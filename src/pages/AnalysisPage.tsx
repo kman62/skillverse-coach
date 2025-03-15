@@ -1,14 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import VideoUploader from '@/components/ui/VideoUploader';
-import AnalysisCard from '@/components/ui/AnalysisCard';
-import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import { getSportById, getDrillById } from '@/lib/constants';
-import { ChevronLeft, BarChart, Check, AlertCircle, Clock, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { generateMockAnalysisData } from '@/utils/mockAnalysisData';
+
+// Components
+import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
+import DrillInfo from '@/components/analysis/DrillInfo';
+import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
+import ResultsPanel from '@/components/analysis/ResultsPanel';
+import NotFoundMessage from '@/components/analysis/NotFoundMessage';
 
 const AnalysisPage = () => {
   const { sportId, drillId } = useParams<{ sportId: string; drillId: string }>();
@@ -50,96 +54,7 @@ const AnalysisPage = () => {
     
     // Simulate analysis with a timeout (would be replaced with actual analysis API call)
     setTimeout(() => {
-      // Mock analysis result data
-      const result = {
-        title: `${drill?.name} Analysis`,
-        description: "AI-powered feedback on your technique",
-        score: Math.floor(Math.random() * 30) + 60, // Random score between 60-90
-        metrics: [
-          {
-            name: "Arm Angle",
-            value: Math.floor(Math.random() * 20) + 70,
-            target: 85,
-            unit: "°"
-          },
-          {
-            name: "Joint Alignment",
-            value: Math.floor(Math.random() * 25) + 70,
-            target: 90,
-            unit: "%"
-          },
-          {
-            name: "Motion Smoothness",
-            value: Math.floor(Math.random() * 30) + 65,
-            target: 95,
-            unit: "%"
-          },
-          {
-            name: "Balance",
-            value: Math.floor(Math.random() * 20) + 75,
-            target: 90,
-            unit: "%"
-          }
-        ],
-        feedback: {
-          good: [
-            "Good initial stance and body positioning",
-            "Consistent follow-through motion after completion",
-            "Proper weight distribution throughout the movement"
-          ],
-          improve: [
-            "Try to maintain a more consistent arm angle during execution",
-            "Focus on keeping your joints aligned throughout the motion",
-            "Work on smoother transitions between movement phases"
-          ]
-        }
-      };
-      
-      // Mock behavior analysis data
-      const behavior = {
-        consistency: [
-          {
-            name: "Timing Consistency",
-            description: "Your shot timing varies by less than 0.2 seconds between attempts, showing excellent consistency.",
-            quality: "good",
-            icon: <Check size={16} />
-          },
-          {
-            name: "Position Variance",
-            description: "Your starting position shifts slightly between attempts, which may affect overall consistency.",
-            quality: "needs-improvement",
-            icon: <AlertCircle size={16} />
-          }
-        ],
-        preRoutine: [
-          {
-            name: "Preparation Time",
-            description: "You take 3-4 seconds to prepare before each shot, which is optimal for focus without overthinking.",
-            quality: "good",
-            icon: <Clock size={16} />
-          },
-          {
-            name: "Deep Breath",
-            description: "You consistently take a deep breath before shooting, which helps with focus and stability.",
-            quality: "good",
-            icon: <Check size={16} />
-          }
-        ],
-        habits: [
-          {
-            name: "Follow Through",
-            description: "Your follow-through is consistent and well-extended, improving accuracy and shot control.",
-            quality: "good",
-            icon: <Check size={16} />
-          },
-          {
-            name: "Reset Between Shots",
-            description: "You don't fully reset your position between attempts, which may introduce inconsistencies.",
-            quality: "needs-improvement",
-            icon: <RotateCcw size={16} />
-          }
-        ]
-      };
+      const { result, behavior } = generateMockAnalysisData(drill?.name || "Technique");
       
       setAnalysisResult(result);
       setBehaviorAnalysis(behavior);
@@ -157,19 +72,7 @@ const AnalysisPage = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow flex items-center justify-center p-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Drill not found</h2>
-            <p className="mt-2 text-muted-foreground">
-              We couldn't find the drill you're looking for.
-            </p>
-            <Link 
-              to="/"
-              className="mt-6 inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              <ChevronLeft size={16} className="mr-1" />
-              Back to Sports
-            </Link>
-          </div>
+          <NotFoundMessage />
         </main>
         <Footer />
       </div>
@@ -182,135 +85,25 @@ const AnalysisPage = () => {
       
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-6 md:px-12 pt-4">
-          {/* Breadcrumb Navigation */}
-          <div className="mb-8">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Link to="/" className="hover:text-primary transition-colors">Sports</Link>
-              <span className="mx-2">/</span>
-              <Link to={`/sports/${sport.id}`} className="hover:text-primary transition-colors">{sport.name}</Link>
-              <span className="mx-2">/</span>
-              <span className="text-foreground">{drill.name}</span>
-            </div>
-          </div>
-          
-          {/* Drill Info */}
-          <div className="mb-10">
-            <h1 className="text-3xl font-bold">{drill.name}</h1>
-            <p className="mt-2 text-muted-foreground">{drill.description}</p>
-            
-            <div className="mt-4 inline-flex items-center px-3 py-1 bg-secondary rounded-full text-xs font-medium">
-              Difficulty: {drill.difficulty.charAt(0).toUpperCase() + drill.difficulty.slice(1)}
-            </div>
-          </div>
+          <BreadcrumbNav sport={sport} drill={drill} />
+          <DrillInfo drill={drill} />
           
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             {/* Left Column: Video Upload */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
-              <VideoUploader onVideoSelected={handleVideoSelected} />
-              
-              <div className="mt-6">
-                <button
-                  onClick={handleAnalyzeClick}
-                  disabled={!videoFile || isAnalyzing}
-                  className={`w-full py-3 rounded-lg text-white font-medium flex items-center justify-center transition-colors ${
-                    !videoFile || isAnalyzing 
-                      ? "bg-primary/60 cursor-not-allowed" 
-                      : "bg-primary hover:bg-primary/90"
-                  }`}
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <BarChart size={18} className="mr-2" />
-                      Analyze Technique
-                    </>
-                  )}
-                </button>
-              </div>
-              
-              <div className="mt-8">
-                <h3 className="text-lg font-medium mb-3">Tips for Best Results</h3>
-                <ul className="space-y-2 pl-5">
-                  <li className="text-muted-foreground text-sm list-disc">
-                    Ensure good lighting and a clear background
-                  </li>
-                  <li className="text-muted-foreground text-sm list-disc">
-                    Position the camera to capture your full body movement
-                  </li>
-                  <li className="text-muted-foreground text-sm list-disc">
-                    Perform the technique at a normal speed
-                  </li>
-                  <li className="text-muted-foreground text-sm list-disc">
-                    Wear appropriate clothing that makes it easy to see your form
-                  </li>
-                </ul>
-              </div>
-            </div>
+            <VideoAnalysisPanel
+              videoFile={videoFile}
+              isAnalyzing={isAnalyzing}
+              onVideoSelected={handleVideoSelected}
+              onAnalyzeClick={handleAnalyzeClick}
+            />
             
             {/* Right Column: Analysis Results */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
-              
-              {!analysisResult && !isAnalyzing && (
-                <div className="bg-card rounded-xl border border-border h-[500px] flex items-center justify-center p-6 text-center">
-                  <div>
-                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <BarChart size={24} className="text-primary" />
-                    </div>
-                    <h3 className="text-lg font-medium">No Analysis Yet</h3>
-                    <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                      Upload a video and click "Analyze Technique" to receive personalized feedback.
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {isAnalyzing && (
-                <div className="bg-card rounded-xl border border-border h-[500px] flex items-center justify-center p-6 text-center animate-pulse">
-                  <div>
-                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium">Analyzing Your Technique</h3>
-                    <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                      Please wait while our AI analyzes your movement patterns...
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {analysisResult && !isAnalyzing && (
-                <div className="animate-fade-in space-y-6">
-                  <AnalysisCard 
-                    title={analysisResult.title}
-                    description={analysisResult.description}
-                    score={analysisResult.score}
-                    metrics={analysisResult.metrics}
-                    feedback={analysisResult.feedback}
-                  />
-                  
-                  {behaviorAnalysis && (
-                    <BehaviorAnalysis 
-                      consistency={behaviorAnalysis.consistency}
-                      preRoutine={behaviorAnalysis.preRoutine}
-                      habits={behaviorAnalysis.habits}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+            <ResultsPanel
+              isAnalyzing={isAnalyzing}
+              analysisResult={analysisResult}
+              behaviorAnalysis={behaviorAnalysis}
+            />
           </div>
         </div>
       </main>
