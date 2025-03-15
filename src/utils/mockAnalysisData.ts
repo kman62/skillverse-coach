@@ -1,9 +1,47 @@
 
 import { Check, AlertCircle, Clock, RotateCcw } from 'lucide-react';
+import React from 'react';
 
-export const generateMockAnalysisData = (drillName: string) => {
+// Define types for our data structure
+interface AnalysisMetric {
+  name: string;
+  value: number;
+  target: number;
+  unit: string;
+}
+
+interface AnalysisResult {
+  title: string;
+  description: string;
+  score: number;
+  metrics: AnalysisMetric[];
+  feedback: {
+    good: string[];
+    improve: string[];
+  };
+}
+
+interface BehaviorPattern {
+  name: string;
+  description: string;
+  quality: 'good' | 'needs-improvement';
+  icon: React.ReactNode;
+}
+
+interface BehaviorAnalysis {
+  consistency: BehaviorPattern[];
+  preRoutine: BehaviorPattern[];
+  habits: BehaviorPattern[];
+}
+
+interface MockAnalysisData {
+  result: AnalysisResult;
+  behavior: BehaviorAnalysis;
+}
+
+export const generateMockAnalysisData = (drillName: string): MockAnalysisData => {
   // Mock analysis result data
-  const result = {
+  const result: AnalysisResult = {
     title: `${drillName} Analysis`,
     description: "AI-powered feedback on your technique",
     score: Math.floor(Math.random() * 30) + 60, // Random score between 60-90
@@ -48,19 +86,19 @@ export const generateMockAnalysisData = (drillName: string) => {
   };
   
   // Mock behavior analysis data
-  const behavior = {
+  const behavior: BehaviorAnalysis = {
     consistency: [
       {
         name: "Timing Consistency",
         description: "Your shot timing varies by less than 0.2 seconds between attempts, showing excellent consistency.",
         quality: "good",
-        icon: <Check size={16} />
+        icon: React.createElement(Check, { size: 16 })
       },
       {
         name: "Position Variance",
         description: "Your starting position shifts slightly between attempts, which may affect overall consistency.",
         quality: "needs-improvement",
-        icon: <AlertCircle size={16} />
+        icon: React.createElement(AlertCircle, { size: 16 })
       }
     ],
     preRoutine: [
@@ -68,13 +106,13 @@ export const generateMockAnalysisData = (drillName: string) => {
         name: "Preparation Time",
         description: "You take 3-4 seconds to prepare before each shot, which is optimal for focus without overthinking.",
         quality: "good",
-        icon: <Clock size={16} />
+        icon: React.createElement(Clock, { size: 16 })
       },
       {
         name: "Deep Breath",
         description: "You consistently take a deep breath before shooting, which helps with focus and stability.",
         quality: "good",
-        icon: <Check size={16} />
+        icon: React.createElement(Check, { size: 16 })
       }
     ],
     habits: [
@@ -82,13 +120,13 @@ export const generateMockAnalysisData = (drillName: string) => {
         name: "Follow Through",
         description: "Your follow-through is consistent and well-extended, improving accuracy and shot control.",
         quality: "good",
-        icon: <Check size={16} />
+        icon: React.createElement(Check, { size: 16 })
       },
       {
         name: "Reset Between Shots",
         description: "You don't fully reset your position between attempts, which may introduce inconsistencies.",
         quality: "needs-improvement",
-        icon: <RotateCcw size={16} />
+        icon: React.createElement(RotateCcw, { size: 16 })
       }
     ]
   };
