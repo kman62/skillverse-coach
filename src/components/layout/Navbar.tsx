@@ -38,7 +38,7 @@ const Navbar = () => {
             to="/" 
             className="text-xl md:text-2xl font-semibold tracking-tight transition-opacity duration-200 hover:opacity-80"
           >
-            <span className="gradient-text">Complete</span> <span className="text-foreground">Coaching App</span>
+            <span className="gradient-text">AI</span><span className="text-foreground">thlete</span>
           </Link>
 
           {/* Desktop Navigation */}

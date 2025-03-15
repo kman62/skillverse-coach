@@ -13,7 +13,7 @@ const Footer = () => {
               to="/" 
               className="text-xl font-semibold tracking-tight transition-opacity duration-200 hover:opacity-80"
             >
-              <span className="gradient-text">Complete</span> <span className="text-foreground">Coaching App</span>
+              <span className="gradient-text">AI</span><span className="text-foreground">thlete</span>
             </Link>
             <p className="mt-4 text-muted-foreground">
               Analyze and improve your sports technique with AI-powered feedback and personalized coaching.
@@ -97,7 +97,7 @@ const Footer = () => {
 
         <div className="mt-12 pt-8 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Complete Coaching App. All rights reserved.
+            &copy; {new Date().getFullYear()} AIthlete. All rights reserved.
           </p>
         </div>
       </div>
