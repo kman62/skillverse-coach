@@ -1,5 +1,3 @@
-import { StaticImageData } from "next/image";
-
 export interface Sport {
   id: string;
   name: string;
