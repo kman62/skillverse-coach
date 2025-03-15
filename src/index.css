@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -139,9 +138,7 @@ html, body {
 }
 
 /* Image/Video Related */
-.aspect-video {
-  @apply aspect-video;
-}
+/* Removed the circular dependency - we don't need to redefine aspect-video since it's already provided by Tailwind */
 
 .video-container {
   @apply relative w-full overflow-hidden rounded-xl shadow-lg;
