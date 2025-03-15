@@ -9,9 +9,10 @@ interface DrillCardProps {
   sportId: string;
   drill: Drill;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-const DrillCard = ({ sportId, drill, className }: DrillCardProps) => {
+const DrillCard = ({ sportId, drill, className, style }: DrillCardProps) => {
   // Map difficulty to appropriate color
   const difficultyColor = {
     beginner: "bg-green-500",
@@ -26,13 +27,16 @@ const DrillCard = ({ sportId, drill, className }: DrillCardProps) => {
         "group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-1",
         className
       )}
+      style={style}
     >
-      <div className="aspect-w-16 aspect-h-9 w-full overflow-hidden rounded-t-xl">
-        <img 
-          src={drill.coverImage} 
-          alt={drill.name} 
-          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-        />
+      <div className="relative w-full overflow-hidden rounded-t-xl">
+        <div className="aspect-video">
+          <img 
+            src={drill.coverImage} 
+            alt={drill.name} 
+            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
       </div>
       
       <div className="p-5">

@@ -8,9 +8,10 @@ import { Sport } from '@/lib/constants';
 interface SportsCardProps {
   sport: Sport;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-const SportsCard = ({ sport, className }: SportsCardProps) => {
+const SportsCard = ({ sport, className, style }: SportsCardProps) => {
   return (
     <Link 
       to={`/sports/${sport.id}`}
@@ -18,6 +19,7 @@ const SportsCard = ({ sport, className }: SportsCardProps) => {
         "group relative overflow-hidden rounded-2xl card-hover",
         className
       )}
+      style={style}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 z-10" />
       
