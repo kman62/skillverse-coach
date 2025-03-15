@@ -103,6 +103,7 @@ const AnalysisPage = () => {
               isAnalyzing={isAnalyzing}
               analysisResult={analysisResult}
               behaviorAnalysis={behaviorAnalysis}
+              videoFile={videoFile}
             />
           </div>
         </div>

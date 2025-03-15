@@ -19,6 +19,7 @@ interface AnalysisResult {
     good: string[];
     improve: string[];
   };
+  coachingTips: string[];
 }
 
 interface BehaviorPattern {
@@ -28,10 +29,28 @@ interface BehaviorPattern {
   icon: React.ReactNode;
 }
 
+interface TimingData {
+  average: string;
+  consistency: number;
+  isRushing: boolean;
+  attempts: {
+    attemptNumber: number;
+    duration: string;
+  }[];
+}
+
+interface FatigueIndicator {
+  level: 'low' | 'moderate' | 'high';
+  signs: string[];
+  recommendations: string[];
+}
+
 interface BehaviorAnalysis {
   consistency: BehaviorPattern[];
   preRoutine: BehaviorPattern[];
   habits: BehaviorPattern[];
+  timing: TimingData;
+  fatigue: FatigueIndicator;
 }
 
 interface MockAnalysisData {
@@ -82,7 +101,13 @@ export const generateMockAnalysisData = (drillName: string): MockAnalysisData =>
         "Focus on keeping your joints aligned throughout the motion",
         "Work on smoother transitions between movement phases"
       ]
-    }
+    },
+    coachingTips: [
+      "Practice maintaining a 45-degree elbow angle throughout your shot for optimal power transfer",
+      "Focus on keeping your eyes on the target until your follow-through is complete",
+      "Try to establish a consistent pre-shot routine to improve shooting consistency",
+      "Work on holding your follow-through position for 1-2 seconds after release"
+    ]
   };
   
   // Mock behavior analysis data
@@ -128,7 +153,32 @@ export const generateMockAnalysisData = (drillName: string): MockAnalysisData =>
         quality: "needs-improvement",
         icon: React.createElement(RotateCcw, { size: 16 })
       }
-    ]
+    ],
+    timing: {
+      average: "1.8 seconds",
+      consistency: 87,
+      isRushing: true,
+      attempts: [
+        { attemptNumber: 1, duration: "2.1 seconds" },
+        { attemptNumber: 2, duration: "1.9 seconds" },
+        { attemptNumber: 3, duration: "1.7 seconds" },
+        { attemptNumber: 4, duration: "1.6 seconds" },
+        { attemptNumber: 5, duration: "1.5 seconds" }
+      ]
+    },
+    fatigue: {
+      level: "moderate",
+      signs: [
+        "Decreased power in later attempts",
+        "More variable follow-through",
+        "Slight drop in arm position over time"
+      ],
+      recommendations: [
+        "Take brief rest periods between training sets",
+        "Focus on proper breathing throughout your routine",
+        "Consider shorter, more frequent practice sessions"
+      ]
+    }
   };
 
   return { result, behavior };

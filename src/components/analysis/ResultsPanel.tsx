@@ -1,16 +1,18 @@
 
 import React from 'react';
-import { BarChart } from 'lucide-react';
+import { BarChart, Share2, Save, RefreshCw } from 'lucide-react';
 import AnalysisCard from '@/components/ui/AnalysisCard';
 import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
+import { Button } from '@/components/ui/button';
 
 interface ResultsPanelProps {
   isAnalyzing: boolean;
   analysisResult: any | null;
   behaviorAnalysis: any | null;
+  videoFile: File | null;
 }
 
-const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis }: ResultsPanelProps) => {
+const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis, videoFile }: ResultsPanelProps) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
@@ -48,6 +50,20 @@ const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis }: Results
       
       {analysisResult && !isAnalyzing && (
         <div className="animate-fade-in space-y-6">
+          {/* Video with annotations */}
+          {videoFile && (
+            <div className="rounded-lg border border-border overflow-hidden bg-black relative">
+              <video 
+                className="w-full aspect-video object-contain" 
+                controls
+                src={URL.createObjectURL(videoFile)}
+              />
+              <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                Analysis Overlay Active
+              </div>
+            </div>
+          )}
+          
           <AnalysisCard 
             title={analysisResult.title}
             description={analysisResult.description}
@@ -61,8 +77,41 @@ const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis }: Results
               consistency={behaviorAnalysis.consistency}
               preRoutine={behaviorAnalysis.preRoutine}
               habits={behaviorAnalysis.habits}
+              timing={behaviorAnalysis.timing}
+              fatigue={behaviorAnalysis.fatigue}
             />
           )}
+          
+          {/* Coaching Tips Section */}
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h3 className="text-lg font-semibold mb-3">Coaching Tips</h3>
+            <div className="space-y-3">
+              {analysisResult.coachingTips.map((tip: string, index: number) => (
+                <div key={index} className="flex gap-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="mt-1 bg-primary/20 text-primary h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm">{tip}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Button variant="outline" className="flex-1">
+              <Save size={16} className="mr-2" />
+              Save Results
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <Share2 size={16} className="mr-2" />
+              Share
+            </Button>
+            <Button variant="default" className="flex-1">
+              <RefreshCw size={16} className="mr-2" />
+              Retry
+            </Button>
+          </div>
         </div>
       )}
     </div>
