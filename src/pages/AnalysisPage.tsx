@@ -5,8 +5,9 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import VideoUploader from '@/components/ui/VideoUploader';
 import AnalysisCard from '@/components/ui/AnalysisCard';
+import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import { getSportById, getDrillById } from '@/lib/constants';
-import { ChevronLeft, BarChart } from 'lucide-react';
+import { ChevronLeft, BarChart, Check, AlertCircle, Clock, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const AnalysisPage = () => {
@@ -16,6 +17,7 @@ const AnalysisPage = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
+  const [behaviorAnalysis, setBehaviorAnalysis] = useState<any | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -31,6 +33,7 @@ const AnalysisPage = () => {
   const handleVideoSelected = (file: File) => {
     setVideoFile(file);
     setAnalysisResult(null);
+    setBehaviorAnalysis(null);
   };
   
   const handleAnalyzeClick = () => {
@@ -92,7 +95,54 @@ const AnalysisPage = () => {
         }
       };
       
+      // Mock behavior analysis data
+      const behavior = {
+        consistency: [
+          {
+            name: "Timing Consistency",
+            description: "Your shot timing varies by less than 0.2 seconds between attempts, showing excellent consistency.",
+            quality: "good",
+            icon: <Check size={16} />
+          },
+          {
+            name: "Position Variance",
+            description: "Your starting position shifts slightly between attempts, which may affect overall consistency.",
+            quality: "needs-improvement",
+            icon: <AlertCircle size={16} />
+          }
+        ],
+        preRoutine: [
+          {
+            name: "Preparation Time",
+            description: "You take 3-4 seconds to prepare before each shot, which is optimal for focus without overthinking.",
+            quality: "good",
+            icon: <Clock size={16} />
+          },
+          {
+            name: "Deep Breath",
+            description: "You consistently take a deep breath before shooting, which helps with focus and stability.",
+            quality: "good",
+            icon: <Check size={16} />
+          }
+        ],
+        habits: [
+          {
+            name: "Follow Through",
+            description: "Your follow-through is consistent and well-extended, improving accuracy and shot control.",
+            quality: "good",
+            icon: <Check size={16} />
+          },
+          {
+            name: "Reset Between Shots",
+            description: "You don't fully reset your position between attempts, which may introduce inconsistencies.",
+            quality: "needs-improvement",
+            icon: <RotateCcw size={16} />
+          }
+        ]
+      };
+      
       setAnalysisResult(result);
+      setBehaviorAnalysis(behavior);
       setIsAnalyzing(false);
       
       toast({
@@ -242,7 +292,7 @@ const AnalysisPage = () => {
               )}
               
               {analysisResult && !isAnalyzing && (
-                <div className="animate-fade-in">
+                <div className="animate-fade-in space-y-6">
                   <AnalysisCard 
                     title={analysisResult.title}
                     description={analysisResult.description}
@@ -250,6 +300,14 @@ const AnalysisPage = () => {
                     metrics={analysisResult.metrics}
                     feedback={analysisResult.feedback}
                   />
+                  
+                  {behaviorAnalysis && (
+                    <BehaviorAnalysis 
+                      consistency={behaviorAnalysis.consistency}
+                      preRoutine={behaviorAnalysis.preRoutine}
+                      habits={behaviorAnalysis.habits}
+                    />
+                  )}
                 </div>
               )}
             </div>
