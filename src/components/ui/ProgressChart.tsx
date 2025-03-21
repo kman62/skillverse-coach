@@ -78,10 +78,12 @@ const ProgressChart = ({ data, metrics, className }: ProgressChartProps) => {
         
         <div className="mt-3 sm:mt-0 flex gap-2 items-center">
           <span className="text-sm text-muted-foreground mr-1">View:</span>
-          <TabsList className="grid w-[180px] grid-cols-2">
-            <TabsTrigger value="line" onClick={() => setChartType('line')}>Line</TabsTrigger>
-            <TabsTrigger value="bar" onClick={() => setChartType('bar')}>Bar</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="line" value={chartType} onValueChange={(value) => setChartType(value as 'line' | 'bar')}>
+            <TabsList className="grid w-[180px] grid-cols-2">
+              <TabsTrigger value="line">Line</TabsTrigger>
+              <TabsTrigger value="bar">Bar</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
       
