@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { getSportById, getDrillById } from '@/lib/constants';
 import { useToast } from '@/components/ui/use-toast';
-import { generateMockAnalysisData } from '@/utils/mockAnalysisData';
+import { analyzeVideo, AnalysisResponse } from '@/utils/videoAnalysisService';
 
 // Components
 import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
@@ -40,7 +40,7 @@ const AnalysisPage = () => {
     setBehaviorAnalysis(null);
   };
   
-  const handleAnalyzeClick = () => {
+  const handleAnalyzeClick = async () => {
     if (!videoFile) {
       toast({
         title: "No video selected",
@@ -52,19 +52,30 @@ const AnalysisPage = () => {
     
     setIsAnalyzing(true);
     
-    // Simulate analysis with a timeout (would be replaced with actual analysis API call)
-    setTimeout(() => {
-      const { result, behavior } = generateMockAnalysisData(drill?.name || "Technique");
+    try {
+      // Use the actual video analysis service
+      const analysisData: AnalysisResponse = await analyzeVideo(
+        videoFile, 
+        drill?.name || "Technique"
+      );
       
-      setAnalysisResult(result);
-      setBehaviorAnalysis(behavior);
-      setIsAnalyzing(false);
+      setAnalysisResult(analysisData.result);
+      setBehaviorAnalysis(analysisData.behavior);
       
       toast({
         title: "Analysis Complete",
         description: "Your technique has been successfully analyzed"
       });
-    }, 3000);
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast({
+        title: "Analysis Failed",
+        description: "There was an error analyzing your video. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
   
   if (!sport || !drill) {

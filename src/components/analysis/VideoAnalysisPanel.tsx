@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
 import { BarChart } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -17,12 +17,49 @@ const VideoAnalysisPanel = ({
   onVideoSelected,
   onAnalyzeClick 
 }: VideoAnalysisPanelProps) => {
+  const { toast } = useToast();
+  const [processingProgress, setProcessingProgress] = useState(0);
+
+  // Update progress bar during "analysis"
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isAnalyzing) {
+      setProcessingProgress(0);
+      interval = setInterval(() => {
+        setProcessingProgress(prev => {
+          // Slowly increase progress, capping at 90% until complete
+          const newProgress = prev + (Math.random() * 4);
+          return newProgress < 90 ? newProgress : 90;
+        });
+      }, 200);
+    } else {
+      setProcessingProgress(isAnalyzing ? 90 : 0);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isAnalyzing]);
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
       <VideoUploader onVideoSelected={onVideoSelected} />
       
       <div className="mt-6">
+        {isAnalyzing && (
+          <div className="mb-3 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div 
+              className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${processingProgress}%` }}
+            ></div>
+            <p className="text-xs text-muted-foreground mt-1 text-right">
+              {Math.round(processingProgress)}% processed
+            </p>
+          </div>
+        )}
+        
         <button
           onClick={onAnalyzeClick}
           disabled={!videoFile || isAnalyzing}
