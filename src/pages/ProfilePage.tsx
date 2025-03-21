@@ -9,6 +9,7 @@ import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2, Settings, C
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button'; // Added missing Button import
 import { 
   Tabs, 
   TabsContent, 
