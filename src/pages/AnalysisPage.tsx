@@ -53,10 +53,11 @@ const AnalysisPage = () => {
     setIsAnalyzing(true);
     
     try {
-      // Use the actual video analysis service
+      // Pass sportId to the analysis function
       const analysisData: AnalysisResponse = await analyzeVideo(
         videoFile, 
-        drill?.name || "Technique"
+        drill?.name || "Technique",
+        sportId || "generic"
       );
       
       setAnalysisResult(analysisData.result);
