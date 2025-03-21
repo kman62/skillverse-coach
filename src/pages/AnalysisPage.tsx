@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { getSportById, getDrillById } from '@/lib/constants';
 import { useToast } from '@/components/ui/use-toast';
-import { analyzeVideo, AnalysisResponse } from '@/utils/videoAnalysisService';
+import { analyzeVideo, saveAnalysisResult, AnalysisResponse } from '@/utils/videoAnalysisService';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Components
 import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
@@ -23,7 +24,10 @@ const AnalysisPage = () => {
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
   const [behaviorAnalysis, setBehaviorAnalysis] = useState<any | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (sportId) {
@@ -52,6 +56,16 @@ const AnalysisPage = () => {
       return;
     }
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to analyze videos",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+    
     setIsAnalyzing(true);
     setApiError(null);
     
@@ -66,9 +80,19 @@ const AnalysisPage = () => {
       setAnalysisResult(analysisData.result);
       setBehaviorAnalysis(analysisData.behavior);
       
+      // Save the analysis results to Supabase
+      setIsSaving(true);
+      await saveAnalysisResult(
+        videoFile,
+        sportId || "generic",
+        drillId || "technique",
+        analysisData.result,
+        analysisData.behavior
+      );
+      
       toast({
         title: "Analysis Complete",
-        description: "Your technique has been successfully analyzed"
+        description: "Your technique has been successfully analyzed and saved"
       });
     } catch (error) {
       console.error("Analysis error:", error);
@@ -80,6 +104,7 @@ const AnalysisPage = () => {
       });
     } finally {
       setIsAnalyzing(false);
+      setIsSaving(false);
     }
   };
   
@@ -109,14 +134,14 @@ const AnalysisPage = () => {
             {/* Left Column: Video Upload */}
             <VideoAnalysisPanel
               videoFile={videoFile}
-              isAnalyzing={isAnalyzing}
+              isAnalyzing={isAnalyzing || isSaving}
               onVideoSelected={handleVideoSelected}
               onAnalyzeClick={handleAnalyzeClick}
             />
             
             {/* Right Column: Analysis Results */}
             <ResultsPanel
-              isAnalyzing={isAnalyzing}
+              isAnalyzing={isAnalyzing || isSaving}
               analysisResult={analysisResult}
               behaviorAnalysis={behaviorAnalysis}
               videoFile={videoFile}

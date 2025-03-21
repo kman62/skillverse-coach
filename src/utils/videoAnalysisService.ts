@@ -7,7 +7,8 @@ import { generateFootballAnalysis } from './analysis/footballAnalysis';
 import { generateTennisAnalysis } from './analysis/tennisAnalysis';
 import { generateGolfAnalysis } from './analysis/golfAnalysis';
 import { generateSoccerAnalysis } from './analysis/soccerAnalysis';
-import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 const AI_API_URL = "https://api.aithlete.ai/analyze"; // Replace with your actual API endpoint
 const AI_API_KEY = "YOUR_API_KEY"; // In production, get this from environment variables or Supabase
@@ -53,6 +54,105 @@ export const analyzeVideo = async (
     
     // Generate fallback analysis data based on drill name and sport
     return generateSportSpecificAnalysis(sportId, drillName);
+  }
+};
+
+// Save analysis result to Supabase
+export const saveAnalysisResult = async (
+  videoFile: File,
+  sportId: string,
+  drillId: string,
+  analysisResult: any,
+  behaviorAnalysis: any
+) => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user) {
+      throw new Error('User not authenticated');
+    }
+    
+    const userId = userData.user.id;
+    
+    // 1. Upload video to Supabase Storage
+    const videoFileName = `${userId}/${uuidv4()}-${videoFile.name}`;
+    const { error: uploadError, data: uploadData } = await supabase.storage
+      .from('videos')
+      .upload(videoFileName, videoFile);
+      
+    if (uploadError) {
+      throw new Error(`Error uploading video: ${uploadError.message}`);
+    }
+    
+    // Get public URL for the uploaded video
+    const { data: { publicUrl } } = supabase.storage
+      .from('videos')
+      .getPublicUrl(videoFileName);
+    
+    // 2. Insert video metadata
+    const { error: videoError, data: videoData } = await supabase
+      .from('videos')
+      .insert({
+        user_id: userId,
+        sport_id: sportId,
+        drill_id: drillId,
+        title: `${drillId} Analysis`,
+        video_url: publicUrl
+      })
+      .select()
+      .single();
+      
+    if (videoError) {
+      throw new Error(`Error saving video metadata: ${videoError.message}`);
+    }
+    
+    // 3. Insert analysis results
+    const score = analysisResult?.overallScore || 
+                 (analysisResult?.scores?.reduce((acc: number, curr: any) => acc + curr.score, 0) / 
+                  (analysisResult?.scores?.length || 1));
+                  
+    const { error: analysisError } = await supabase
+      .from('analysis_results')
+      .insert({
+        user_id: userId,
+        video_id: videoData.id,
+        sport_id: sportId,
+        drill_id: drillId,
+        analysis_data: analysisResult,
+        behavior_data: behaviorAnalysis,
+        score: Math.round(score)
+      });
+      
+    if (analysisError) {
+      throw new Error(`Error saving analysis results: ${analysisError.message}`);
+    }
+    
+    // 4. Update user progress
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    const { error: progressError } = await supabase
+      .from('user_progress')
+      .insert({
+        user_id: userId,
+        sport_id: sportId,
+        drill_id: drillId,
+        date: today,
+        score: Math.round(score),
+        metrics: {
+          technicalScore: analysisResult?.technicalScore || 0,
+          consistencyScore: analysisResult?.consistencyScore || 0,
+          behaviorScore: behaviorAnalysis?.overallScore || 0
+        }
+      });
+      
+    if (progressError) {
+      throw new Error(`Error saving user progress: ${progressError.message}`);
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving analysis data:', error);
+    throw error;
   }
 };
 
