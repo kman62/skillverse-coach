@@ -22,6 +22,7 @@ const AnalysisPage = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
   const [behaviorAnalysis, setBehaviorAnalysis] = useState<any | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -38,6 +39,7 @@ const AnalysisPage = () => {
     setVideoFile(file);
     setAnalysisResult(null);
     setBehaviorAnalysis(null);
+    setApiError(null);
   };
   
   const handleAnalyzeClick = async () => {
@@ -51,6 +53,7 @@ const AnalysisPage = () => {
     }
     
     setIsAnalyzing(true);
+    setApiError(null);
     
     try {
       // Pass sportId to the analysis function
@@ -69,6 +72,7 @@ const AnalysisPage = () => {
       });
     } catch (error) {
       console.error("Analysis error:", error);
+      setApiError(error instanceof Error ? error.message : "Unknown error occurred");
       toast({
         title: "Analysis Failed",
         description: "There was an error analyzing your video. Please try again.",
@@ -116,6 +120,7 @@ const AnalysisPage = () => {
               analysisResult={analysisResult}
               behaviorAnalysis={behaviorAnalysis}
               videoFile={videoFile}
+              apiError={apiError}
             />
           </div>
         </div>
