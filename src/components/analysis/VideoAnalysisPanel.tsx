@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
 import { BarChart, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 interface VideoAnalysisPanelProps {
   videoFile: File | null;
@@ -20,6 +21,7 @@ const VideoAnalysisPanel = ({
   const { toast } = useToast();
   const [processingProgress, setProcessingProgress] = useState(0);
   const [usesDemoData, setUsesDemoData] = useState(false);
+  const [progressPhase, setProgressPhase] = useState('');
 
   // Update progress bar during "analysis"
   useEffect(() => {
@@ -29,13 +31,33 @@ const VideoAnalysisPanel = ({
       setProcessingProgress(0);
       interval = setInterval(() => {
         setProcessingProgress(prev => {
+          // Different speed for different phases
+          const phaseThresholds = [
+            { threshold: 20, phase: 'Initializing analysis...' },
+            { threshold: 40, phase: 'Processing video frames...' },
+            { threshold: 60, phase: 'Analyzing technique...' },
+            { threshold: 80, phase: 'Generating feedback...' },
+            { threshold: 90, phase: 'Finalizing results...' },
+          ];
+          
+          // Update the phase text based on progress
+          for (const { threshold, phase } of phaseThresholds) {
+            if (prev < threshold) {
+              setProgressPhase(phase);
+              break;
+            }
+          }
+          
           // Slowly increase progress, capping at 90% until complete
-          const newProgress = prev + (Math.random() * 4);
+          const increment = Math.random() * 3 + (prev < 30 ? 2 : prev < 60 ? 1 : 0.5);
+          const newProgress = prev + increment;
           return newProgress < 90 ? newProgress : 90;
         });
       }, 200);
     } else {
+      // Reset or complete progress
       setProcessingProgress(isAnalyzing ? 90 : 0);
+      setProgressPhase('');
     }
     
     return () => {
@@ -90,14 +112,20 @@ const VideoAnalysisPanel = ({
       
       <div className="mt-6">
         {isAnalyzing && (
-          <div className="mb-3 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-            <div 
-              className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${processingProgress}%` }}
-            ></div>
-            <p className="text-xs text-muted-foreground mt-1 text-right">
-              {Math.round(processingProgress)}% processed
-            </p>
+          <div className="mb-5 space-y-2">
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-muted-foreground">{progressPhase}</span>
+              <span className="font-medium">{Math.round(processingProgress)}%</span>
+            </div>
+            <Progress value={processingProgress} className="h-2" />
+            <div className="grid grid-cols-5 w-full mt-1">
+              {['Initializing', 'Processing', 'Analyzing', 'Generating', 'Finalizing'].map((phase, i) => (
+                <div key={phase} className="flex flex-col items-center">
+                  <div className={`w-2 h-2 rounded-full mb-1 ${processingProgress >= (i+1)*20 ? 'bg-primary' : 'bg-muted'}`}></div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">{phase}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         
