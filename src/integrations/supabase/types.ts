@@ -9,7 +9,149 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      analysis_results: {
+        Row: {
+          analysis_data: Json
+          behavior_data: Json | null
+          created_at: string
+          drill_id: string
+          id: string
+          score: number | null
+          sport_id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          behavior_data?: Json | null
+          created_at?: string
+          drill_id: string
+          id?: string
+          score?: number | null
+          sport_id: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          behavior_data?: Json | null
+          created_at?: string
+          drill_id?: string
+          id?: string
+          score?: number | null
+          sport_id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_results_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          created_at: string
+          date: string
+          drill_id: string
+          id: string
+          metrics: Json | null
+          score: number
+          sport_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          drill_id: string
+          id?: string
+          metrics?: Json | null
+          score: number
+          sport_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          drill_id?: string
+          id?: string
+          metrics?: Json | null
+          score?: number
+          sport_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          created_at: string
+          description: string | null
+          drill_id: string
+          id: string
+          sport_id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          drill_id: string
+          id?: string
+          sport_id: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          drill_id?: string
+          id?: string
+          sport_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

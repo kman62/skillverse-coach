@@ -2,12 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Menu, X, User, BarChart } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -54,24 +65,48 @@ const Navbar = () => {
                 Sports
               </Link>
             </li>
+            {user && (
+              <li>
+                <Link 
+                  to="/profile" 
+                  className={cn(
+                    "text-sm font-medium link-underline",
+                    location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
+                  )}
+                >
+                  My Progress
+                </Link>
+              </li>
+            )}
             <li>
-              <Link 
-                to="/profile" 
-                className={cn(
-                  "text-sm font-medium link-underline",
-                  location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
-                )}
-              >
-                My Progress
-              </Link>
-            </li>
-            <li>
-              <Link 
-                to="/profile" 
-                className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-              >
-                <User size={18} />
-              </Link>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    >
+                      <User size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/auth">
+                  <Button>Sign In</Button>
+                </Link>
+              )}
             </li>
           </ul>
 
@@ -100,25 +135,45 @@ const Navbar = () => {
                   Sports
                 </Link>
               </li>
+              {user && (
+                <li>
+                  <Link 
+                    to="/profile" 
+                    className={cn(
+                      "block py-2 text-base font-medium",
+                      location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
+                    )}
+                  >
+                    My Progress
+                  </Link>
+                </li>
+              )}
               <li>
-                <Link 
-                  to="/profile" 
-                  className={cn(
-                    "block py-2 text-base font-medium",
-                    location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
-                  )}
-                >
-                  My Progress
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/profile" 
-                  className="flex items-center space-x-2 py-2 text-base font-medium text-foreground/80"
-                >
-                  <User size={18} />
-                  <span>Profile</span>
-                </Link>
+                {user ? (
+                  <>
+                    <Link 
+                      to="/profile" 
+                      className="flex items-center space-x-2 py-2 text-base font-medium text-foreground/80"
+                    >
+                      <User size={18} />
+                      <span>Profile</span>
+                    </Link>
+                    <button
+                      onClick={() => signOut()}
+                      className="flex items-center space-x-2 py-2 text-base font-medium text-foreground/80 w-full"
+                    >
+                      <LogOut size={18} />
+                      <span>Log out</span>
+                    </button>
+                  </>
+                ) : (
+                  <Link 
+                    to="/auth"
+                    className="block w-full"
+                  >
+                    <Button className="w-full">Sign In</Button>
+                  </Link>
+                )}
               </li>
             </ul>
           </div>
