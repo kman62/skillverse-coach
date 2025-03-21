@@ -15,6 +15,8 @@ import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
 import ResultsPanel from '@/components/analysis/ResultsPanel';
 import NotFoundMessage from '@/components/analysis/NotFoundMessage';
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 const AnalysisPage = () => {
   const { sportId, drillId } = useParams<{ sportId: string; drillId: string }>();
   const [sport, setSport] = useState(sportId ? getSportById(sportId) : null);
@@ -40,6 +42,17 @@ const AnalysisPage = () => {
   }, [sportId, drillId]);
   
   const handleVideoSelected = (file: File) => {
+    // Double-check file size (in addition to VideoUploader's check)
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = Math.round(file.size / (1024 * 1024));
+      toast({
+        title: "Video too large",
+        description: `Your video is ${sizeMB}MB which exceeds the 50MB limit. Please select a smaller file.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setVideoFile(file);
     setAnalysisResult(null);
     setBehaviorAnalysis(null);

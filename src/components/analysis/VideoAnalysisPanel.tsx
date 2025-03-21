@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
 import { BarChart } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,7 +21,7 @@ const VideoAnalysisPanel = ({
   const [processingProgress, setProcessingProgress] = useState(0);
 
   // Update progress bar during "analysis"
-  React.useEffect(() => {
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     
     if (isAnalyzing) {
@@ -42,10 +42,23 @@ const VideoAnalysisPanel = ({
     };
   }, [isAnalyzing]);
 
+  const handleVideoSelected = (file: File) => {
+    // Check if file is too large before passing it to parent
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    
+    if (file.size > MAX_FILE_SIZE) {
+      // This error is now handled in the VideoUploader component
+      // But we still check here to prevent passing large files up
+      return;
+    }
+    
+    onVideoSelected(file);
+  };
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
-      <VideoUploader onVideoSelected={onVideoSelected} />
+      <VideoUploader onVideoSelected={handleVideoSelected} />
       
       <div className="mt-6">
         {isAnalyzing && (
@@ -100,6 +113,9 @@ const VideoAnalysisPanel = ({
           </li>
           <li className="text-muted-foreground text-sm list-disc">
             Wear appropriate clothing that makes it easy to see your form
+          </li>
+          <li className="text-muted-foreground text-sm list-disc">
+            Keep videos under 50MB for optimal processing
           </li>
         </ul>
       </div>

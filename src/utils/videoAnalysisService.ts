@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const AI_API_URL = "https://api.aithlete.ai/analyze"; // Replace with your actual API endpoint
 const AI_API_KEY = "YOUR_API_KEY"; // In production, get this from environment variables or Supabase
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export type { AnalysisResult, BehaviorAnalysis, AnalysisResponse } from './analysis/analysisTypes';
 
@@ -20,6 +21,11 @@ export const analyzeVideo = async (
   drillName: string,
   sportId: string
 ): Promise<AnalysisResponse> => {
+  // Check file size before attempting to upload
+  if (videoFile.size > MAX_FILE_SIZE) {
+    throw new Error(`Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`);
+  }
+  
   // Create form data to send the video file
   const formData = new FormData();
   formData.append("video", videoFile);
@@ -66,6 +72,11 @@ export const saveAnalysisResult = async (
   behaviorAnalysis: any
 ) => {
   try {
+    // Check file size before attempting to upload
+    if (videoFile.size > MAX_FILE_SIZE) {
+      throw new Error(`Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`);
+    }
+    
     const { data: userData } = await supabase.auth.getUser();
     
     if (!userData?.user) {
@@ -81,6 +92,9 @@ export const saveAnalysisResult = async (
       .upload(videoFileName, videoFile);
       
     if (uploadError) {
+      if (uploadError.message.includes('exceeded the maximum allowed size')) {
+        throw new Error('Video file size exceeds the Supabase storage limit of 50MB.');
+      }
       throw new Error(`Error uploading video: ${uploadError.message}`);
     }
     

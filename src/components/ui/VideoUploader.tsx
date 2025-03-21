@@ -1,7 +1,11 @@
 
 import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Upload, Video, X, Play } from 'lucide-react';
+import { Upload, Video, X, Play, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// Max file size: 50MB (Supabase default limit)
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 interface VideoUploaderProps {
   onVideoSelected: (file: File) => void;
@@ -12,6 +16,7 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [sizeError, setSizeError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -33,7 +38,7 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('video/')) {
-        processVideoFile(file);
+        validateAndProcessFile(file);
       }
     }
   };
@@ -44,12 +49,23 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       if (file.type.startsWith('video/')) {
-        processVideoFile(file);
+        validateAndProcessFile(file);
       }
     }
   };
 
-  const processVideoFile = (file: File) => {
+  const validateAndProcessFile = (file: File) => {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = Math.round(file.size / (1024 * 1024));
+      setSizeError(`Video size (${sizeMB}MB) exceeds the maximum allowed size of 50MB. Please select a smaller video.`);
+      return;
+    }
+    
+    // Clear any previous errors
+    setSizeError(null);
+    
+    // Process the file
     setVideoFile(file);
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
@@ -62,6 +78,7 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
     }
     setVideoPreview(null);
     setVideoFile(null);
+    setSizeError(null);
     if (inputRef.current) {
       inputRef.current.value = '';
     }
@@ -73,8 +90,21 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' bytes';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
+  };
+
   return (
     <div className={cn("w-full", className)}>
+      {sizeError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{sizeError}</AlertDescription>
+        </Alert>
+      )}
+
       {!videoPreview ? (
         <div 
           className={cn(
@@ -110,6 +140,9 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
               <Upload size={18} className="mr-2" />
               Select Video
             </button>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Maximum file size: 50MB
+            </p>
           </div>
         </div>
       ) : (
@@ -132,7 +165,7 @@ const VideoUploader = ({ onVideoSelected, className }: VideoUploaderProps) => {
       
       {videoFile && (
         <div className="mt-2 text-sm text-muted-foreground">
-          Selected: {videoFile.name}
+          Selected: {videoFile.name} ({formatFileSize(videoFile.size)})
         </div>
       )}
     </div>
