@@ -5,6 +5,7 @@ import AnalysisCard from '@/components/ui/AnalysisCard';
 import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import VideoAnnotation from '@/components/analysis/VideoAnnotation';
 
 interface ResultsPanelProps {
   isAnalyzing: boolean;
@@ -128,14 +129,11 @@ const ResultsPanel = ({
           {/* Video with annotations */}
           {videoFile && (
             <div className="rounded-lg border border-border overflow-hidden bg-black relative">
-              <video 
-                className="w-full aspect-video object-contain" 
-                controls
-                src={URL.createObjectURL(videoFile)}
+              <VideoAnnotation 
+                videoFile={videoFile} 
+                analysisResult={analysisResult}
+                isDemoMode={isDemoMode}
               />
-              <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-                Analysis Overlay Active
-              </div>
             </div>
           )}
           
