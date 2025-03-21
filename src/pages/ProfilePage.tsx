@@ -3,11 +3,23 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ProgressChart from '@/components/ui/ProgressChart';
+import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import { SPORTS } from '@/lib/constants';
-import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -15,6 +27,8 @@ const ProfilePage = () => {
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [progressData, setProgressData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -71,6 +85,25 @@ const ProfilePage = () => {
     
     fetchUserData();
   }, [user]);
+  
+  const handleProfileUpdate = async () => {
+    // Refresh profile data after update
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) throw error;
+      setProfile(data);
+      setIsEditFormOpen(false);
+    } catch (error) {
+      console.error('Error refreshing profile data:', error);
+    }
+  };
   
   // Format date string
   const formatDate = (dateString: string) => {
@@ -172,141 +205,266 @@ const ProfilePage = () => {
                     </div>
                   </div>
                 </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="ml-auto"
+                  onClick={() => setIsEditFormOpen(!isEditFormOpen)}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {isEditFormOpen ? 'Cancel' : 'Edit Profile'}
+                </Button>
               </div>
             </div>
           </section>
           
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Progress Chart */}
-            <div className="lg:col-span-2">
-              {progressData.length > 0 ? (
-                <ProgressChart data={progressData} />
-              ) : (
-                <div className="bg-card rounded-xl border border-border p-10 flex flex-col items-center justify-center h-80">
-                  <p className="text-lg text-muted-foreground mb-4">No progress data available yet</p>
-                  <p className="text-sm text-center max-w-md">
-                    Complete some drill analyses to see your progress over time!
-                  </p>
-                </div>
+          {/* Profile Edit Form */}
+          <Collapsible
+            open={isEditFormOpen}
+            onOpenChange={setIsEditFormOpen}
+            className="mb-10"
+          >
+            <CollapsibleContent className="bg-card rounded-xl border border-border p-6 animate-fade-in">
+              <h2 className="text-xl font-semibold mb-6">Edit Profile</h2>
+              {profile && (
+                <ProfileEditForm 
+                  initialData={profile} 
+                  onProfileUpdate={handleProfileUpdate} 
+                />
               )}
-            </div>
+            </CollapsibleContent>
+          </Collapsible>
+          
+          {/* Tabs Navigation */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-10">
+            <TabsList className="mb-8">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            </TabsList>
             
-            {/* Achievements */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h2 className="text-lg font-semibold mb-4">Your Achievements</h2>
-              
-              <div className="space-y-4">
-                {recentActivities.length > 0 ? (
-                  <>
-                    <div className="flex items-center p-3 bg-primary/5 rounded-lg">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                        <Award size={20} className="text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">First Analysis</p>
-                        <p className="text-sm text-muted-foreground">Completed your first video analysis</p>
-                      </div>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="animate-fade-in">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Progress Chart */}
+                <div className="lg:col-span-2">
+                  {progressData.length > 0 ? (
+                    <ProgressChart data={progressData} />
+                  ) : (
+                    <div className="bg-card rounded-xl border border-border p-10 flex flex-col items-center justify-center h-80">
+                      <p className="text-lg text-muted-foreground mb-4">No progress data available yet</p>
+                      <p className="text-sm text-center max-w-md">
+                        Complete some drill analyses to see your progress over time!
+                      </p>
                     </div>
-                    
-                    {recentActivities.length >= 3 && (
-                      <div className="flex items-center p-3 bg-primary/5 rounded-lg">
-                        <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                          <Award size={20} className="text-primary" />
+                  )}
+                </div>
+                
+                {/* Achievements Summary */}
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <h2 className="text-lg font-semibold mb-4">Your Achievements</h2>
+                  
+                  <div className="space-y-4">
+                    {recentActivities.length > 0 ? (
+                      <>
+                        <div className="flex items-center p-3 bg-primary/5 rounded-lg">
+                          <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                            <Award size={20} className="text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">First Analysis</p>
+                            <p className="text-sm text-muted-foreground">Completed your first video analysis</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Dedicated Athlete</p>
-                          <p className="text-sm text-muted-foreground">Completed 3+ video analyses</p>
-                        </div>
+                        
+                        {recentActivities.length >= 3 && (
+                          <div className="flex items-center p-3 bg-primary/5 rounded-lg">
+                            <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                              <Award size={20} className="text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Dedicated Athlete</p>
+                              <p className="text-sm text-muted-foreground">Completed 3+ video analyses</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {recentActivities.some((a: any) => a.score >= 80) && (
+                          <div className="flex items-center p-3 bg-primary/5 rounded-lg">
+                            <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                              <Award size={20} className="text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Excellence</p>
+                              <p className="text-sm text-muted-foreground">Achieved a score of 80 or higher</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground">
+                        Complete your first analysis to earn achievements!
                       </div>
                     )}
-                    
-                    {recentActivities.some((a: any) => a.score >= 80) && (
-                      <div className="flex items-center p-3 bg-primary/5 rounded-lg">
-                        <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                          <Award size={20} className="text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Excellence</p>
-                          <p className="text-sm text-muted-foreground">Achieved a score of 80 or higher</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Activity Tab */}
+            <TabsContent value="activity" className="animate-fade-in">
+              <div className="bg-card rounded-xl border border-border overflow-hidden">
+                {recentActivities.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Sport</TableHead>
+                          <TableHead>Drill</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Time</TableHead>
+                          <TableHead>Score</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentActivities.map((activity) => (
+                          <TableRow key={activity.id}>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <span className="mr-2 text-xl">{getSportIcon(activity.sport_id)}</span>
+                                <span>{getSportName(activity.sport_id)}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{activity.drill_id}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Calendar size={14} className="mr-2 text-muted-foreground" />
+                                <span>{formatDate(activity.created_at)}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Clock size={14} className="mr-2 text-muted-foreground" />
+                                <span>{formatTime(activity.created_at)}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <span className={`font-medium ${
+                                  activity.score >= 80 ? 'text-green-500' : 
+                                  activity.score >= 70 ? 'text-yellow-500' : 
+                                  'text-red-500'
+                                }`}>
+                                  {activity.score}
+                                </span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 ) : (
-                  <div className="p-4 text-center text-muted-foreground">
-                    Complete your first analysis to earn achievements!
+                  <div className="p-10 text-center">
+                    <p className="text-muted-foreground mb-4">No activity recorded yet</p>
+                    <p className="text-sm max-w-md mx-auto">
+                      Start analyzing your technique in different sports to see your activity history here!
+                    </p>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-          
-          {/* Recent Activity */}
-          <section className="mt-10">
-            <h2 className="text-xl font-semibold mb-6">Recent Activity</h2>
+            </TabsContent>
             
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              {recentActivities.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Sport</TableHead>
-                        <TableHead>Drill</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Score</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentActivities.map((activity) => (
-                        <TableRow key={activity.id}>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <span className="mr-2 text-xl">{getSportIcon(activity.sport_id)}</span>
-                              <span>{getSportName(activity.sport_id)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{activity.drill_id}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <Calendar size={14} className="mr-2 text-muted-foreground" />
-                              <span>{formatDate(activity.created_at)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <Clock size={14} className="mr-2 text-muted-foreground" />
-                              <span>{formatTime(activity.created_at)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <span className={`font-medium ${
-                                activity.score >= 80 ? 'text-green-500' : 
-                                activity.score >= 70 ? 'text-yellow-500' : 
-                                'text-red-500'
-                              }`}>
-                                {activity.score}
-                              </span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+            {/* Achievements Tab */}
+            <TabsContent value="achievements" className="animate-fade-in">
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h2 className="text-xl font-semibold mb-6">Achievement Badges</h2>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* First Analysis Achievement */}
+                  <div className={`rounded-lg border p-4 ${recentActivities.length > 0 ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted/50 opacity-50'}`}>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Award size={32} className={`${recentActivities.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <h3 className="font-semibold mb-1">First Analysis</h3>
+                      <p className="text-sm text-muted-foreground">Complete your first video analysis</p>
+                      {recentActivities.length > 0 && (
+                        <div className="mt-3 text-xs bg-primary/10 px-2 py-1 rounded-full text-primary">
+                          Unlocked
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Dedicated Athlete Achievement */}
+                  <div className={`rounded-lg border p-4 ${recentActivities.length >= 3 ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted/50 opacity-50'}`}>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Flame size={32} className={`${recentActivities.length >= 3 ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <h3 className="font-semibold mb-1">Dedicated Athlete</h3>
+                      <p className="text-sm text-muted-foreground">Complete at least 3 video analyses</p>
+                      {recentActivities.length >= 3 && (
+                        <div className="mt-3 text-xs bg-primary/10 px-2 py-1 rounded-full text-primary">
+                          Unlocked
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Excellence Achievement */}
+                  <div className={`rounded-lg border p-4 ${recentActivities.some((a: any) => a.score >= 80) ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted/50 opacity-50'}`}>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Award size={32} className={`${recentActivities.some((a: any) => a.score >= 80) ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <h3 className="font-semibold mb-1">Excellence</h3>
+                      <p className="text-sm text-muted-foreground">Achieve a score of 80 or higher</p>
+                      {recentActivities.some((a: any) => a.score >= 80) && (
+                        <div className="mt-3 text-xs bg-primary/10 px-2 py-1 rounded-full text-primary">
+                          Unlocked
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Consistency Achievement */}
+                  <div className="rounded-lg border p-4 bg-muted/30 border-muted/50 opacity-50">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Calendar size={32} className="text-muted-foreground" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Consistency</h3>
+                      <p className="text-sm text-muted-foreground">Complete analyses on 5 consecutive days</p>
+                    </div>
+                  </div>
+                  
+                  {/* All Sports Achievement */}
+                  <div className="rounded-lg border p-4 bg-muted/30 border-muted/50 opacity-50">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Award size={32} className="text-muted-foreground" />
+                      </div>
+                      <h3 className="font-semibold mb-1">All-Around Athlete</h3>
+                      <p className="text-sm text-muted-foreground">Complete analyses in all available sports</p>
+                    </div>
+                  </div>
+                  
+                  {/* Master Achievement */}
+                  <div className="rounded-lg border p-4 bg-muted/30 border-muted/50 opacity-50">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                        <Award size={32} className="text-muted-foreground" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Master</h3>
+                      <p className="text-sm text-muted-foreground">Achieve a score of 90 or higher</p>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="p-10 text-center">
-                  <p className="text-muted-foreground mb-4">No activity recorded yet</p>
-                  <p className="text-sm max-w-md mx-auto">
-                    Start analyzing your technique in different sports to see your activity history here!
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       
