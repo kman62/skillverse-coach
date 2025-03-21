@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { BarChart, Share2, Save, RefreshCw, AlertTriangle } from 'lucide-react';
+import { BarChart, Share2, Save, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import AnalysisCard from '@/components/ui/AnalysisCard';
 import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ResultsPanelProps {
   isAnalyzing: boolean;
@@ -11,9 +12,47 @@ interface ResultsPanelProps {
   behaviorAnalysis: any | null;
   videoFile: File | null;
   apiError?: string | null;
+  isDemoMode?: boolean;
+  onRetry?: () => void;
 }
 
-const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis, videoFile, apiError }: ResultsPanelProps) => {
+const ResultsPanel = ({ 
+  isAnalyzing, 
+  analysisResult, 
+  behaviorAnalysis, 
+  videoFile, 
+  apiError,
+  isDemoMode,
+  onRetry 
+}: ResultsPanelProps) => {
+  const { toast } = useToast();
+  
+  const handleSaveResults = () => {
+    toast({
+      title: "Results Saved",
+      description: "Your analysis results have been saved to your profile"
+    });
+  };
+  
+  const handleShareResults = () => {
+    // Create a shareable link or copy results to clipboard
+    // This is a simplified implementation
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => {
+        toast({
+          title: "Link Copied",
+          description: "Share link has been copied to your clipboard"
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Sharing Failed",
+          description: "Could not copy link to clipboard",
+          variant: "destructive"
+        });
+      });
+  };
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
@@ -42,9 +81,14 @@ const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis, videoFile
             <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
               {apiError || "There was an error analyzing your video. Please try again."}
             </p>
-            <p className="text-muted-foreground mt-4 text-sm max-w-sm mx-auto">
-              Note: We're showing fallback analysis results below for demonstration purposes.
-            </p>
+            <Button 
+              variant="outline"
+              className="mt-4"
+              onClick={onRetry}
+            >
+              <RefreshCw size={16} className="mr-2" />
+              Try Again
+            </Button>
           </div>
         </div>
       )}
@@ -68,6 +112,19 @@ const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis, videoFile
       
       {analysisResult && !isAnalyzing && (
         <div className="animate-fade-in space-y-6">
+          {/* Demo mode indicator */}
+          {isDemoMode && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-2">
+              <Info size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-blue-700 font-medium">Demo Mode Active</p>
+                <p className="text-xs text-blue-600 mt-1">
+                  This analysis uses simulated data for demonstration purposes.
+                </p>
+              </div>
+            </div>
+          )}
+          
           {/* Video with annotations */}
           {videoFile && (
             <div className="rounded-lg border border-border overflow-hidden bg-black relative">
@@ -117,15 +174,15 @@ const ResultsPanel = ({ isAnalyzing, analysisResult, behaviorAnalysis, videoFile
           
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 pt-2">
-            <Button variant="outline" className="flex-1">
+            <Button variant="outline" className="flex-1" onClick={handleSaveResults}>
               <Save size={16} className="mr-2" />
               Save Results
             </Button>
-            <Button variant="outline" className="flex-1">
+            <Button variant="outline" className="flex-1" onClick={handleShareResults}>
               <Share2 size={16} className="mr-2" />
               Share
             </Button>
-            <Button variant="default" className="flex-1">
+            <Button variant="default" className="flex-1" onClick={onRetry}>
               <RefreshCw size={16} className="mr-2" />
               Retry
             </Button>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
-import { BarChart } from 'lucide-react';
+import { BarChart, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface VideoAnalysisPanelProps {
@@ -19,6 +19,7 @@ const VideoAnalysisPanel = ({
 }: VideoAnalysisPanelProps) => {
   const { toast } = useToast();
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [usesDemoData, setUsesDemoData] = useState(false);
 
   // Update progress bar during "analysis"
   useEffect(() => {
@@ -52,13 +53,40 @@ const VideoAnalysisPanel = ({
       return;
     }
     
+    // Reset the demo data indicator when a new video is selected
+    setUsesDemoData(false);
     onVideoSelected(file);
   };
+
+  // Handler for connection failures (when we use mock data)
+  // This is called by AnalysisPage after catching a connection error
+  useEffect(() => {
+    const handleConnectionStatus = (event: CustomEvent) => {
+      if (event.detail?.isDemoMode) {
+        setUsesDemoData(true);
+      }
+    };
+    
+    window.addEventListener('analysis-status' as any, handleConnectionStatus);
+    
+    return () => {
+      window.removeEventListener('analysis-status' as any, handleConnectionStatus);
+    };
+  }, []);
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
       <VideoUploader onVideoSelected={handleVideoSelected} />
+      
+      {usesDemoData && !isAnalyzing && (
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start gap-2">
+          <Info size={18} className="text-yellow-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-yellow-700">
+            Using demo mode. The API connection could not be established, so simulated analysis data will be shown.
+          </p>
+        </div>
+      )}
       
       <div className="mt-6">
         {isAnalyzing && (

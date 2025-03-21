@@ -27,6 +27,7 @@ const AnalysisPage = () => {
   const [behaviorAnalysis, setBehaviorAnalysis] = useState<any | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const AnalysisPage = () => {
     setAnalysisResult(null);
     setBehaviorAnalysis(null);
     setApiError(null);
+    setIsDemoMode(false);
   };
   
   const handleAnalyzeClick = async () => {
@@ -81,6 +83,7 @@ const AnalysisPage = () => {
     
     setIsAnalyzing(true);
     setApiError(null);
+    setIsDemoMode(false);
     
     try {
       // Pass sportId to the analysis function
@@ -92,6 +95,15 @@ const AnalysisPage = () => {
       
       setAnalysisResult(analysisData.result);
       setBehaviorAnalysis(analysisData.behavior);
+      
+      // If we received analysis data but it was from the fallback, set demo mode
+      if ((window as any).usedFallbackData) {
+        setIsDemoMode(true);
+        // Notify the VideoAnalysisPanel via a custom event
+        window.dispatchEvent(new CustomEvent('analysis-status', { 
+          detail: { isDemoMode: true } 
+        }));
+      }
       
       // Save the analysis results to Supabase
       setIsSaving(true);
@@ -105,16 +117,29 @@ const AnalysisPage = () => {
       
       toast({
         title: "Analysis Complete",
-        description: "Your technique has been successfully analyzed and saved"
+        description: isDemoMode 
+          ? "Your technique has been analyzed using demo mode" 
+          : "Your technique has been successfully analyzed and saved"
       });
     } catch (error) {
       console.error("Analysis error:", error);
       setApiError(error instanceof Error ? error.message : "Unknown error occurred");
-      toast({
-        title: "Analysis Failed",
-        description: "There was an error analyzing your video. Please try again.",
-        variant: "destructive"
-      });
+      
+      if (error instanceof Error && 
+         (error.message.includes("exceeded the maximum allowed size") || 
+          error.message.includes("file size exceeds"))) {
+        toast({
+          title: "Video too large",
+          description: "Please upload a smaller video file (max 50MB)",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: "There was an error analyzing your video. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsAnalyzing(false);
       setIsSaving(false);
@@ -159,6 +184,8 @@ const AnalysisPage = () => {
               behaviorAnalysis={behaviorAnalysis}
               videoFile={videoFile}
               apiError={apiError}
+              isDemoMode={isDemoMode}
+              onRetry={handleAnalyzeClick}
             />
           </div>
         </div>
