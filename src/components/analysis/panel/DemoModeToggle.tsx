@@ -33,7 +33,16 @@ const DemoModeToggle = ({
         <div className="mt-2 flex items-start gap-2">
           <Info size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-gray-600">
-            Using demo mode with simulated analysis data. GPT-4o will not be used for analysis.
+            Demo mode is enabled. Analysis will use simulated data instead of GPT-4o.
+          </p>
+        </div>
+      )}
+      
+      {!isDemoMode && (
+        <div className="mt-2 flex items-start gap-2">
+          <Info size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-gray-600">
+            GPT-4o will be used for analysis. Enable demo mode if you don't want to use the AI service.
           </p>
         </div>
       )}

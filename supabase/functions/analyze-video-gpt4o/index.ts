@@ -19,15 +19,38 @@ serve(async (req) => {
   }
 
   try {
+    // Check for OpenAI API key
     if (!openAIApiKey) {
       console.error("OpenAI API key not configured");
-      throw new Error('OpenAI API key not configured');
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable.' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     console.log("Received video analysis request");
     
     // Parse the request body
-    const formData = await req.formData();
+    let formData;
+    try {
+      formData = await req.formData();
+      console.log("Request form data parsed successfully");
+    } catch (formDataError) {
+      console.error("Error parsing form data:", formDataError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid form data provided. Could not parse request body.' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     const sportId = formData.get('sportId')?.toString() || 'generic';
     const drillName = formData.get('drillName')?.toString() || 'technique';
     
@@ -35,7 +58,13 @@ serve(async (req) => {
     const videoFile = formData.get('video');
     if (!videoFile || !(videoFile instanceof File)) {
       console.error("No video file provided");
-      throw new Error('No video file provided');
+      return new Response(
+        JSON.stringify({ error: 'No video file provided in the request.' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     console.log(`Processing video analysis for ${sportId}/${drillName}`, {
@@ -49,54 +78,75 @@ serve(async (req) => {
 
     // Call OpenAI API with GPT-4o
     console.log("Calling GPT-4o API for analysis...");
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { 
+              role: 'system', 
+              content: `You are AIthlete, an advanced sports technique analyzer. You specialize in providing detailed, constructive feedback on athletic techniques for ${sportId}, particularly for the ${drillName} drill.` 
+            },
+            { 
+              role: 'user', 
+              content: prompt 
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("OpenAI API error:", errorData);
+        return new Response(
+          JSON.stringify({ error: `OpenAI API error: ${response.status} ${response.statusText}` }),
           { 
-            role: 'system', 
-            content: `You are AIthlete, an advanced sports technique analyzer. You specialize in providing detailed, constructive feedback on athletic techniques for ${sportId}, particularly for the ${drillName} drill.` 
-          },
-          { 
-            role: 'user', 
-            content: prompt 
+            status: 502, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      }),
-    });
+        );
+      }
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      const gpt4oOutput = data.choices[0].message.content;
+      
+      // Transform GPT-4o output into our expected analysis format
+      const analysisData = processGPT4oResponse(gpt4oOutput, sportId, drillName);
+      
+      console.log("Analysis completed successfully");
+      
+      return new Response(JSON.stringify(analysisData), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (openAIError) {
+      console.error("OpenAI API call failed:", openAIError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Error calling OpenAI API: ${openAIError.message || 'Unknown error'}` 
+        }),
+        { 
+          status: 502, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
-
-    const data = await response.json();
-    const gpt4oOutput = data.choices[0].message.content;
-    
-    // Transform GPT-4o output into our expected analysis format
-    const analysisData = processGPT4oResponse(gpt4oOutput, sportId, drillName);
-    
-    console.log("Analysis completed successfully");
-    
-    return new Response(JSON.stringify(analysisData), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error("Error in video analysis:", error);
-    return new Response(JSON.stringify({ 
-      error: error.message || "An error occurred during video analysis" 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Unhandled error in video analysis:", error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || "An unexpected error occurred during video analysis" 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
 

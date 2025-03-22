@@ -115,25 +115,8 @@ export const analyzeVideo = async (
     console.warn("GPT-4o analysis failed:", gpt4oError);
     dispatchAnalysisEvent('api-failed-gpt4o', { error: String(gpt4oError) });
     
-    // For demonstration purposes, fall back to mock data
-    console.log("Using fallback mock data due to GPT-4o failure");
-    toast({
-      title: "Using demo mode",
-      description: "Could not connect to GPT-4o. Using demo data instead.",
-      variant: "default"
-    });
-    
-    // Set global flag for demo mode
-    window.usedFallbackData = true;
-    dispatchAnalysisEvent('using-demo-data');
-    
-    // Simulate a brief delay to make the fallback feel more realistic
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate fallback analysis data based on drill name and sport
-    console.log(`Generating fallback analysis data for ${sportId}/${drillName}`);
-    const mockData = generateSportSpecificAnalysis(sportId, drillName);
-    dispatchAnalysisEvent('demo-data-generated');
-    return mockData;
+    // Instead of falling back to mock data, throw an error to be handled by the caller
+    // This prevents automatic fallback to demo mode
+    throw new Error(`GPT-4o analysis failed: ${gpt4oError}`);
   }
 };

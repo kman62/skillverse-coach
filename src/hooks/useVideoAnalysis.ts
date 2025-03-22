@@ -144,6 +144,7 @@ export function useVideoAnalysis() {
         callbacks.onAnalysisError(error);
       }
       
+      // Check for specific errors
       if (error instanceof Error && 
          (error.message.includes("exceeded the maximum allowed size") || 
           error.message.includes("file size exceeds"))) {
@@ -159,10 +160,16 @@ export function useVideoAnalysis() {
           variant: "destructive"
         });
         navigate('/auth');
+      } else if (error instanceof Error && error.message.includes("GPT-4o analysis failed")) {
+        toast({
+          title: "Analysis Service Error",
+          description: "The AI analysis service is currently unavailable. Please try again later or use demo mode.",
+          variant: "destructive"
+        });
       } else {
         toast({
           title: "Analysis Failed",
-          description: "There was an error analyzing your video. Please try again.",
+          description: "There was an error analyzing your video. Please try again or enable demo mode.",
           variant: "destructive"
         });
       }
