@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/collapsible";
 import AccuracyMetrics from '@/components/progress/AccuracyMetrics';
 import { SPORTS } from '@/lib/constants';
+import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -73,7 +73,7 @@ const ProfilePage = () => {
             created_at,
             sport_id,
             drill_id,
-            videos (id, title)
+            videos (id, title, video_url)
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -516,6 +516,7 @@ const ProfilePage = () => {
     if (!user) return;
     
     try {
+      console.log("Fetching analysis details for ID:", analysisId);
       const { data, error } = await supabase
         .from('analysis_results')
         .select(`
@@ -527,20 +528,31 @@ const ProfilePage = () => {
           analysis_data,
           behavior_data,
           video_id,
-          videos (video_url)
+          videos (id, title, video_url)
         `)
         .eq('id', analysisId)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching analysis details:', error);
+        throw error;
+      }
+      
+      console.log("Analysis data retrieved:", data);
       setSelectedAnalysisData(data);
       setIsDetailsModalOpen(true);
     } catch (error) {
       console.error('Error fetching analysis details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load analysis details. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleActivityRowClick = (analysisId: string) => {
+    console.log("Row clicked for analysis ID:", analysisId);
     setSelectedAnalysisId(analysisId);
     fetchAnalysisDetails(analysisId);
   };
@@ -755,6 +767,12 @@ const ProfilePage = () => {
       </main>
       
       <Footer />
+      
+      <AnalysisDetailsModal
+        open={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        analysisData={selectedAnalysisData}
+      />
     </div>
   );
 };

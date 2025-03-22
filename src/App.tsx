@@ -41,6 +41,7 @@ const App = () => (
               <Route element={<ProtectedRoute />}>
                 <Route path="/sports/:sportId" element={<DrillsPage />} />
                 <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
+                <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
               
@@ -55,4 +56,3 @@ const App = () => (
 );
 
 export default App;
-

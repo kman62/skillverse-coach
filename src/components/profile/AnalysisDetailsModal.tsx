@@ -7,6 +7,7 @@ import { Award, Video, Flame, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { getSportById, getDrillById } from '@/lib/constants';
+import { toast } from '@/components/ui/use-toast';
 
 interface AnalysisDetailsModalProps {
   open: boolean;
@@ -25,16 +26,32 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
   const behaviorData = analysisData.behavior_data;
   
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMMM d, yyyy');
+    try {
+      return format(new Date(dateString), 'MMMM d, yyyy');
+    } catch (error) {
+      console.error("Date formatting error:", error, dateString);
+      return dateString;
+    }
   };
   
   const formatTime = (dateString: string) => {
-    return format(new Date(dateString), 'h:mm a');
+    try {
+      return format(new Date(dateString), 'h:mm a');
+    } catch (error) {
+      console.error("Time formatting error:", error, dateString);
+      return "";
+    }
   };
   
   const handleReviewClick = () => {
     if (sport && drill) {
-      navigate(`/analysis/${sport.id}/${drill.id}?analysisId=${analysisData.id}`);
+      navigate(`/sports/${sport.id}/drills/${drill.id}?analysisId=${analysisData.id}`);
+    } else {
+      toast({
+        title: "Navigation Error",
+        description: "Could not navigate to analysis. Sport or drill information missing.",
+        variant: "destructive"
+      });
     }
   };
   
@@ -50,6 +67,10 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
     if (score >= 70) return "text-yellow-500";
     return "text-red-500";
   };
+
+  // Check if data is present
+  const hasAnalysisResult = analysisResult && Object.keys(analysisResult).length > 0;
+  const hasBehaviorData = behaviorData && Object.keys(behaviorData).length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,23 +110,26 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
                 <div className="bg-card rounded-lg border p-5 md:w-2/3">
                   <h3 className="text-sm font-medium text-muted-foreground mb-4">Analysis Overview</h3>
                   <div className="space-y-3">
-                    <p>{analysisResult?.description || "No description available"}</p>
+                    <p>{hasAnalysisResult && analysisResult.description ? analysisResult.description : "No description available"}</p>
                     
                     <div className="mt-4">
                       <h4 className="text-sm font-medium mb-2">Key Insights:</h4>
                       <ul className="space-y-1">
-                        {analysisResult?.feedback?.good?.slice(0, 2).map((item: string, idx: number) => (
+                        {hasAnalysisResult && analysisResult.feedback?.good?.slice(0, 2).map((item: string, idx: number) => (
                           <li key={`good-${idx}`} className="flex items-start">
                             <CheckCircle size={16} className="text-green-500 mr-2 mt-1 shrink-0" />
                             <span className="text-sm">{item}</span>
                           </li>
                         ))}
-                        {analysisResult?.feedback?.improve?.slice(0, 2).map((item: string, idx: number) => (
+                        {hasAnalysisResult && analysisResult.feedback?.improve?.slice(0, 2).map((item: string, idx: number) => (
                           <li key={`improve-${idx}`} className="flex items-start">
                             <AlertCircle size={16} className="text-yellow-500 mr-2 mt-1 shrink-0" />
                             <span className="text-sm">{item}</span>
                           </li>
                         ))}
+                        {(!hasAnalysisResult || !analysisResult.feedback) && (
+                          <li className="text-sm text-muted-foreground">No insights available</li>
+                        )}
                       </ul>
                     </div>
                   </div>
@@ -121,7 +145,7 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
             </TabsContent>
             
             <TabsContent value="technique" className="mt-4 space-y-4">
-              {analysisResult?.metrics && analysisResult.metrics.length > 0 ? (
+              {hasAnalysisResult && analysisResult.metrics && analysisResult.metrics.length > 0 ? (
                 <div className="bg-card rounded-lg border p-5">
                   <h3 className="text-sm font-medium text-muted-foreground mb-4">Technical Metrics</h3>
                   <div className="space-y-4">
@@ -155,7 +179,7 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
                     <CheckCircle size={16} className="text-green-500 mr-2" />
                     What You're Doing Well
                   </h3>
-                  {analysisResult?.feedback?.good && analysisResult.feedback.good.length > 0 ? (
+                  {hasAnalysisResult && analysisResult.feedback?.good && analysisResult.feedback.good.length > 0 ? (
                     <ul className="space-y-2 pl-6">
                       {analysisResult.feedback.good.map((item: string, index: number) => (
                         <li key={index} className="text-sm list-disc text-foreground">
@@ -173,7 +197,7 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
                     <AlertCircle size={16} className="text-yellow-500 mr-2" />
                     Areas to Improve
                   </h3>
-                  {analysisResult?.feedback?.improve && analysisResult.feedback.improve.length > 0 ? (
+                  {hasAnalysisResult && analysisResult.feedback?.improve && analysisResult.feedback.improve.length > 0 ? (
                     <ul className="space-y-2 pl-6">
                       {analysisResult.feedback.improve.map((item: string, index: number) => (
                         <li key={index} className="text-sm list-disc text-foreground">
@@ -187,7 +211,7 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
                 </div>
               </div>
               
-              {analysisResult?.coachingTips && analysisResult.coachingTips.length > 0 && (
+              {hasAnalysisResult && analysisResult.coachingTips && analysisResult.coachingTips.length > 0 && (
                 <div className="bg-card rounded-lg border p-5">
                   <h3 className="text-sm font-medium text-muted-foreground mb-4">Coaching Tips</h3>
                   <ul className="space-y-2 pl-6">
@@ -202,75 +226,83 @@ const AnalysisDetailsModal = ({ open, onOpenChange, analysisData }: AnalysisDeta
             </TabsContent>
             
             <TabsContent value="behavior" className="mt-4 space-y-4">
-              {behaviorData ? (
+              {hasBehaviorData ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-card rounded-lg border p-5">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Consistency</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Score</span>
-                        <span className="font-medium">{behaviorData.consistency?.score || 0}/100</span>
+                  {behaviorData.consistency && (
+                    <div className="bg-card rounded-lg border p-5">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-4">Consistency</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Score</span>
+                          <span className="font-medium">{behaviorData.consistency?.score || 0}/100</span>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${behaviorData.consistency?.score || 0}%` }}
+                          />
+                        </div>
+                        <p className="text-sm mt-2">{behaviorData.consistency?.feedback || "No feedback available"}</p>
                       </div>
-                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${behaviorData.consistency?.score || 0}%` }}
-                        />
-                      </div>
-                      <p className="text-sm mt-2">{behaviorData.consistency?.feedback || "No feedback available"}</p>
                     </div>
-                  </div>
+                  )}
                   
-                  <div className="bg-card rounded-lg border p-5">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Pre-Routine</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Score</span>
-                        <span className="font-medium">{behaviorData.preRoutine?.score || 0}/100</span>
+                  {behaviorData.preRoutine && (
+                    <div className="bg-card rounded-lg border p-5">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-4">Pre-Routine</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Score</span>
+                          <span className="font-medium">{behaviorData.preRoutine?.score || 0}/100</span>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${behaviorData.preRoutine?.score || 0}%` }}
+                          />
+                        </div>
+                        <p className="text-sm mt-2">{behaviorData.preRoutine?.feedback || "No feedback available"}</p>
                       </div>
-                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${behaviorData.preRoutine?.score || 0}%` }}
-                        />
-                      </div>
-                      <p className="text-sm mt-2">{behaviorData.preRoutine?.feedback || "No feedback available"}</p>
                     </div>
-                  </div>
+                  )}
                   
-                  <div className="bg-card rounded-lg border p-5">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Habits</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Score</span>
-                        <span className="font-medium">{behaviorData.habits?.score || 0}/100</span>
+                  {behaviorData.habits && (
+                    <div className="bg-card rounded-lg border p-5">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-4">Habits</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Score</span>
+                          <span className="font-medium">{behaviorData.habits?.score || 0}/100</span>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${behaviorData.habits?.score || 0}%` }}
+                          />
+                        </div>
+                        <p className="text-sm mt-2">{behaviorData.habits?.feedback || "No feedback available"}</p>
                       </div>
-                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${behaviorData.habits?.score || 0}%` }}
-                        />
-                      </div>
-                      <p className="text-sm mt-2">{behaviorData.habits?.feedback || "No feedback available"}</p>
                     </div>
-                  </div>
+                  )}
                   
-                  <div className="bg-card rounded-lg border p-5">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Fatigue Management</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Score</span>
-                        <span className="font-medium">{behaviorData.fatigue?.score || 0}/100</span>
+                  {behaviorData.fatigue && (
+                    <div className="bg-card rounded-lg border p-5">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-4">Fatigue Management</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Score</span>
+                          <span className="font-medium">{behaviorData.fatigue?.score || 0}/100</span>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${behaviorData.fatigue?.score || 0}%` }}
+                          />
+                        </div>
+                        <p className="text-sm mt-2">{behaviorData.fatigue?.feedback || "No feedback available"}</p>
                       </div>
-                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${behaviorData.fatigue?.score || 0}%` }}
-                        />
-                      </div>
-                      <p className="text-sm mt-2">{behaviorData.fatigue?.feedback || "No feedback available"}</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-card rounded-lg border p-5 text-center text-muted-foreground">
