@@ -19,6 +19,7 @@ interface AnalysisResultsProps {
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
   gameplaySituation?: string;
+  playType?: string;
 }
 
 const AnalysisResults = ({
@@ -31,20 +32,23 @@ const AnalysisResults = ({
   sportId,
   drillId,
   onPoseAnalysis,
-  gameplaySituation = "regular"
+  gameplaySituation,
+  playType
 }: AnalysisResultsProps) => {
-  // Function to adjust the analysis result title based on gameplay situation
-  const getTitleWithGameplay = () => {
-    if (gameplaySituation === "regular") {
-      return analysisResult.title;
-    }
+  // Format gameplay information for display
+  const formatPlayType = (playType?: string): string => {
+    if (!playType) return '';
     
-    const formattedGameplay = gameplaySituation
+    return playType
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-      
-    return `${analysisResult.title}: ${formattedGameplay}`;
+  };
+  
+  const getGameplaySituationTitle = (): string => {
+    if (!gameplaySituation || !playType) return analysisResult.title;
+    
+    return `${gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1)} Analysis: ${formatPlayType(playType)}`;
   };
   
   return (
@@ -65,7 +69,7 @@ const AnalysisResults = ({
       )}
       
       <AnalysisCard 
-        title={getTitleWithGameplay()}
+        title={gameplaySituation && playType ? getGameplaySituationTitle() : analysisResult.title}
         description={analysisResult.description}
         score={analysisResult.score}
         metrics={analysisResult.metrics}

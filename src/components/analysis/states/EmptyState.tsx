@@ -1,60 +1,53 @@
 
 import React from 'react';
-import { BarChart, Target, Play } from 'lucide-react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { BarChart, Camera } from 'lucide-react';
+import GameplaySelector from '@/components/analysis/GameplaySelector';
 
 interface EmptyStateProps {
-  onGameplayChange?: (gameplay: string) => void;
+  gameplaySituation?: string;
+  playType?: string;
+  onGameplaySituationChange?: (situation: string) => void;
+  onPlayTypeChange?: (play: string) => void;
 }
 
-const EmptyState = ({ onGameplayChange }: EmptyStateProps) => {
-  const gameplayOptions = [
-    { value: 'regular', label: 'Regular Technique' },
-    { value: 'pick-and-roll', label: 'Pick and Roll' },
-    { value: 'iso', label: 'Isolation Play' },
-    { value: 'fast-break', label: 'Fast Break' },
-    { value: 'post-up', label: 'Post-Up Play' },
-    { value: 'zone-offense', label: 'Zone Offense' },
-    { value: 'man-defense', label: 'Man-to-Man Defense' },
-  ];
-
+const EmptyState = ({
+  gameplaySituation,
+  playType,
+  onGameplaySituationChange,
+  onPlayTypeChange
+}: EmptyStateProps) => {
   return (
-    <div className="bg-card rounded-xl border border-border h-[500px] flex items-center justify-center p-6 text-center">
+    <div className="bg-card rounded-xl border border-border h-auto flex flex-col items-center justify-center p-6 text-center">
       <div>
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
           <BarChart size={24} className="text-primary" />
         </div>
         <h3 className="text-lg font-medium">No Analysis Yet</h3>
-        <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+        <p className="text-muted-foreground mt-2 max-w-sm mx-auto mb-6">
           Upload a video and click "Analyze Technique" to receive personalized feedback.
         </p>
-        
-        <div className="mt-6 max-w-xs mx-auto">
-          <label className="text-sm font-medium text-left block mb-2">
-            Select Gameplay Situation
-          </label>
-          <Select onValueChange={onGameplayChange} defaultValue="regular">
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select gameplay type" />
-            </SelectTrigger>
-            <SelectContent>
-              {gameplayOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <div className="mt-4 flex items-center gap-2 text-sm bg-primary/5 p-3 rounded-lg text-left">
-            <Target size={18} className="text-primary flex-shrink-0" />
-            <p>Selecting a specific gameplay situation will help tailor the analysis to your needs.</p>
+
+        <div className="mt-4 max-w-md mx-auto text-left">
+          <div className="p-4 border rounded-md">
+            <h4 className="font-medium text-sm mb-3">Game Analysis Configuration</h4>
+            
+            <GameplaySelector 
+              gameplaySituation={gameplaySituation}
+              playType={playType}
+              onGameplaySituationChange={onGameplaySituationChange}
+              onPlayTypeChange={onPlayTypeChange}
+            />
+            
+            <div className="flex items-center justify-center space-x-2 mt-6 text-sm text-muted-foreground">
+              <Camera size={16} />
+              <span>Basketball gameplay analysis ready</span>
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4">
+              <p className="text-sm text-amber-800">
+                For best results, make sure your full body is visible and play the video before analyzing.
+              </p>
+            </div>
           </div>
         </div>
       </div>

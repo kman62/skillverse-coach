@@ -2,14 +2,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sport, Drill } from '@/lib/constants';
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 
 interface BreadcrumbNavProps {
   sport: Sport | null;
@@ -21,25 +13,13 @@ const BreadcrumbNav = ({ sport, drill }: BreadcrumbNavProps) => {
   
   return (
     <div className="mb-8">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/">Sports</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to={`/sports/${sport.id}`}>{sport.name}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{drill.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Link to="/" className="hover:text-primary transition-colors">Sports</Link>
+        <span className="mx-2">/</span>
+        <Link to={`/sports/${sport.id}`} className="hover:text-primary transition-colors">{sport.name}</Link>
+        <span className="mx-2">/</span>
+        <span className="text-foreground">{drill.name}</span>
+      </div>
     </div>
   );
 };

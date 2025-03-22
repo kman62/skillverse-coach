@@ -8,15 +8,13 @@ interface VideoAnnotationProps {
   analysisResult: any | null;
   isDemoMode?: boolean;
   onPoseAnalysis?: (metrics: any) => void;
-  gameplaySituation?: string;
 }
 
 const VideoAnnotation = ({ 
   videoFile, 
   analysisResult, 
   isDemoMode,
-  onPoseAnalysis,
-  gameplaySituation = "regular"
+  onPoseAnalysis 
 }: VideoAnnotationProps) => {
   const [poseDetected, setPoseDetected] = useState(false);
   const [detectionActive, setDetectionActive] = useState(false);

@@ -10,7 +10,6 @@ interface PoseCanvasProps {
   results?: Results;
   analysisResult: any | null;
   poseDetected: boolean;
-  gameplaySituation?: string;
 }
 
 const PoseCanvas: React.FC<PoseCanvasProps> = ({
@@ -18,8 +17,7 @@ const PoseCanvas: React.FC<PoseCanvasProps> = ({
   videoRef,
   results,
   analysisResult,
-  poseDetected,
-  gameplaySituation = "regular"
+  poseDetected
 }) => {
   // Handle canvas drawing
   useEffect(() => {
@@ -72,7 +70,7 @@ const PoseCanvas: React.FC<PoseCanvasProps> = ({
       ctx.fillText('No pose detected', canvas.width/2, 40);
     }
     
-    // Draw custom annotations based on analysis result and gameplay situation
+    // Draw custom annotations based on analysis result
     if (analysisResult) {
       drawAnalysisAnnotations(
         ctx, 
@@ -80,23 +78,8 @@ const PoseCanvas: React.FC<PoseCanvasProps> = ({
         canvas.height, 
         video.currentTime, 
         video.duration,
-        analysisResult,
-        gameplaySituation
+        analysisResult
       );
-    }
-    
-    // Add gameplay situation indicator
-    if (gameplaySituation !== "regular") {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(10, canvas.height - 40, 180, 30);
-      ctx.fillStyle = 'white';
-      ctx.font = '14px sans-serif';
-      ctx.textAlign = 'left';
-      const formattedGameplay = gameplaySituation
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      ctx.fillText(`Gameplay: ${formattedGameplay}`, 20, canvas.height - 20);
     }
     
     // Add timestamp for debugging

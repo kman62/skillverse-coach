@@ -1,19 +1,19 @@
-
 import { AnalysisResponse } from './analysisTypes';
 import { buildAnalysisResponse } from './analysisHelpers';
 
 // Basketball-specific analysis
 export const generateBasketballAnalysis = (
   drillName: string, 
-  score: number,
-  gameplaySituation: string = "regular"
+  score: number, 
+  gameplaySituation?: string, 
+  playType?: string
 ): AnalysisResponse => {
-  // First check if we have a gameplay situation
-  if (gameplaySituation !== "regular") {
-    return generateGameplayAnalysis(drillName, score, gameplaySituation);
+  // If gameplay situation and play type are provided, use those for analysis
+  if (gameplaySituation && playType) {
+    return generateGameplayAnalysis(gameplaySituation, playType, score);
   }
   
-  // Determine drill-specific metrics and feedback
+  // Otherwise, determine drill-specific metrics and feedback
   let metrics = [];
   let feedback = { good: [], improve: [] };
   let coachingTips = [];
@@ -208,40 +208,38 @@ export const generateBasketballAnalysis = (
   return buildAnalysisResponse(drillName, score, metrics, feedback, coachingTips);
 };
 
-// Function to generate analysis for specific gameplay situations
-const generateGameplayAnalysis = (
-  drillName: string, 
-  score: number,
-  gameplaySituation: string
-): AnalysisResponse => {
+// Function to generate analysis for gameplay situations
+function generateGameplayAnalysis(gameplaySituation: string, playType: string, score: number): AnalysisResponse {
+  let title = `${gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1)} Analysis: ${formatPlayType(playType)}`;
+  let description = `Analysis of your ${gameplaySituation} execution for ${formatPlayType(playType)}.`;
   let metrics = [];
   let feedback = { good: [], improve: [] };
   let coachingTips = [];
   
-  // Customize analysis based on gameplay situation
-  switch (gameplaySituation) {
-    case 'pick-and-roll':
+  // Offense gameplay
+  if (gameplaySituation === 'offense') {
+    if (playType === 'crossover') {
       metrics = [
         {
-          name: "Screen Setting",
+          name: "Ball Control",
           value: Math.floor(score * 0.9 + Math.random() * 10),
           target: 95,
           unit: "%"
         },
         {
-          name: "Ball Handler Timing",
+          name: "Change of Speed",
           value: Math.floor(score * 0.85 + Math.random() * 15),
           target: 90,
           unit: "%"
         },
         {
-          name: "Roll/Pop Decision",
+          name: "Body Deception",
           value: Math.floor(score * 0.95 + Math.random() * 5),
           target: 100,
           unit: "%"
         },
         {
-          name: "Defensive Read",
+          name: "Defender Reaction",
           value: Math.floor(score * 0.8 + Math.random() * 20),
           target: 95,
           unit: "%"
@@ -250,96 +248,45 @@ const generateGameplayAnalysis = (
       
       feedback = {
         good: [
-          "Good screen angle and contact",
-          "Effective timing between screener and ball handler",
-          "Proper spacing after the pick"
+          "Effective use of head and shoulder fakes",
+          "Good ball protection during the crossover",
+          "Quick acceleration after the move"
         ],
         improve: [
-          "Hold the screen longer before rolling",
-          "Ball handler should wait for the screen to be set",
-          "Be more decisive on the roll or pop decision"
+          "Lower your center of gravity more for better balance",
+          "Incorporate more change of pace with your crossover",
+          "Use your off-hand to create more separation"
         ]
       };
       
       coachingTips = [
-        "Practice the timing between screener and ball handler",
-        "Work on reading different defensive coverages",
-        "Develop chemistry with consistent partners",
-        "Vary the pick and roll with pick and pop options"
+        "Practice against live defenders to improve timing",
+        "Work on crossovers with both hands equally",
+        "Add hesitation elements to make your crossover more unpredictable",
+        "Study film of elite ball handlers to learn their techniques"
       ];
-      break;
-      
-    case 'iso':
+    } else if (playType === 'pick-and-roll') {
       metrics = [
         {
-          name: "First Step Explosiveness",
+          name: "Screen Usage",
           value: Math.floor(score * 0.9 + Math.random() * 10),
           target: 95,
-          unit: "%"
-        },
-        {
-          name: "Dribble Control",
-          value: Math.floor(score * 0.85 + Math.random() * 15),
-          target: 90,
-          unit: "%"
-        },
-        {
-          name: "Shot Creation",
-          value: Math.floor(score * 0.95 + Math.random() * 5),
-          target: 100,
           unit: "%"
         },
         {
           name: "Decision Making",
-          value: Math.floor(score * 0.8 + Math.random() * 20),
-          target: 95,
-          unit: "%"
-        }
-      ];
-      
-      feedback = {
-        good: [
-          "Good use of hesitation moves",
-          "Effective change of pace",
-          "Strong body control when finishing"
-        ],
-        improve: [
-          "Keep your head up to spot open teammates",
-          "Work on counter moves when primary move is stopped",
-          "Improve shot selection in iso situations"
-        ]
-      };
-      
-      coachingTips = [
-        "Practice reading defensive positioning",
-        "Develop a go-to move and counter move",
-        "Work on finishing with both hands",
-        "Study film of elite isolation players"
-      ];
-      break;
-      
-    case 'fast-break':
-      metrics = [
-        {
-          name: "Transition Speed",
-          value: Math.floor(score * 0.9 + Math.random() * 10),
-          target: 95,
-          unit: "%"
-        },
-        {
-          name: "Lane Filling",
           value: Math.floor(score * 0.85 + Math.random() * 15),
           target: 90,
           unit: "%"
         },
         {
-          name: "Decision Making",
+          name: "Timing",
           value: Math.floor(score * 0.95 + Math.random() * 5),
           target: 100,
           unit: "%"
         },
         {
-          name: "Ball Movement",
+          name: "Pass Accuracy",
           value: Math.floor(score * 0.8 + Math.random() * 20),
           target: 95,
           unit: "%"
@@ -348,47 +295,45 @@ const generateGameplayAnalysis = (
       
       feedback = {
         good: [
-          "Quick outlet passes to start the break",
-          "Good floor spacing in transition",
-          "Eyes up looking for teammates"
+          "Good patience waiting for the screen to be set",
+          "Effective reading of the defense's coverage",
+          "Proper spacing after the screen"
         ],
         improve: [
-          "Run wider lanes to create better spacing",
-          "Make simpler passes in transition",
-          "Balance aggression with control"
+          "Work on tighter turns around the screener",
+          "Develop more options based on defensive reactions",
+          "Improve communication with the screener"
         ]
       };
       
       coachingTips = [
-        "Practice 3-on-2 and 2-on-1 fast break drills",
-        "Focus on making decisions at game speed",
-        "Work on finishing through contact in transition",
-        "Develop quick outlet passing after rebounds"
+        "Practice pick-and-roll against different defensive coverages",
+        "Study film of elite guards to see how they use screens",
+        "Develop chemistry with your screeners through repetition",
+        "Learn to read when to split, reject, or use the screen"
       ];
-      break;
-      
-    case 'post-up':
+    } else if (playType === 'jumpshot') {
       metrics = [
         {
-          name: "Post Position",
+          name: "Shot Mechanics",
           value: Math.floor(score * 0.9 + Math.random() * 10),
           target: 95,
+          unit: "%"
+        },
+        {
+          name: "Balance",
+          value: Math.floor(score * 0.85 + Math.random() * 15),
+          target: 90,
+          unit: "%"
+        },
+        {
+          name: "Shot Release",
+          value: Math.floor(score * 0.95 + Math.random() * 5),
+          target: 100,
           unit: "%"
         },
         {
           name: "Footwork",
-          value: Math.floor(score * 0.85 + Math.random() * 15),
-          target: 90,
-          unit: "%"
-        },
-        {
-          name: "Move Selection",
-          value: Math.floor(score * 0.95 + Math.random() * 5),
-          target: 100,
-          unit: "%"
-        },
-        {
-          name: "Counter Moves",
           value: Math.floor(score * 0.8 + Math.random() * 20),
           target: 95,
           unit: "%"
@@ -397,47 +342,45 @@ const generateGameplayAnalysis = (
       
       feedback = {
         good: [
-          "Good seal against defender",
-          "Strong base and balance",
-          "Effective use of pivots"
+          "Consistent shot motion from setup to release",
+          "Good shot elevation on your jumper",
+          "Squared shoulders to the basket"
         ],
         improve: [
-          "Hold position longer before making a move",
-          "Keep the ball higher to avoid guards digging down",
-          "Develop more counter moves"
+          "Work on quicker release without sacrificing form",
+          "Maintain better balance on contested shots",
+          "Focus on consistent follow-through in game situations"
         ]
       };
       
       coachingTips = [
-        "Practice Mikan drills for touch around the rim",
-        "Work on drop steps and up-and-under moves",
-        "Develop passing skills out of double teams",
-        "Use a chair for solo footwork drills"
+        "Practice shooting while fatigued to build game-like conditioning",
+        "Film your shooting form from multiple angles",
+        "Use form shooting drills to reinforce proper mechanics",
+        "Practice shooting off different types of movements"
       ];
-      break;
-      
-    case 'zone-offense':
+    } else if (playType === 'layup') {
       metrics = [
         {
-          name: "Ball Movement",
+          name: "Footwork",
           value: Math.floor(score * 0.9 + Math.random() * 10),
           target: 95,
           unit: "%"
         },
         {
-          name: "Zone Gaps Attack",
+          name: "Body Control",
           value: Math.floor(score * 0.85 + Math.random() * 15),
           target: 90,
           unit: "%"
         },
         {
-          name: "Flash to High Post",
+          name: "Finishing Technique",
           value: Math.floor(score * 0.95 + Math.random() * 5),
           target: 100,
           unit: "%"
         },
         {
-          name: "Perimeter Spacing",
+          name: "Shot Protection",
           value: Math.floor(score * 0.8 + Math.random() * 20),
           target: 95,
           unit: "%"
@@ -446,26 +389,28 @@ const generateGameplayAnalysis = (
       
       feedback = {
         good: [
-          "Good ball reversal to shift the zone",
-          "Effective high-post entry passes",
-          "Patient approach to find zone gaps"
+          "Good use of the backboard angle",
+          "Effective body positioning to protect the ball",
+          "Proper footwork on the approach"
         ],
         improve: [
-          "Attack the gaps more aggressively",
-          "Improve skip passes to open shooters",
-          "Better timing on flash cuts to open areas"
+          "Practice finishing with both hands equally",
+          "Develop more creative finishes for different situations",
+          "Improve body control when taking contact"
         ]
       };
       
       coachingTips = [
-        "Practice zone offense shell drill daily",
-        "Focus on quick ball movement without dribbling",
-        "Work on high-post entry and decision making",
-        "Develop skip passes to opposite corners"
+        "Practice Mikan drills to improve touch around the rim",
+        "Work on finishing through contact with a pad or defender",
+        "Develop various layup types (reverse, eurostep, floater)",
+        "Focus on maintaining speed while maintaining control"
       ];
-      break;
-      
-    case 'man-defense':
+    }
+  }
+  // Defense gameplay
+  else if (gameplaySituation === 'defense') {
+    if (playType === 'man-defense') {
       metrics = [
         {
           name: "Defensive Stance",
@@ -480,13 +425,13 @@ const generateGameplayAnalysis = (
           unit: "%"
         },
         {
-          name: "Ball Pressure",
+          name: "Hand Activity",
           value: Math.floor(score * 0.95 + Math.random() * 5),
           target: 100,
           unit: "%"
         },
         {
-          name: "Close Out Technique",
+          name: "Position Recovery",
           value: Math.floor(score * 0.8 + Math.random() * 20),
           target: 95,
           unit: "%"
@@ -495,76 +440,445 @@ const generateGameplayAnalysis = (
       
       feedback = {
         good: [
-          "Good defensive stance and position",
+          "Good defensive stance with bent knees",
           "Active hands in passing lanes",
-          "Proper closeout technique"
+          "Proper positioning between ball and basket"
         ],
         improve: [
-          "Stay lower in your stance for longer periods",
-          "Improve foot speed on lateral movements",
-          "Better communication on switches and screens"
+          "Work on quicker lateral slides without crossing feet",
+          "Maintain lower center of gravity throughout possession",
+          "Improve anticipation of offensive moves"
         ]
       };
       
       coachingTips = [
         "Practice defensive slides with resistance bands",
-        "Work on closeout drills with different angles",
-        "Focus on positioning between man and basket",
-        "Develop defensive conditioning for late-game situations"
+        "Work on closeouts followed by defensive containment",
+        "Use mirror drills to improve reaction time",
+        "Study film of elite defenders to learn positioning"
       ];
-      break;
-      
-    default:
-      // Generic basketball gameplay metrics
-      return buildAnalysisResponse(`${drillName}: Custom Gameplay`, score, [
+    } else if (playType === 'zone-defense') {
+      metrics = [
         {
-          name: "Execution",
+          name: "Zone Positioning",
           value: Math.floor(score * 0.9 + Math.random() * 10),
           target: 95,
           unit: "%"
         },
         {
-          name: "Decision Making",
+          name: "Communication",
           value: Math.floor(score * 0.85 + Math.random() * 15),
           target: 90,
           unit: "%"
         },
         {
-          name: "Teamwork",
+          name: "Zone Rotation",
           value: Math.floor(score * 0.95 + Math.random() * 5),
           target: 100,
           unit: "%"
         },
         {
-          name: "Basketball IQ",
+          name: "Defensive Awareness",
           value: Math.floor(score * 0.8 + Math.random() * 20),
           target: 95,
           unit: "%"
         }
-      ], {
+      ];
+      
+      feedback = {
         good: [
-          "Good overall basketball awareness",
-          "Effective decision making",
-          "Solid fundamental execution"
+          "Good positioning in your zone area",
+          "Active communication with teammates",
+          "Proper shifts based on ball movement"
         ],
         improve: [
-          "Work on reading the defense more quickly",
-          "Improve timing on specific actions",
-          "Develop better court awareness"
+          "Increase awareness of weak side threats",
+          "Improve rotation speed when the ball moves quickly",
+          "Better recognition of zone vulnerabilities"
         ]
-      }, [
-        "Study film of successful execution of this play type",
-        "Practice at game speed to improve timing",
-        "Focus on reading defensive reactions",
-        "Work on communication with teammates"
-      ]);
+      };
+      
+      coachingTips = [
+        "Practice zone shell drills with specific rotations",
+        "Drill communication patterns with teammates",
+        "Study film of zone defensive breakdowns",
+        "Work on recognizing and defending common zone attacks"
+      ];
+    } else if (playType === 'closeout') {
+      metrics = [
+        {
+          name: "Closeout Speed",
+          value: Math.floor(score * 0.9 + Math.random() * 10),
+          target: 95,
+          unit: "%"
+        },
+        {
+          name: "Body Control",
+          value: Math.floor(score * 0.85 + Math.random() * 15),
+          target: 90,
+          unit: "%"
+        },
+        {
+          name: "Hand Placement",
+          value: Math.floor(score * 0.95 + Math.random() * 5),
+          target: 100,
+          unit: "%"
+        },
+        {
+          name: "Recovery Defense",
+          value: Math.floor(score * 0.8 + Math.random() * 20),
+          target: 95,
+          unit: "%"
+        }
+      ];
+      
+      feedback = {
+        good: [
+          "Good sprint to closeout position",
+          "Effective chopping of feet to stop momentum",
+          "Active high hand to contest shots"
+        ],
+        improve: [
+          "Work on maintaining balance during closeouts",
+          "Improve angles to force baseline or middle as needed",
+          "Better recognition of shooter vs. driver tendencies"
+        ]
+      };
+      
+      coachingTips = [
+        "Practice the 'fly-by' closeout technique for elite shooters",
+        "Drill closeout to containment transitions",
+        "Work on different closeout techniques based on personnel",
+        "Practice closeouts from different starting positions"
+      ];
+    } else if (playType === 'help-defense') {
+      metrics = [
+        {
+          name: "Help Positioning",
+          value: Math.floor(score * 0.9 + Math.random() * 10),
+          target: 95,
+          unit: "%"
+        },
+        {
+          name: "Reaction Time",
+          value: Math.floor(score * 0.85 + Math.random() * 15),
+          target: 90,
+          unit: "%"
+        },
+        {
+          name: "Recovery Speed",
+          value: Math.floor(score * 0.95 + Math.random() * 5),
+          target: 100,
+          unit: "%"
+        },
+        {
+          name: "Communication",
+          value: Math.floor(score * 0.8 + Math.random() * 20),
+          target: 95,
+          unit: "%"
+        }
+      ];
+      
+      feedback = {
+        good: [
+          "Good positioning in help position",
+          "Quick reaction to dribble penetration",
+          "Proper communication on rotations"
+        ],
+        improve: [
+          "Work on taking better angles when helping",
+          "Improve recovery speed to your man after helping",
+          "Better timing on help decisions"
+        ]
+      };
+      
+      coachingTips = [
+        "Practice shell defense focusing on help rotations",
+        "Drill help-and-recover situations with teammates",
+        "Work on communication terminology for help defense",
+        "Study film of elite team defenses to learn proper timing"
+      ];
+    }
+  }
+  // Transition gameplay
+  else if (gameplaySituation === 'transition') {
+    if (playType === 'fast-break') {
+      metrics = [
+        {
+          name: "Lane Running",
+          value: Math.floor(score * 0.9 + Math.random() * 10),
+          target: 95,
+          unit: "%"
+        },
+        {
+          name: "Spacing",
+          value: Math.floor(score * 0.85 + Math.random() * 15),
+          target: 90,
+          unit: "%"
+        },
+        {
+          name: "Decision Making",
+          value: Math.floor(score * 0.95 + Math.random() * 5),
+          target: 100,
+          unit: "%"
+        },
+        {
+          name: "Finishing",
+          value: Math.floor(score * 0.8 + Math.random() * 20),
+          target: 95,
+          unit: "%"
+        }
+      ];
+      
+      feedback = {
+        good: [
+          "Good lane running and floor spacing",
+          "Effective decision making with the ball",
+          "Proper timing on cuts and fills"
+        ],
+        improve: [
+          "Work on maintaining wider spacing in lanes",
+          "Improve recognition of numbers advantage",
+          "Better finishing decisions at high speed"
+        ]
+      };
+      
+      coachingTips = [
+        "Practice 3-on-2, 2-on-1 fast break drills regularly",
+        "Work on outlet passes and floor running after rebounds",
+        "Develop decision trees for different break situations",
+        "Film your fast breaks to analyze spacing patterns"
+      ];
+    } else if (playType === 'transition-offense') {
+      metrics = [
+        {
+          name: "Early Offense",
+          value: Math.floor(score * 0.9 + Math.random() * 10),
+          target: 95,
+          unit: "%"
+        },
+        {
+          name: "Floor Balance",
+          value: Math.floor(score * 0.85 + Math.random() * 15),
+          target: 90,
+          unit: "%"
+        },
+        {
+          name: "Pace",
+          value: Math.floor(score * 0.95 + Math.random() * 5),
+          target: 100,
+          unit: "%"
+        },
+        {
+          name: "Shot Selection",
+          value: Math.floor(score * 0.8 + Math.random() * 20),
+          target: 95,
+          unit: "%"
+        }
+      ];
+      
+      feedback = {
+        good: [
+          "Good pace pushing the ball up court",
+          "Effective early offense actions",
+          "Proper floor spacing in transition"
+        ],
+        improve: [
+          "Work on quicker decision making in early offense",
+          "Improve shot selection in transition",
+          "Better recognition of when to push vs. set up"
+        ]
+      };
+      
+      coachingTips = [
+        "Practice transition drills that flow into half-court sets",
+        "Work on quick outlet passes after defensive rebounds",
+        "Develop primary and secondary transition options",
+        "Study film of teams with effective transition offense"
+      ];
+    } else if (playType === 'transition-defense') {
+      metrics = [
+        {
+          name: "Sprint Back",
+          value: Math.floor(score * 0.9 + Math.random() * 10),
+          target: 95,
+          unit: "%"
+        },
+        {
+          name: "Matchup Recognition",
+          value: Math.floor(score * 0.85 + Math.random() * 15),
+          target: 90,
+          unit: "%"
+        },
+        {
+          name: "Communication",
+          value: Math.floor(score * 0.95 + Math.random() * 5),
+          target: 100,
+          unit: "%"
+        },
+        {
+          name: "Paint Protection",
+          value: Math.floor(score * 0.8 + Math.random() * 20),
+          target: 95,
+          unit: "%"
+        }
+      ];
+      
+      feedback = {
+        good: [
+          "Good hustle sprinting back on defense",
+          "Effective communication finding matchups",
+          "Proper protection of the paint first"
+        ],
+        improve: [
+          "Work on taking better angles when sprinting back",
+          "Improve recognition of ball vs. man responsibilities",
+          "Better communication in cross-matching situations"
+        ]
+      };
+      
+      coachingTips = [
+        "Practice defensive transition drills with disadvantages",
+        "Work on sprint-back mechanics from different floor positions",
+        "Develop verbal and non-verbal transition defense communication",
+        "Study film of elite teams' transition defense principles"
+      ];
+    }
   }
   
-  // Format the gameplay situation for title display
-  const formattedGameplay = gameplaySituation
+  // If no specific metrics were set, use generic ones
+  if (metrics.length === 0) {
+    metrics = [
+      {
+        name: "Technique",
+        value: Math.floor(score * 0.9 + Math.random() * 10),
+        target: 95,
+        unit: "%"
+      },
+      {
+        name: "Positioning",
+        value: Math.floor(score * 0.85 + Math.random() * 15),
+        target: 90,
+        unit: "%"
+      },
+      {
+        name: "Decision Making",
+        value: Math.floor(score * 0.95 + Math.random() * 5),
+        target: 100,
+        unit: "%"
+      },
+      {
+        name: "Execution",
+        value: Math.floor(score * 0.8 + Math.random() * 20),
+        target: 95,
+        unit: "%"
+      }
+    ];
+    
+    feedback = {
+      good: [
+        "Good overall execution of basketball fundamentals",
+        "Effective basketball IQ in game situations",
+        "Proper technique in movement patterns"
+      ],
+      improve: [
+        "Focus on more consistent technique under pressure",
+        "Work on quicker decision making in game situations",
+        "Improve positioning awareness in relation to teammates"
+      ]
+    };
+    
+    coachingTips = [
+      "Practice in game-like conditions to improve performance",
+      "Film your gameplay to identify patterns and tendencies",
+      "Work on specific situations that challenge your decision making",
+      "Develop a pre-game routine that prepares you mentally"
+    ];
+  }
+  
+  return {
+    result: {
+      title,
+      description,
+      score,
+      metrics,
+      feedback,
+      coachingTips
+    },
+    behavior: {
+      consistency: [
+        {
+          name: "Movement Pattern",
+          description: `Your ${playType} movement pattern is consistent.`,
+          quality: score > 75 ? "good" : "needs-improvement",
+          icon: null
+        },
+        {
+          name: "Position Stability",
+          description: `Your ${playType} position shows good stability.`,
+          quality: score > 70 ? "good" : "needs-improvement",
+          icon: null
+        }
+      ],
+      preRoutine: [
+        {
+          name: "Mental Preparation",
+          description: "Good focus before beginning the movement.",
+          quality: "good",
+          icon: null
+        },
+        {
+          name: "Position Setup",
+          description: `Your setup position for ${playType} could be more consistent.`,
+          quality: score > 85 ? "good" : "needs-improvement",
+          icon: null
+        }
+      ],
+      habits: [
+        {
+          name: "Recovery Position",
+          description: "You return to proper position between attempts.",
+          quality: score > 80 ? "good" : "needs-improvement",
+          icon: null
+        },
+        {
+          name: "Body Alignment",
+          description: `Maintain better alignment during ${playType}.`,
+          quality: score > 75 ? "good" : "needs-improvement",
+          icon: null
+        }
+      ],
+      timing: {
+        average: `${(1.5 + Math.random() * 0.8).toFixed(1)} seconds`,
+        consistency: Math.floor(score * 0.9),
+        isRushing: score < 75,
+        attempts: Array(5).fill(0).map((_, i) => ({
+          attemptNumber: i + 1,
+          duration: `${(1.3 + Math.random() * 1).toFixed(1)} seconds`
+        }))
+      },
+      fatigue: {
+        level: score > 85 ? "low" : score > 70 ? "moderate" : "high",
+        signs: [
+          "Slight decrease in form quality in later attempts",
+          "Minor variations in technique consistency",
+          "Small reduction in power output over time"
+        ],
+        recommendations: [
+          "Focus on maintaining proper technique even when tired",
+          "Consider shorter, more frequent practice sessions",
+          "Incorporate more specific conditioning for this movement"
+        ]
+      }
+    }
+  };
+}
+
+// Helper function to format play type for display
+function formatPlayType(playType: string): string {
+  // Convert from kebab-case to Title Case with spaces
+  return playType
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
-  
-  return buildAnalysisResponse(`${drillName}: ${formattedGameplay}`, score, metrics, feedback, coachingTips);
-};
+}
