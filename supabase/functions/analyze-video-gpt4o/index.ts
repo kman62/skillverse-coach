@@ -24,6 +24,8 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    console.log("Received video analysis request");
+    
     // Parse the request body
     const formData = await req.formData();
     const sportId = formData.get('sportId')?.toString() || 'generic';
