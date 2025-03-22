@@ -79,7 +79,8 @@ export const saveAnalysisResult = async (
       userId,
       sportId,
       drillId,
-      analysisData.score || 75,
+      // Fix: Use the score from analysisData or a default if it doesn't exist
+      analysisData.score || calculateScoreFromAnalysis(analysisResult),
       analysisResult,
       behaviorAnalysis
     );
@@ -89,4 +90,16 @@ export const saveAnalysisResult = async (
     console.error('Error saving analysis data:', error);
     throw error;
   }
+};
+
+/**
+ * Calculate a score from analysis result if analysisData.score is not available
+ */
+const calculateScoreFromAnalysis = (analysisResult: any): number => {
+  if (typeof analysisResult?.score === 'number') {
+    return Math.round(analysisResult.score);
+  }
+  
+  // Fallback to a reasonable default score
+  return 75;
 };
