@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
+import DrillInfo from '@/components/analysis/DrillInfo';
+import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
+import ResultsPanel from '@/components/analysis/ResultsPanel';
 import { getSportById, getDrillById } from '@/lib/constants';
 import { useToast } from '@/components/ui/use-toast';
 import { analyzeVideo, saveAnalysisResult, AnalysisResponse } from '@/utils/videoAnalysisService';
@@ -310,7 +314,12 @@ const AnalysisPage = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow flex items-center justify-center p-6">
-          <NotFoundMessage />
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Drill or Sport Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              We couldn't find the drill or sport you're looking for.
+            </p>
+          </div>
         </main>
         <Footer />
       </div>

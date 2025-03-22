@@ -31,13 +31,11 @@ const VideoAnnotation = ({
         onPoseDetection={(detected) => setPoseDetected(detected)}
         onPoseAnalysis={onPoseAnalysis}
         setDetectionActive={setDetectionActive}
-        gameplaySituation={gameplaySituation}
       />
       <StatusIndicators 
         detectionActive={detectionActive}
         poseDetected={poseDetected}
         isDemoMode={isDemoMode}
-        gameplaySituation={gameplaySituation}
       />
     </div>
   );
