@@ -215,8 +215,9 @@ export const saveAnalysisResult = async (
       console.error("Error uploading video to Supabase:", uploadError);
       console.error("Upload error details:", {
         message: uploadError.message,
-        statusCode: uploadError.status || 'N/A',
-        details: uploadError.details || 'N/A'
+        // StorageError doesn't have status or details properties, so we'll fix this
+        code: uploadError.code || 'N/A',
+        name: uploadError.name || 'N/A'
       });
       
       if (uploadError.message.includes('bucket_id_name_pkey')) {

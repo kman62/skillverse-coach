@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -12,6 +11,7 @@ import DrillInfo from '@/components/analysis/DrillInfo';
 import NotFoundMessage from '@/components/analysis/NotFoundMessage';
 import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
 import ResultsPanel from '@/components/analysis/ResultsPanel';
+import { supabase } from '@/integrations/supabase/client';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
