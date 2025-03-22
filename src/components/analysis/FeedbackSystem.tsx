@@ -50,7 +50,7 @@ const FeedbackSystem = ({ analysisId, sportId, drillId, score }: FeedbackSystemP
     setIsSubmitting(true);
 
     try {
-      // Submit feedback to Supabase using raw query
+      // Submit feedback to Supabase using RPC function
       const { error } = await supabase.rpc('insert_analysis_feedback', {
         p_user_id: user.id,
         p_analysis_id: analysisId || null,

@@ -207,7 +207,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      insert_analysis_feedback: {
+        Args: {
+          p_user_id: string
+          p_analysis_id: string
+          p_sport_id: string
+          p_drill_id: string
+          p_rating: number
+          p_comments: string
+          p_original_score: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
