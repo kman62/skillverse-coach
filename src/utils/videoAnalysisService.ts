@@ -215,9 +215,9 @@ export const saveAnalysisResult = async (
       console.error("Error uploading video to Supabase:", uploadError);
       console.error("Upload error details:", {
         message: uploadError.message,
-        // The type definition for StorageError doesn't include statusCode
-        // Just use the error object properties that actually exist
-        errorName: uploadError.name || 'N/A',
+        // StorageError doesn't include statusCode property
+        errorName: uploadError.name,
+        // Log the full error object for debugging
         error: uploadError
       });
       
