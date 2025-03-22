@@ -23,7 +23,6 @@ export const usePoseDetection = ({
   const [lastAnalysisTime, setLastAnalysisTime] = useState<number>(0);
   const [alreadySentAnalysis, setAlreadySentAnalysis] = useState<boolean>(false);
 
-  // Initialize MediaPipe pose detection
   const initializePoseDetection = async () => {
     if (!videoRef.current) return;
     
@@ -39,14 +38,11 @@ export const usePoseDetection = ({
     }
   };
 
-  // Process video frames
   const processFrame = async () => {
     if (!poseDetector || !videoRef.current) return;
     
-    // Skip processing if video is paused or ended
     if (videoRef.current.paused || videoRef.current.ended) return;
     
-    // Throttle processing to avoid overloading
     const now = Date.now();
     if (now - lastProcessTime < 100) return;
     setLastProcessTime(now);
@@ -60,19 +56,15 @@ export const usePoseDetection = ({
           
           onPoseDetection(true);
           
-          // Calculate metrics from pose data and pass to parent
           if (onPoseAnalysis && !alreadySentAnalysis) {
             const metrics = calculatePoseMetrics(results);
             if (metrics) {
-              // Only send analysis updates at a reasonable interval to prevent UI flickering
               const currentTime = Date.now();
               if (currentTime - lastAnalysisTime > 2000) {
                 console.log('Calculated pose metrics:', metrics);
                 onPoseAnalysis(metrics);
                 setLastAnalysisTime(currentTime);
                 
-                // In demo mode, once we've sent metrics and analysis is shown,
-                // we don't need to keep updating it
                 if (window.usedFallbackData) {
                   console.log('Demo mode detected - setting alreadySentAnalysis to true');
                   setAlreadySentAnalysis(true);
@@ -90,7 +82,6 @@ export const usePoseDetection = ({
     }
   };
 
-  // Handle video play and pause
   const handlePlay = () => {
     console.log('Video playback started - beginning pose detection');
     
@@ -100,9 +91,8 @@ export const usePoseDetection = ({
       return;
     }
     
-    // Start detection loop
     if (detectionInterval) clearInterval(detectionInterval);
-    const interval = setInterval(processFrame, 100); // Process every 100ms
+    const interval = setInterval(processFrame, 100);
     setDetectionInterval(interval);
   };
 
@@ -114,7 +104,6 @@ export const usePoseDetection = ({
     }
   };
 
-  // Reset analysis state when video file changes
   useEffect(() => {
     if (videoFile) {
       setAlreadySentAnalysis(false);
@@ -127,16 +116,13 @@ export const usePoseDetection = ({
     console.log('Setting up pose detection for video file:', videoFile.name);
     const video = videoRef.current;
     
-    // Set up event listeners
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     
-    // Initialize pose detection if video autoplay is enabled
     if (!video.paused && !video.ended) {
       handlePlay();
     }
     
-    // Clean up
     return () => {
       console.log('Cleaning up pose detection');
       video.removeEventListener('play', handlePlay);
