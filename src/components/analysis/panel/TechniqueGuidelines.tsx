@@ -1,11 +1,7 @@
 
 import React from 'react';
 
-interface TechniqueGuidelinesProps {
-  useLocalAnalysis: boolean;
-}
-
-const TechniqueGuidelines = ({ useLocalAnalysis }: TechniqueGuidelinesProps) => {
+const TechniqueGuidelines = () => {
   return (
     <div className="mt-8">
       <h3 className="text-lg font-medium mb-3">Tips for Best Results</h3>
@@ -25,11 +21,6 @@ const TechniqueGuidelines = ({ useLocalAnalysis }: TechniqueGuidelinesProps) => 
         <li className="text-muted-foreground text-sm list-disc">
           Keep videos under 50MB for optimal processing
         </li>
-        {useLocalAnalysis && (
-          <li className="text-muted-foreground text-sm list-disc font-medium text-green-700">
-            Make sure your face and full body are visible for better pose detection
-          </li>
-        )}
       </ul>
     </div>
   );

@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
 import { useToast } from '@/components/ui/use-toast';
 import ConnectionStatus from './panel/ConnectionStatus';
 import AnalysisProgress from './panel/AnalysisProgress';
 import AnalysisButton from './panel/AnalysisButton';
-import AnalysisModeSwitcher from './panel/AnalysisModeSwitcher';
 import DemoModeAlert from './panel/DemoModeAlert';
 import AnalysisStageIndicator from './panel/AnalysisStageIndicator';
 import TechniqueGuidelines from './panel/TechniqueGuidelines';
@@ -27,7 +27,6 @@ const VideoAnalysisPanel = ({
   const [usesDemoData, setUsesDemoData] = useState(false);
   const [progressPhase, setProgressPhase] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
-  const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
   const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   
   // Progress simulation effect with improved handling
@@ -174,7 +173,6 @@ const VideoAnalysisPanel = ({
       } catch (error) {
         console.error("API connectivity check failed:", error);
         setConnectionStatus('offline');
-        setUseLocalAnalysis(true);
       }
     };
     
@@ -213,17 +211,6 @@ const VideoAnalysisPanel = ({
     };
   }, []);
 
-  // Toggle between local and cloud analysis
-  const toggleAnalysisMode = () => {
-    setUseLocalAnalysis(!useLocalAnalysis);
-    toast({
-      title: !useLocalAnalysis ? "Local Analysis Enabled" : "Cloud Analysis Enabled",
-      description: !useLocalAnalysis 
-        ? "Using on-device MediaPipe for real-time pose detection" 
-        : "Using cloud AI for comprehensive analysis"
-    });
-  };
-
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
@@ -237,15 +224,9 @@ const VideoAnalysisPanel = ({
         isAnalyzing={isAnalyzing} 
       />
       
-      <AnalysisModeSwitcher 
-        useLocalAnalysis={useLocalAnalysis} 
-        toggleAnalysisMode={toggleAnalysisMode} 
-      />
-      
       <DemoModeAlert 
         usesDemoData={usesDemoData} 
         isAnalyzing={isAnalyzing} 
-        useLocalAnalysis={useLocalAnalysis} 
       />
       
       <div className="mt-6">
@@ -258,15 +239,11 @@ const VideoAnalysisPanel = ({
         <AnalysisButton 
           videoFile={videoFile} 
           isAnalyzing={isAnalyzing} 
-          useLocalAnalysis={useLocalAnalysis} 
-          onClick={() => {
-            window.localStorage.setItem('useLocalAnalysis', useLocalAnalysis.toString());
-            onAnalyzeClick();
-          }} 
+          onClick={onAnalyzeClick} 
         />
       </div>
       
-      <TechniqueGuidelines useLocalAnalysis={useLocalAnalysis} />
+      <TechniqueGuidelines />
     </div>
   );
 };

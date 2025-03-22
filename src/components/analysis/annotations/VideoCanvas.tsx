@@ -56,24 +56,6 @@ const VideoCanvas = ({
     setDetectionActive
   });
 
-  // Notify user when pose detection is initialized
-  useEffect(() => {
-    if (poseDetector) {
-      console.log('MediaPipe pose detector is ready');
-      toast({
-        title: "Pose Detection Ready",
-        description: "Play the video to start analyzing your technique",
-        duration: 3000,
-      });
-      
-      // Force a frame process to check if detection works
-      if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended) {
-        console.log('Video is playing, processing initial frame');
-        processFrame();
-      }
-    }
-  }, [poseDetector, toast, processFrame]);
-
   // Tell user when video loads to play it
   const handleVideoLoaded = () => {
     console.log('Video loaded and ready for playback', {
@@ -86,7 +68,7 @@ const VideoCanvas = ({
     setVideoError(null);
     toast({
       title: "Video Loaded",
-      description: "Press play to begin pose detection",
+      description: "Press play to begin viewing",
       duration: 3000,
     });
   };
@@ -107,16 +89,13 @@ const VideoCanvas = ({
   
   // Handle play event to start detection
   const handleVideoPlay = () => {
-    console.log('Video started playing, detection active');
+    console.log('Video started playing');
     setDetectionActive(true);
-    if (poseDetector && videoRef.current) {
-      processFrame();
-    }
   };
   
   // Handle pause event to stop detection
   const handleVideoPause = () => {
-    console.log('Video paused, detection paused');
+    console.log('Video paused');
     setDetectionActive(false);
   };
   
@@ -154,12 +133,6 @@ const VideoCanvas = ({
         poseDetected={poseDetected}
       />
 
-      {videoLoaded && !poseDetector && (
-        <div className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 p-2 rounded text-xs">
-          Pose detector loading...
-        </div>
-      )}
-      
       {videoError && (
         <div className="absolute top-2 left-2 bg-red-100 text-red-800 p-2 rounded text-xs">
           Error: {videoError}
