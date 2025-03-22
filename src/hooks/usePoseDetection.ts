@@ -1,5 +1,5 @@
 
-import { useEffect, useState, RefObject } from 'react';
+import { useEffect, useState, RefObject, useCallback } from 'react';
 import { createPoseDetector, detectPose, calculatePoseMetrics } from '@/utils/mediapipe/poseDetection';
 import { Results } from '@mediapipe/pose';
 
@@ -21,10 +21,14 @@ export const usePoseDetection = ({
   const [poseDetector, setPoseDetector] = useState<any>(null);
   const [detectionInterval, setDetectionInterval] = useState<NodeJS.Timeout | null>(null);
   const [lastProcessTime, setLastProcessTime] = useState<number>(0);
+  const [initializationAttempts, setInitializationAttempts] = useState(0);
 
   // Initialize MediaPipe pose detection
   const initializePoseDetection = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current) {
+      console.warn('Video element not ready, delaying initialization');
+      return;
+    }
     
     try {
       console.log('Initializing MediaPipe pose detector...');
@@ -32,18 +36,32 @@ export const usePoseDetection = ({
       const detector = await createPoseDetector();
       setPoseDetector(detector);
       console.log('✅ MediaPipe Pose detector initialized successfully');
+      return detector;
     } catch (error) {
       console.error('❌ Error initializing pose detector:', error);
       setDetectionActive(false);
+      return null;
     }
   };
 
   // Process video frames
-  const processFrame = async () => {
-    if (!poseDetector || !videoRef.current) return;
+  const processFrame = useCallback(async () => {
+    if (!poseDetector || !videoRef.current) {
+      console.warn('Cannot process frame: detector or video not ready');
+      return;
+    }
     
     // Skip processing if video is paused or ended
-    if (videoRef.current.paused || videoRef.current.ended) return;
+    if (videoRef.current.paused || videoRef.current.ended) {
+      console.log('Video is paused or ended, skipping pose detection');
+      return;
+    }
+    
+    // Check if video has loaded metadata
+    if (!videoRef.current.videoWidth || !videoRef.current.videoHeight) {
+      console.warn('Video dimensions not yet available');
+      return;
+    }
     
     // Throttle processing to avoid overloading
     const now = Date.now();
@@ -51,6 +69,7 @@ export const usePoseDetection = ({
     setLastProcessTime(now);
     
     try {
+      console.log('Processing video frame at time:', videoRef.current.currentTime);
       await detectPose(poseDetector, videoRef.current, (results: Results) => {
         if (results.poseLandmarks) {
           const visibleLandmarks = results.poseLandmarks.filter(lm => lm.visibility > 0.5).length;
@@ -62,7 +81,10 @@ export const usePoseDetection = ({
           if (onPoseAnalysis) {
             const metrics = calculatePoseMetrics(results);
             if (metrics) {
+              console.log('Calculated pose metrics:', metrics);
               onPoseAnalysis(metrics);
+            } else {
+              console.warn('Could not calculate pose metrics from results');
             }
           }
         } else {
@@ -73,36 +95,41 @@ export const usePoseDetection = ({
     } catch (error) {
       console.error('Error in pose detection:', error);
     }
-  };
+  }, [poseDetector, videoRef, lastProcessTime, onPoseDetection, onPoseAnalysis, setLastProcessTime]);
 
   // Handle video play and pause
-  const handlePlay = () => {
+  const handlePlay = useCallback(async () => {
     console.log('Video playback started - beginning pose detection');
     
     if (!poseDetector) {
       console.log('No pose detector found, initializing now...');
-      initializePoseDetection();
-      return;
+      const detector = await initializePoseDetection();
+      if (!detector) {
+        console.warn('Failed to initialize pose detector on play');
+        return;
+      }
     }
     
     // Start detection loop
     if (detectionInterval) clearInterval(detectionInterval);
     const interval = setInterval(processFrame, 100); // Process every 100ms
     setDetectionInterval(interval);
-  };
+  }, [poseDetector, detectionInterval, processFrame, initializePoseDetection]);
 
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     console.log('Video paused - stopping pose detection');
     if (detectionInterval) {
       clearInterval(detectionInterval);
       setDetectionInterval(null);
     }
-  };
+  }, [detectionInterval]);
 
   useEffect(() => {
     if (!videoRef.current || !videoFile) return;
     
     console.log('Setting up pose detection for video file:', videoFile.name);
+    initializePoseDetection();
+    
     const video = videoRef.current;
     
     // Set up event listeners
@@ -128,7 +155,20 @@ export const usePoseDetection = ({
         poseDetector.close();
       }
     };
-  }, [videoRef.current, videoFile, poseDetector]);
+  }, [videoRef.current, videoFile]);
+
+  // Retry initialization if it fails
+  useEffect(() => {
+    if (!poseDetector && videoFile && initializationAttempts < 3) {
+      const timer = setTimeout(() => {
+        console.log(`Retrying pose detector initialization (attempt ${initializationAttempts + 1})`);
+        setInitializationAttempts(prev => prev + 1);
+        initializePoseDetection();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [poseDetector, videoFile, initializationAttempts]);
 
   return {
     poseDetector,

@@ -24,10 +24,11 @@ const VideoCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [poseDetected, setPoseDetected] = useState(false);
   const [poseResults, setPoseResults] = useState<Results | undefined>(undefined);
+  const [videoReady, setVideoReady] = useState(false);
   const { toast } = useToast();
   
   // Use the pose detection hook
-  const { poseDetector } = usePoseDetection({
+  const { poseDetector, processFrame } = usePoseDetection({
     videoRef,
     videoFile,
     onPoseDetection: (detected) => {
@@ -52,12 +53,36 @@ const VideoCanvas = ({
 
   // Tell user when video loads to play it
   const handleVideoLoaded = () => {
+    console.log('Video loaded successfully, dimensions:', 
+      videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+    setVideoReady(true);
     toast({
       title: "Video Loaded",
       description: "Press play to begin pose detection",
       duration: 3000,
     });
   };
+
+  // Force frame processing when video is playing
+  useEffect(() => {
+    if (!videoRef.current || !poseDetector || !videoReady) return;
+    
+    const video = videoRef.current;
+    
+    // Process frames periodically when video is playing
+    const checkVideoPlaying = () => {
+      if (!video.paused && !video.ended) {
+        console.log('Video is playing - processing frame');
+        processFrame();
+      }
+    };
+    
+    const intervalId = setInterval(checkVideoPlaying, 500);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [poseDetector, processFrame, videoReady]);
   
   return (
     <>
@@ -65,6 +90,7 @@ const VideoCanvas = ({
         ref={videoRef}
         className="w-full aspect-video object-contain bg-black"
         controls
+        playsInline
         src={URL.createObjectURL(videoFile)}
         onLoadedData={handleVideoLoaded}
       />
