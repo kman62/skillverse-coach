@@ -29,14 +29,33 @@ const AnalysisStageIndicator = ({
       'api-success-fallback': 'Analysis complete from backup server...',
       'api-failed-all': 'All servers unavailable, using demo mode...',
       'using-demo-data': 'Using demo data for analysis...',
-      'demo-data-generated': 'Demo analysis complete...'
+      'demo-data-generated': 'Demo analysis complete...',
+      'processing-video': 'Processing video frames...',
+      'analyzing-technique': 'Analyzing your technique...',
+      'generating-feedback': 'Generating personalized feedback...',
+      'saving-results': 'Saving your analysis results...'
     };
     
     return stageMap[stage] || stage.replace(/-/g, ' ');
   };
   
+  // Determine indicator color based on stage
+  const getIndicatorColor = (stage: string | null): string => {
+    if (!stage) return 'bg-blue-50 border-blue-100 text-blue-700';
+    
+    if (stage.includes('error') || stage.includes('failed')) {
+      return 'bg-yellow-50 border-yellow-100 text-yellow-700';
+    }
+    
+    if (stage.includes('success') || stage.includes('complete')) {
+      return 'bg-green-50 border-green-100 text-green-700';
+    }
+    
+    return 'bg-blue-50 border-blue-100 text-blue-700';
+  };
+  
   return (
-    <div className="mt-3 p-2.5 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700 flex items-center">
+    <div className={`mt-3 p-2.5 border rounded-md text-sm flex items-center ${getIndicatorColor(analysisStage)}`}>
       {isAnalyzing ? (
         <Loader2 size={16} className="mr-2 animate-spin" />
       ) : (
