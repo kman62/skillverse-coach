@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
 import { useToast } from '@/components/ui/use-toast';
@@ -31,37 +30,69 @@ const VideoAnalysisPanel = ({
   const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
   const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   
-  // Progress simulation effect
+  // Progress simulation effect with improved handling
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
     if (isAnalyzing) {
+      // Reset progress when analysis starts
       setProcessingProgress(0);
+      
+      const phaseThresholds = [
+        { threshold: 20, phase: 'Initializing analysis...' },
+        { threshold: 40, phase: 'Processing video frames...' },
+        { threshold: 60, phase: 'Analyzing technique...' },
+        { threshold: 80, phase: 'Generating feedback...' },
+        { threshold: 99, phase: 'Finalizing results...' },
+      ];
+      
       interval = setInterval(() => {
         setProcessingProgress(prev => {
-          const phaseThresholds = [
-            { threshold: 20, phase: 'Initializing analysis...' },
-            { threshold: 40, phase: 'Processing video frames...' },
-            { threshold: 60, phase: 'Analyzing technique...' },
-            { threshold: 80, phase: 'Generating feedback...' },
-            { threshold: 90, phase: 'Finalizing results...' },
-          ];
+          // Different increment speeds at different stages
+          const getIncrement = (progress: number) => {
+            if (progress < 30) return Math.random() * 2 + 1; // Faster at start
+            if (progress < 60) return Math.random() * 1.5 + 0.5; // Medium in middle
+            if (progress < 80) return Math.random() * 1 + 0.3; // Slower near end
+            return Math.random() * 0.5 + 0.1; // Very slow at the end
+          };
           
+          const increment = getIncrement(prev);
+          const newProgress = prev + increment;
+          
+          // Update the phase based on current progress
           for (const { threshold, phase } of phaseThresholds) {
-            if (prev < threshold) {
+            if (prev < threshold && newProgress >= threshold) {
               setProgressPhase(phase);
+              break;
+            } else if (prev < threshold) {
               break;
             }
           }
           
-          const increment = Math.random() * 3 + (prev < 30 ? 2 : prev < 60 ? 1 : 0.5);
-          const newProgress = prev + increment;
-          return newProgress < 90 ? newProgress : 90;
+          // Ensure we don't exceed 99% (the final 100% happens when analysis is complete)
+          return newProgress < 99 ? newProgress : 99;
         });
       }, 200);
+      
+      // Set initial phase
+      setProgressPhase('Initializing analysis...');
     } else {
-      setProcessingProgress(isAnalyzing ? 90 : 0);
-      setProgressPhase('');
+      // When analysis completes, set progress to 100%
+      if (processingProgress > 0 && processingProgress < 100) {
+        setProcessingProgress(100);
+        setProgressPhase('Analysis complete!');
+        
+        // Reset progress after a short delay
+        const resetTimeout = setTimeout(() => {
+          setProcessingProgress(0);
+          setProgressPhase('');
+        }, 1500);
+        
+        return () => clearTimeout(resetTimeout);
+      } else {
+        setProcessingProgress(0);
+        setProgressPhase('');
+      }
     }
     
     return () => {
@@ -69,7 +100,7 @@ const VideoAnalysisPanel = ({
     };
   }, [isAnalyzing]);
 
-  // Analysis stage listener
+  // Track API/analysis stage events
   useEffect(() => {
     const handleAnalysisStage = (event: CustomEvent) => {
       if (event.detail?.stage) {
@@ -77,25 +108,36 @@ const VideoAnalysisPanel = ({
         console.log(`Analysis stage detected: ${stage}`, event.detail);
         setAnalysisStage(stage);
         
-        // Show toast notifications for important stages
+        // Update progress based on stage events
         if (stage === 'api-request-primary') {
+          setProcessingProgress(25);
+          setProgressPhase('Connecting to analysis server...');
+          
           toast({
             title: "Connecting to analysis server",
             description: "Sending video for analysis...",
           });
         } else if (stage === 'api-failed-primary') {
+          setProcessingProgress(30);
+          setProgressPhase('Trying backup server...');
+          
           toast({
             title: "Primary server unavailable",
             description: "Trying backup server...",
             variant: "default"
           });
         } else if (stage === 'api-success-primary' || stage === 'api-success-fallback') {
+          setProcessingProgress(90);
+          setProgressPhase('Processing results...');
+          
           toast({
             title: "Video analysis complete",
             description: "Processing results...",
           });
         } else if (stage === 'using-demo-data') {
           setUsesDemoData(true);
+          setProcessingProgress(95);
+          setProgressPhase('Preparing demo results...');
         }
       }
     };
