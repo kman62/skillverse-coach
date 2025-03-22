@@ -30,6 +30,14 @@ export const analyzeVideo = async (
     throw new Error(errorMsg);
   }
   
+  // Custom event for tracking analysis stages
+  const dispatchAnalysisEvent = (stage: string, detail: any = {}) => {
+    console.log(`Analysis stage: ${stage}`, detail);
+    window.dispatchEvent(new CustomEvent('analysis-stage', { 
+      detail: { stage, ...detail }
+    }));
+  };
+  
   // If demo mode is explicitly requested, skip the API calls
   if (forceDemoMode) {
     console.log("Demo mode explicitly requested by user");
@@ -53,14 +61,6 @@ export const analyzeVideo = async (
   formData.append("video", videoFile);
   formData.append("drillName", drillName);
   formData.append("sportId", sportId);
-  
-  // Custom event for tracking analysis stages
-  const dispatchAnalysisEvent = (stage: string, detail: any = {}) => {
-    console.log(`Analysis stage: ${stage}`, detail);
-    window.dispatchEvent(new CustomEvent('analysis-stage', { 
-      detail: { stage, ...detail }
-    }));
-  };
   
   dispatchAnalysisEvent('started');
   
