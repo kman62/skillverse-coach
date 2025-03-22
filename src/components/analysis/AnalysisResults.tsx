@@ -35,20 +35,19 @@ const AnalysisResults = ({
   gameplaySituation,
   playType
 }: AnalysisResultsProps) => {
-  // Format gameplay information for display
-  const formatPlayType = (playType?: string): string => {
-    if (!playType) return '';
+  // Create a title based on gameplay situation and play type if available
+  const renderTitle = () => {
+    if (gameplaySituation && playType) {
+      const formattedGameplay = gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1);
+      const formattedPlayType = playType
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      return `${formattedGameplay}: ${formattedPlayType}`;
+    }
     
-    return playType
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-  
-  const getGameplaySituationTitle = (): string => {
-    if (!gameplaySituation || !playType) return analysisResult.title;
-    
-    return `${gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1)} Analysis: ${formatPlayType(playType)}`;
+    return analysisResult.title;
   };
   
   return (
@@ -69,7 +68,7 @@ const AnalysisResults = ({
       )}
       
       <AnalysisCard 
-        title={gameplaySituation && playType ? getGameplaySituationTitle() : analysisResult.title}
+        title={renderTitle()}
         description={analysisResult.description}
         score={analysisResult.score}
         metrics={analysisResult.metrics}
@@ -93,7 +92,7 @@ const AnalysisResults = ({
       <FeedbackSystem 
         analysisId={analysisId}
         sportId={sportId || "generic"}
-        drillId={drillId || "technique"}
+        drillId={drillId || (playType ? playType : "technique")}
         score={analysisResult.score || 0}
       />
       
