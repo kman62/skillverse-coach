@@ -31,9 +31,12 @@ const VideoCanvas = ({
   const { poseDetector, processFrame } = usePoseDetection({
     videoRef,
     videoFile,
-    onPoseDetection: (detected) => {
+    onPoseDetection: (detected, results) => {
       setPoseDetected(detected);
       onPoseDetection(detected);
+      if (results) {
+        setPoseResults(results);
+      }
     },
     onPoseAnalysis,
     setDetectionActive
@@ -69,7 +72,7 @@ const VideoCanvas = ({
     
     const video = videoRef.current;
     
-    // Process frames periodically when video is playing
+    // Process frames when video is playing
     const checkVideoPlaying = () => {
       if (!video.paused && !video.ended) {
         console.log('Video is playing - processing frame');
@@ -77,10 +80,21 @@ const VideoCanvas = ({
       }
     };
     
-    const intervalId = setInterval(checkVideoPlaying, 500);
+    // Process frames more frequently for better detection
+    const intervalId = setInterval(checkVideoPlaying, 100);
+    
+    // Also process frames on timeupdate events
+    const onTimeUpdate = () => {
+      if (!video.paused && !video.ended) {
+        processFrame();
+      }
+    };
+    
+    video.addEventListener('timeupdate', onTimeUpdate);
     
     return () => {
       clearInterval(intervalId);
+      video.removeEventListener('timeupdate', onTimeUpdate);
     };
   }, [poseDetector, processFrame, videoReady]);
   

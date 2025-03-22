@@ -21,24 +21,24 @@ export const createPoseDetector = async (): Promise<Pose> => {
     }, 10000);
     
     // Configure the model
-    pose.setOptions({
-      modelComplexity: 1, // 0, 1, or 2 - higher is more accurate but slower
-      smoothLandmarks: true,
-      enableSegmentation: false,
-      smoothSegmentation: false,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    })
-    .then(() => {
+    try {
+      pose.setOptions({
+        modelComplexity: 1, // 0, 1, or 2 - higher is more accurate but slower
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        smoothSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+      
       console.log('MediaPipe pose detector configured successfully');
       clearTimeout(timeoutId);
       resolve(pose);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error('Failed to configure MediaPipe:', error);
       clearTimeout(timeoutId);
       reject(error);
-    });
+    }
   });
 };
 
@@ -64,13 +64,10 @@ export const detectPose = async (
     // Set the callback to receive results
     pose.onResults(onResults);
     
-    // Create a timestamp for this frame
-    const timestamp = videoElement.currentTime * 1000; // Convert to ms
-    
     // Process the current video frame
+    // Updated to match the expected InputMap type without timestamp
     await pose.send({ 
-      image: videoElement,
-      timestamp: timestamp
+      image: videoElement
     });
   } catch (error) {
     console.error('Error processing video frame:', error);

@@ -1,12 +1,12 @@
 
 import { useEffect, useState, RefObject, useCallback } from 'react';
 import { createPoseDetector, detectPose, calculatePoseMetrics } from '@/utils/mediapipe/poseDetection';
-import { Results } from '@mediapipe/pose';
+import { Results, Pose } from '@mediapipe/pose';
 
 interface UsePoseDetectionProps {
   videoRef: RefObject<HTMLVideoElement>;
   videoFile: File | null;
-  onPoseDetection: (poseDetected: boolean) => void;
+  onPoseDetection: (poseDetected: boolean, results?: Results) => void;
   onPoseAnalysis?: (metrics: any) => void;
   setDetectionActive: (active: boolean) => void;
 }
@@ -18,16 +18,16 @@ export const usePoseDetection = ({
   onPoseAnalysis,
   setDetectionActive
 }: UsePoseDetectionProps) => {
-  const [poseDetector, setPoseDetector] = useState<any>(null);
+  const [poseDetector, setPoseDetector] = useState<Pose | null>(null);
   const [detectionInterval, setDetectionInterval] = useState<NodeJS.Timeout | null>(null);
   const [lastProcessTime, setLastProcessTime] = useState<number>(0);
   const [initializationAttempts, setInitializationAttempts] = useState(0);
 
   // Initialize MediaPipe pose detection
-  const initializePoseDetection = async () => {
+  const initializePoseDetection = useCallback(async () => {
     if (!videoRef.current) {
       console.warn('Video element not ready, delaying initialization');
-      return;
+      return null;
     }
     
     try {
@@ -42,18 +42,17 @@ export const usePoseDetection = ({
       setDetectionActive(false);
       return null;
     }
-  };
+  }, [videoRef, setDetectionActive]);
 
   // Process video frames
   const processFrame = useCallback(async () => {
     if (!poseDetector || !videoRef.current) {
-      console.warn('Cannot process frame: detector or video not ready');
+      console.log('Cannot process frame: detector or video not ready');
       return;
     }
     
     // Skip processing if video is paused or ended
     if (videoRef.current.paused || videoRef.current.ended) {
-      console.log('Video is paused or ended, skipping pose detection');
       return;
     }
     
@@ -69,13 +68,12 @@ export const usePoseDetection = ({
     setLastProcessTime(now);
     
     try {
-      console.log('Processing video frame at time:', videoRef.current.currentTime);
       await detectPose(poseDetector, videoRef.current, (results: Results) => {
-        if (results.poseLandmarks) {
+        if (results.poseLandmarks && results.poseLandmarks.length > 0) {
           const visibleLandmarks = results.poseLandmarks.filter(lm => lm.visibility > 0.5).length;
           console.log(`Detected ${visibleLandmarks}/${results.poseLandmarks.length} landmarks`);
           
-          onPoseDetection(true);
+          onPoseDetection(true, results);
           
           // Calculate metrics from pose data and pass to parent
           if (onPoseAnalysis) {
@@ -83,8 +81,6 @@ export const usePoseDetection = ({
             if (metrics) {
               console.log('Calculated pose metrics:', metrics);
               onPoseAnalysis(metrics);
-            } else {
-              console.warn('Could not calculate pose metrics from results');
             }
           }
         } else {
@@ -95,7 +91,7 @@ export const usePoseDetection = ({
     } catch (error) {
       console.error('Error in pose detection:', error);
     }
-  }, [poseDetector, videoRef, lastProcessTime, onPoseDetection, onPoseAnalysis, setLastProcessTime]);
+  }, [poseDetector, videoRef, lastProcessTime, onPoseDetection, onPoseAnalysis]);
 
   // Handle video play and pause
   const handlePlay = useCallback(async () => {
@@ -155,7 +151,7 @@ export const usePoseDetection = ({
         poseDetector.close();
       }
     };
-  }, [videoRef.current, videoFile]);
+  }, [videoRef.current, videoFile, handlePlay, handlePause, initializePoseDetection]);
 
   // Retry initialization if it fails
   useEffect(() => {
@@ -168,7 +164,7 @@ export const usePoseDetection = ({
       
       return () => clearTimeout(timer);
     }
-  }, [poseDetector, videoFile, initializationAttempts]);
+  }, [poseDetector, videoFile, initializationAttempts, initializePoseDetection]);
 
   return {
     poseDetector,
