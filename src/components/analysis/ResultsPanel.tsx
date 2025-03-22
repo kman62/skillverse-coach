@@ -73,8 +73,6 @@ const ResultsPanel = ({
           sportId={sportId}
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
-          gameplaySituation={selectedGameplay}
-          playType={selectedPlay}
         />
       )}
     </div>
