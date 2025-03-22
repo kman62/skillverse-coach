@@ -1,1 +1,10 @@
-project_id = "aghjbyysvchicvekbamg"
+
+project_id = "aithlete-analysis-app"
+[api]
+port = 54321
+[db]
+port = 54322
+[functions]
+port = 9999
+[functions.analyze-video-gpt4o]
+verify_jwt = false
