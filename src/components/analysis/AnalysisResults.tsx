@@ -35,6 +35,22 @@ const AnalysisResults = ({
   gameplaySituation,
   playType
 }: AnalysisResultsProps) => {
+  // Format gameplay information for display
+  const formatPlayType = (playType?: string): string => {
+    if (!playType) return '';
+    
+    return playType
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+  
+  const getGameplaySituationTitle = (): string => {
+    if (!gameplaySituation || !playType) return analysisResult.title;
+    
+    return `${gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1)} Analysis: ${formatPlayType(playType)}`;
+  };
+  
   return (
     <div className="animate-fade-in space-y-6">
       {/* Demo mode indicator */}
@@ -53,7 +69,7 @@ const AnalysisResults = ({
       )}
       
       <AnalysisCard 
-        title={analysisResult.title}
+        title={gameplaySituation && playType ? getGameplaySituationTitle() : analysisResult.title}
         description={analysisResult.description}
         score={analysisResult.score}
         metrics={analysisResult.metrics}
