@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { PlayIcon } from 'lucide-react';
+import { PlayIcon, Brain } from 'lucide-react';
 
 interface AnalysisButtonProps {
   videoFile: File | null;
@@ -24,12 +24,12 @@ const AnalysisButton = ({
     >
       {isAnalyzing ? (
         <>
-          <span className="animate-pulse">Analyzing Video...</span>
+          <span className="animate-pulse">Analyzing with GPT-4o...</span>
         </>
       ) : (
         <>
-          <PlayIcon size={18} className="mr-2" />
-          {videoFile ? "Analyze My Technique" : "Select Video to Analyze"}
+          <Brain size={18} className="mr-2" />
+          {videoFile ? "Analyze with GPT-4o" : "Select Video to Analyze"}
         </>
       )}
     </Button>
