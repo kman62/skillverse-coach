@@ -20,8 +20,6 @@ interface ResultsPanelProps {
   onPoseAnalysis?: (metrics: any) => void;
   gameplaySituation?: string;
   playType?: string;
-  onGameplaySituationChange?: (situation: string) => void;
-  onPlayTypeChange?: (play: string) => void;
 }
 
 const ResultsPanel = ({ 
@@ -37,22 +35,23 @@ const ResultsPanel = ({
   drillId,
   onPoseAnalysis,
   gameplaySituation,
-  playType,
-  onGameplaySituationChange,
-  onPlayTypeChange
+  playType
 }: ResultsPanelProps) => {
+  const [selectedGameplay, setSelectedGameplay] = useState<string | undefined>(gameplaySituation);
+  const [selectedPlay, setSelectedPlay] = useState<string | undefined>(playType);
+  
+  // Update the local state when props change
+  useEffect(() => {
+    setSelectedGameplay(gameplaySituation);
+    setSelectedPlay(playType);
+  }, [gameplaySituation, playType]);
   
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
       
       {!analysisResult && !isAnalyzing && !apiError && (
-        <EmptyState 
-          gameplaySituation={gameplaySituation}
-          playType={playType}
-          onGameplaySituationChange={onGameplaySituationChange}
-          onPlayTypeChange={onPlayTypeChange}
-        />
+        <EmptyState />
       )}
       
       {apiError && !isAnalyzing && (
@@ -74,8 +73,6 @@ const ResultsPanel = ({
           sportId={sportId}
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
-          gameplaySituation={gameplaySituation}
-          playType={playType}
         />
       )}
     </div>
