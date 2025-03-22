@@ -65,9 +65,21 @@ const AnalysisPage = () => {
         },
         onAnalysisError: (error) => {
           setApiError(error.message);
-        }
+        },
+        forceDemoMode: isDemoMode
       }
     );
+  };
+
+  const handleDemoModeToggle = (enabled: boolean) => {
+    console.log(`Demo mode ${enabled ? 'enabled' : 'disabled'} by user`);
+    setIsDemoMode(enabled);
+    
+    // Reset any previous analysis when toggling
+    if (analysisResult) {
+      setAnalysisResult(null);
+      setBehaviorAnalysis(null);
+    }
   };
 
   return (
@@ -82,6 +94,7 @@ const AnalysisPage = () => {
         behaviorAnalysis={behaviorAnalysis}
         apiError={apiError}
         isDemoMode={isDemoMode}
+        onDemoModeChange={handleDemoModeToggle}
         analysisId={analysisId}
         sportId={sportId}
         drillId={drillId}

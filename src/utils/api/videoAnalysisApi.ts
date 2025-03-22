@@ -12,13 +12,15 @@ import { supabase } from '@/integrations/supabase/client';
 export const analyzeVideo = async (
   videoFile: File,
   drillName: string,
-  sportId: string
+  sportId: string,
+  forceDemoMode?: boolean
 ): Promise<AnalysisResponse> => {
   console.log(`Starting video analysis for ${sportId}/${drillName}`, { 
     fileSize: videoFile.size,
     fileName: videoFile.name,
     fileType: videoFile.type,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    forceDemoMode: !!forceDemoMode
   });
   
   // Check file size before attempting to upload
@@ -26,6 +28,24 @@ export const analyzeVideo = async (
     const errorMsg = `Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`;
     console.error(errorMsg);
     throw new Error(errorMsg);
+  }
+  
+  // If demo mode is explicitly requested, skip the API calls
+  if (forceDemoMode) {
+    console.log("Demo mode explicitly requested by user");
+    dispatchAnalysisEvent('using-demo-data');
+    
+    // Set global flag for demo mode
+    window.usedFallbackData = true;
+    
+    // Simulate a brief delay to make the demo feel more realistic
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Generate demo analysis data based on drill name and sport
+    console.log(`Generating demo analysis data for ${sportId}/${drillName}`);
+    const mockData = generateSportSpecificAnalysis(sportId, drillName);
+    dispatchAnalysisEvent('demo-data-generated');
+    return mockData;
   }
   
   // Create form data to send the video file

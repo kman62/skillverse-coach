@@ -30,7 +30,8 @@ export function useVideoAnalysis() {
     callbacks: {
       onAnalysisStart: () => void,
       onAnalysisComplete: (result: any, behavior: any) => void,
-      onAnalysisError: (error: Error) => void
+      onAnalysisError: (error: Error) => void,
+      forceDemoMode?: boolean
     }
   ) => {
     if (!videoFile) {
@@ -55,27 +56,29 @@ export function useVideoAnalysis() {
     
     setIsAnalyzing(true);
     setApiError(null);
-    setIsDemoMode(false);
+    setIsDemoMode(callbacks.forceDemoMode || false);
     setAnalysisId(undefined);
     
     callbacks.onAnalysisStart();
     
     console.log('Starting analysis for', videoFile.name, 'in', sportId, drillId);
     console.log('Current user:', user.id);
+    console.log('Demo mode:', callbacks.forceDemoMode ? 'ENABLED (user selected)' : 'DISABLED');
     
     try {
-      console.log('Initiating API-based video analysis');
+      console.log('Initiating video analysis');
       const analysisData: AnalysisResponse = await analyzeVideo(
         videoFile, 
         callbacks?.onAnalysisComplete ? drillId || "Technique" : "Technique",
-        sportId || "generic"
+        sportId || "generic",
+        callbacks.forceDemoMode
       );
       
       console.log('Analysis completed successfully:', analysisData);
       callbacks.onAnalysisComplete(analysisData.result, analysisData.behavior);
       
-      if (window.usedFallbackData) {
-        console.log('API indicated fallback data was used');
+      if (window.usedFallbackData || callbacks.forceDemoMode) {
+        console.log('Using demo mode for analysis');
         setIsDemoMode(true);
         window.dispatchEvent(new CustomEvent('analysis-status', { 
           detail: { isDemoMode: true } 
@@ -129,7 +132,7 @@ export function useVideoAnalysis() {
       
       toast({
         title: "Analysis Complete",
-        description: isDemoMode 
+        description: isDemoMode || callbacks.forceDemoMode
           ? "Your technique has been analyzed using demo mode" 
           : "Your technique has been successfully analyzed and saved"
       });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
 import { useToast } from '@/components/ui/use-toast';
@@ -8,19 +7,24 @@ import AnalysisButton from './panel/AnalysisButton';
 import DemoModeAlert from './panel/DemoModeAlert';
 import AnalysisStageIndicator from './panel/AnalysisStageIndicator';
 import TechniqueGuidelines from './panel/TechniqueGuidelines';
+import DemoModeToggle from './panel/DemoModeToggle';
 
 interface VideoAnalysisPanelProps {
   videoFile: File | null;
   isAnalyzing: boolean;
   onVideoSelected: (file: File) => void;
   onAnalyzeClick: () => void;
+  isDemoMode: boolean;
+  onDemoModeChange: (enabled: boolean) => void;
 }
 
 const VideoAnalysisPanel = ({ 
   videoFile, 
   isAnalyzing, 
   onVideoSelected,
-  onAnalyzeClick 
+  onAnalyzeClick,
+  isDemoMode,
+  onDemoModeChange
 }: VideoAnalysisPanelProps) => {
   const { toast } = useToast();
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -29,12 +33,10 @@ const VideoAnalysisPanel = ({
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
   const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   
-  // Progress simulation effect with improved handling
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
     if (isAnalyzing) {
-      // Reset progress when analysis starts
       setProcessingProgress(0);
       
       const phaseThresholds = [
@@ -47,18 +49,16 @@ const VideoAnalysisPanel = ({
       
       interval = setInterval(() => {
         setProcessingProgress(prev => {
-          // Different increment speeds at different stages
           const getIncrement = (progress: number) => {
-            if (progress < 30) return Math.random() * 2 + 1; // Faster at start
-            if (progress < 60) return Math.random() * 1.5 + 0.5; // Medium in middle
-            if (progress < 80) return Math.random() * 1 + 0.3; // Slower near end
-            return Math.random() * 0.5 + 0.1; // Very slow at the end
+            if (progress < 30) return Math.random() * 2 + 1;
+            if (progress < 60) return Math.random() * 1.5 + 0.5;
+            if (progress < 80) return Math.random() * 1 + 0.3;
+            return Math.random() * 0.5 + 0.1;
           };
           
           const increment = getIncrement(prev);
           const newProgress = prev + increment;
           
-          // Update the phase based on current progress
           for (const { threshold, phase } of phaseThresholds) {
             if (prev < threshold && newProgress >= threshold) {
               setProgressPhase(phase);
@@ -68,20 +68,16 @@ const VideoAnalysisPanel = ({
             }
           }
           
-          // Ensure we don't exceed 99% (the final 100% happens when analysis is complete)
           return newProgress < 99 ? newProgress : 99;
         });
       }, 200);
       
-      // Set initial phase
       setProgressPhase('Initializing analysis...');
     } else {
-      // When analysis completes, set progress to 100%
       if (processingProgress > 0 && processingProgress < 100) {
         setProcessingProgress(100);
         setProgressPhase('Analysis complete!');
         
-        // Reset progress after a short delay
         const resetTimeout = setTimeout(() => {
           setProcessingProgress(0);
           setProgressPhase('');
@@ -99,7 +95,6 @@ const VideoAnalysisPanel = ({
     };
   }, [isAnalyzing]);
 
-  // Track API/analysis stage events
   useEffect(() => {
     const handleAnalysisStage = (event: CustomEvent) => {
       if (event.detail?.stage) {
@@ -107,7 +102,6 @@ const VideoAnalysisPanel = ({
         console.log(`Analysis stage detected: ${stage}`, event.detail);
         setAnalysisStage(stage);
         
-        // Update progress based on stage events
         if (stage === 'api-request-primary') {
           setProcessingProgress(25);
           setProgressPhase('Connecting to analysis server...');
@@ -148,7 +142,6 @@ const VideoAnalysisPanel = ({
     };
   }, [toast]);
 
-  // API connectivity check
   useEffect(() => {
     const checkApiConnectivity = async () => {
       try {
@@ -183,7 +176,6 @@ const VideoAnalysisPanel = ({
     return () => clearInterval(intervalId);
   }, []);
 
-  // Video selection handler
   const handleVideoSelected = (file: File) => {
     const MAX_FILE_SIZE = 50 * 1024 * 1024;
     
@@ -196,7 +188,6 @@ const VideoAnalysisPanel = ({
     onVideoSelected(file);
   };
 
-  // Demo mode detection
   useEffect(() => {
     const handleConnectionStatus = (event: CustomEvent) => {
       if (event.detail?.isDemoMode) {
@@ -219,13 +210,19 @@ const VideoAnalysisPanel = ({
       
       <VideoUploader onVideoSelected={handleVideoSelected} />
       
+      <DemoModeToggle 
+        isDemoMode={isDemoMode} 
+        onToggle={onDemoModeChange}
+        disabled={isAnalyzing}
+      />
+      
       <AnalysisStageIndicator 
         analysisStage={analysisStage} 
         isAnalyzing={isAnalyzing} 
       />
       
       <DemoModeAlert 
-        usesDemoData={usesDemoData} 
+        usesDemoData={usesDemoData || isDemoMode} 
         isAnalyzing={isAnalyzing} 
       />
       
@@ -239,7 +236,8 @@ const VideoAnalysisPanel = ({
         <AnalysisButton 
           videoFile={videoFile} 
           isAnalyzing={isAnalyzing} 
-          onClick={onAnalyzeClick} 
+          onClick={onAnalyzeClick}
+          isDemoMode={isDemoMode}
         />
       </div>
       
