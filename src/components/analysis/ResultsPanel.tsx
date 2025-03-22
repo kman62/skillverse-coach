@@ -1,12 +1,10 @@
 
 import React from 'react';
-import { BarChart, Share2, Save, RefreshCw, AlertTriangle, Info } from 'lucide-react';
-import AnalysisCard from '@/components/ui/AnalysisCard';
-import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import VideoAnnotation from '@/components/analysis/VideoAnnotation';
-import FeedbackSystem from '@/components/analysis/FeedbackSystem';
+import { BarChart } from 'lucide-react';
+import EmptyState from '@/components/analysis/states/EmptyState';
+import ErrorState from '@/components/analysis/states/ErrorState';
+import LoadingState from '@/components/analysis/states/LoadingState';
+import AnalysisResults from '@/components/analysis/AnalysisResults';
 
 interface ResultsPanelProps {
   isAnalyzing: boolean;
@@ -35,175 +33,34 @@ const ResultsPanel = ({
   drillId,
   onPoseAnalysis
 }: ResultsPanelProps) => {
-  const { toast } = useToast();
-  
-  const handleSaveResults = () => {
-    toast({
-      title: "Results Saved",
-      description: "Your analysis results have been saved to your profile"
-    });
-  };
-  
-  const handleShareResults = () => {
-    // Create a shareable link or copy results to clipboard
-    // This is a simplified implementation
-    navigator.clipboard.writeText(window.location.href)
-      .then(() => {
-        toast({
-          title: "Link Copied",
-          description: "Share link has been copied to your clipboard"
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "Sharing Failed",
-          description: "Could not copy link to clipboard",
-          variant: "destructive"
-        });
-      });
-  };
-
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
       
       {!analysisResult && !isAnalyzing && !apiError && (
-        <div className="bg-card rounded-xl border border-border h-[500px] flex items-center justify-center p-6 text-center">
-          <div>
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <BarChart size={24} className="text-primary" />
-            </div>
-            <h3 className="text-lg font-medium">No Analysis Yet</h3>
-            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-              Upload a video and click "Analyze Technique" to receive personalized feedback.
-            </p>
-          </div>
-        </div>
+        <EmptyState />
       )}
       
       {apiError && !isAnalyzing && (
-        <div className="bg-card rounded-xl border border-destructive h-[500px] flex items-center justify-center p-6 text-center">
-          <div>
-            <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle size={24} className="text-destructive" />
-            </div>
-            <h3 className="text-lg font-medium">Analysis Error</h3>
-            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-              {apiError || "There was an error analyzing your video. Please try again."}
-            </p>
-            <Button 
-              variant="outline"
-              className="mt-4"
-              onClick={onRetry}
-            >
-              <RefreshCw size={16} className="mr-2" />
-              Try Again
-            </Button>
-          </div>
-        </div>
+        <ErrorState errorMessage={apiError} onRetry={onRetry} />
       )}
       
       {isAnalyzing && (
-        <div className="bg-card rounded-xl border border-border h-[500px] flex items-center justify-center p-6 text-center animate-pulse">
-          <div>
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium">Analyzing Your Technique</h3>
-            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-              Please wait while our AI analyzes your movement patterns...
-            </p>
-          </div>
-        </div>
+        <LoadingState />
       )}
       
       {analysisResult && !isAnalyzing && (
-        <div className="animate-fade-in space-y-6">
-          {/* Demo mode indicator */}
-          {isDemoMode && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-2">
-              <Info size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-blue-700 font-medium">Demo Mode Active</p>
-                <p className="text-xs text-blue-600 mt-1">
-                  This analysis uses simulated data for demonstration purposes.
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {/* Video with annotations */}
-          {videoFile && (
-            <div className="rounded-lg border border-border overflow-hidden bg-black relative">
-              <VideoAnnotation 
-                videoFile={videoFile} 
-                analysisResult={analysisResult}
-                isDemoMode={isDemoMode}
-                onPoseAnalysis={onPoseAnalysis}
-              />
-            </div>
-          )}
-          
-          <AnalysisCard 
-            title={analysisResult.title}
-            description={analysisResult.description}
-            score={analysisResult.score}
-            metrics={analysisResult.metrics}
-            feedback={analysisResult.feedback}
-          />
-          
-          {behaviorAnalysis && (
-            <BehaviorAnalysis 
-              consistency={behaviorAnalysis.consistency}
-              preRoutine={behaviorAnalysis.preRoutine}
-              habits={behaviorAnalysis.habits}
-              timing={behaviorAnalysis.timing}
-              fatigue={behaviorAnalysis.fatigue}
-            />
-          )}
-          
-          {/* Coaching Tips Section */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="text-lg font-semibold mb-3">Coaching Tips</h3>
-            <div className="space-y-3">
-              {analysisResult.coachingTips.map((tip: string, index: number) => (
-                <div key={index} className="flex gap-3 p-3 bg-muted/50 rounded-lg">
-                  <div className="mt-1 bg-primary/20 text-primary h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0">
-                    {index + 1}
-                  </div>
-                  <p className="text-sm">{tip}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Feedback System */}
-          <FeedbackSystem 
-            analysisId={analysisId}
-            sportId={sportId || "generic"}
-            drillId={drillId || "technique"}
-            score={analysisResult.score || 0}
-          />
-          
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={handleSaveResults}>
-              <Save size={16} className="mr-2" />
-              Save Results
-            </Button>
-            <Button variant="outline" className="flex-1" onClick={handleShareResults}>
-              <Share2 size={16} className="mr-2" />
-              Share
-            </Button>
-            <Button variant="default" className="flex-1" onClick={onRetry}>
-              <RefreshCw size={16} className="mr-2" />
-              Retry
-            </Button>
-          </div>
-        </div>
+        <AnalysisResults 
+          analysisResult={analysisResult}
+          behaviorAnalysis={behaviorAnalysis}
+          videoFile={videoFile}
+          isDemoMode={isDemoMode}
+          onRetry={onRetry}
+          analysisId={analysisId}
+          sportId={sportId}
+          drillId={drillId}
+          onPoseAnalysis={onPoseAnalysis}
+        />
       )}
     </div>
   );
