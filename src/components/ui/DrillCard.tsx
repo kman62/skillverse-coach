@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Target, Shield, Move3d } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Drill } from '@/lib/constants';
 
 interface DrillCardProps {
@@ -18,20 +18,6 @@ const DrillCard = ({ sportId, drill, className, style }: DrillCardProps) => {
     beginner: "bg-green-500",
     intermediate: "bg-yellow-500",
     advanced: "bg-red-500"
-  };
-  
-  // Map category to icon
-  const getCategoryIcon = (category?: string) => {
-    switch (category?.toLowerCase()) {
-      case 'offense':
-        return <Target size={16} className="text-primary mr-1" />;
-      case 'defense':
-        return <Shield size={16} className="text-primary mr-1" />;
-      case 'transition':
-        return <Move3d size={16} className="text-primary mr-1" />;
-      default:
-        return null;
-    }
   };
   
   return (
@@ -51,13 +37,6 @@ const DrillCard = ({ sportId, drill, className, style }: DrillCardProps) => {
             className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         </div>
-        
-        {drill.category && (
-          <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center">
-            {getCategoryIcon(drill.category)}
-            <span className="text-xs font-medium">{drill.category}</span>
-          </div>
-        )}
       </div>
       
       <div className="p-5">
