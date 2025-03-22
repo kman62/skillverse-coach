@@ -7,13 +7,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { analyzeVideo, saveAnalysisResult, AnalysisResponse } from '@/utils/videoAnalysisService';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Components
-import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
-import DrillInfo from '@/components/analysis/DrillInfo';
-import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
-import ResultsPanel from '@/components/analysis/ResultsPanel';
-import NotFoundMessage from '@/components/analysis/NotFoundMessage';
-
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const AnalysisPage = () => {
@@ -29,6 +22,7 @@ const AnalysisPage = () => {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
   const [poseMetrics, setPoseMetrics] = useState<any>(null);
+  const [gameplaySituation, setGameplaySituation] = useState<string>("regular");
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +38,6 @@ const AnalysisPage = () => {
   }, [sportId, drillId]);
   
   const handleVideoSelected = (file: File) => {
-    // Double-check file size (in addition to VideoUploader's check)
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = Math.round(file.size / (1024 * 1024));
       toast({
@@ -66,16 +59,11 @@ const AnalysisPage = () => {
   const handlePoseAnalysis = (metrics: any) => {
     if (!metrics) return;
     
-    // Store the latest metrics
     setPoseMetrics(metrics);
     
-    // If we're in the middle of analysis, don't update the UI
     if (isAnalyzing) return;
     
-    // If we have metrics but no analysis result yet, create a simple one
-    // based on the MediaPipe detection
     if (metrics && !analysisResult) {
-      // Convert pose metrics to our analysis format
       const localAnalysis: AnalysisResponse = {
         result: {
           title: `${drill?.name || 'Technique'} Analysis`,
@@ -189,13 +177,25 @@ const AnalysisPage = () => {
         }
       };
       
-      // Update the analysis result with the local MediaPipe analysis
       setAnalysisResult(localAnalysis.result);
       setBehaviorAnalysis(localAnalysis.behavior);
-      
-      // Set demo mode flag since this is local analysis
       setIsDemoMode(true);
     }
+  };
+  
+  const handleGameplayChange = (gameplay: string) => {
+    setGameplaySituation(gameplay);
+    
+    if (analysisResult) {
+      setAnalysisResult(null);
+      setBehaviorAnalysis(null);
+      setPoseMetrics(null);
+    }
+    
+    toast({
+      title: "Gameplay Situation Updated",
+      description: `Analysis will focus on ${gameplay.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`,
+    });
   };
   
   const handleAnalyzeClick = async () => {
@@ -244,8 +244,11 @@ const AnalysisPage = () => {
     try {
       const analysisData: AnalysisResponse = await analyzeVideo(
         videoFile, 
-        drill?.name || "Technique",
-        sportId || "generic"
+        gameplaySituation !== "regular" 
+          ? `${drill?.name || "Technique"} - ${gameplaySituation.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`
+          : drill?.name || "Technique",
+        sportId || "generic",
+        gameplaySituation
       );
       
       setAnalysisResult(analysisData.result);
@@ -329,6 +332,7 @@ const AnalysisPage = () => {
               isAnalyzing={isAnalyzing || isSaving}
               onVideoSelected={handleVideoSelected}
               onAnalyzeClick={handleAnalyzeClick}
+              gameplaySituation={gameplaySituation}
             />
             
             <ResultsPanel
@@ -343,6 +347,8 @@ const AnalysisPage = () => {
               sportId={sportId}
               drillId={drillId}
               onPoseAnalysis={handlePoseAnalysis}
+              onGameplayChange={handleGameplayChange}
+              gameplaySituation={gameplaySituation}
             />
           </div>
         </div>

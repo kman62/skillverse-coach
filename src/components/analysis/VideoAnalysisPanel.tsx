@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
-import { BarChart, Info, AlertTriangle, Camera } from 'lucide-react';
+import { BarChart, Info, AlertTriangle, Camera, Target } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 
@@ -9,13 +9,15 @@ interface VideoAnalysisPanelProps {
   isAnalyzing: boolean;
   onVideoSelected: (file: File) => void;
   onAnalyzeClick: () => void;
+  gameplaySituation?: string;
 }
 
 const VideoAnalysisPanel = ({ 
   videoFile, 
   isAnalyzing, 
   onVideoSelected,
-  onAnalyzeClick 
+  onAnalyzeClick,
+  gameplaySituation = "regular"
 }: VideoAnalysisPanelProps) => {
   const { toast } = useToast();
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -126,7 +128,15 @@ const VideoAnalysisPanel = ({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Upload Your Technique
+        {gameplaySituation !== "regular" && (
+          <span className="ml-2 text-sm font-normal inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+            <Target size={14} className="mr-1" />
+            {gameplaySituation.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+          </span>
+        )}
+      </h2>
       
       {connectionStatus !== 'connected' && (
         <div className={`mb-4 p-3 rounded-md flex items-start gap-2 ${
@@ -232,7 +242,10 @@ const VideoAnalysisPanel = ({
           ) : (
             <>
               {useLocalAnalysis ? <Camera size={18} className="mr-2" /> : <BarChart size={18} className="mr-2" />}
-              Analyze Technique
+              {gameplaySituation !== "regular" 
+                ? `Analyze ${gameplaySituation.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Technique`
+                : "Analyze Technique"
+              }
             </>
           )}
         </button>

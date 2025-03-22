@@ -11,6 +11,7 @@ interface VideoCanvasProps {
   onPoseDetection: (poseDetected: boolean) => void;
   onPoseAnalysis?: (metrics: any) => void;
   setDetectionActive: (active: boolean) => void;
+  gameplaySituation?: string;
 }
 
 const VideoCanvas = ({ 
@@ -18,7 +19,8 @@ const VideoCanvas = ({
   analysisResult, 
   onPoseDetection,
   onPoseAnalysis,
-  setDetectionActive
+  setDetectionActive,
+  gameplaySituation = "regular"
 }: VideoCanvasProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,7 +41,8 @@ const VideoCanvas = ({
       }
     },
     onPoseAnalysis,
-    setDetectionActive
+    setDetectionActive,
+    gameplaySituation
   });
 
   // Notify user when pose detection is initialized
@@ -118,6 +121,7 @@ const VideoCanvas = ({
         results={poseResults}
         analysisResult={analysisResult}
         poseDetected={poseDetected}
+        gameplaySituation={gameplaySituation}
       />
     </>
   );

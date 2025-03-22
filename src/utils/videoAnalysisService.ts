@@ -1,4 +1,3 @@
-
 import { AnalysisResponse } from './analysis/analysisTypes';
 import { generateGenericAnalysis } from './analysis/analysisHelpers';
 import { generateBasketballAnalysis } from './analysis/basketballAnalysis';
@@ -38,9 +37,10 @@ const getFallbackApiUrl = () => {
  * Analyzes a video file and returns analysis results
  */
 export const analyzeVideo = async (
-  videoFile: File,
-  drillName: string,
-  sportId: string
+  videoFile: File, 
+  drillName: string, 
+  sportType: string = "generic",
+  gameplaySituation: string = "regular"
 ): Promise<AnalysisResponse> => {
   // Check file size before attempting to upload
   if (videoFile.size > MAX_FILE_SIZE) {
@@ -51,13 +51,13 @@ export const analyzeVideo = async (
   const formData = new FormData();
   formData.append("video", videoFile);
   formData.append("drillName", drillName);
-  formData.append("sportId", sportId);
+  formData.append("sportId", sportType);
   
   // Track if we're using the primary API or fallback
   let usingFallbackApi = false;
   
   try {
-    console.log(`Sending analysis request to ${getApiUrl()} for ${sportId}/${drillName}`);
+    console.log(`Sending analysis request to ${getApiUrl()} for ${sportType}/${drillName}`);
     
     // Add timeout of 45 seconds for the API call
     const controller = new AbortController();
@@ -145,7 +145,7 @@ export const analyzeVideo = async (
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Generate fallback analysis data based on drill name and sport
-    return generateSportSpecificAnalysis(sportId, drillName);
+    return generateSportSpecificAnalysis(sportType, drillName);
   }
 };
 
@@ -281,25 +281,47 @@ const calculateValidScore = (analysisResult: any): number => {
 };
 
 // Sport-specific analysis generator (used as fallback if API fails)
-const generateSportSpecificAnalysis = (sportId: string, drillName: string): AnalysisResponse => {
+const generateSportSpecificAnalysis = (sportType: string, drillName: string): AnalysisResponse => {
   // Generate a deterministic but realistic score
   const baseScore = drillName.length % 20 + 70; // Score between 70-90
   const score = Math.min(100, Math.max(60, baseScore));
   
-  switch(sportId) {
-    case "basketball":
+  switch(sportType.toLowerCase()) {
+    case 'basketball':
       return generateBasketballAnalysis(drillName, score);
-    case "baseball":
+    case 'baseball':
       return generateBaseballAnalysis(drillName, score);
-    case "football":
+    case 'football':
       return generateFootballAnalysis(drillName, score);
-    case "tennis":
+    case 'tennis':
       return generateTennisAnalysis(drillName, score);
-    case "golf":
+    case 'golf':
       return generateGolfAnalysis(drillName, score);
-    case "soccer":
+    case 'soccer':
       return generateSoccerAnalysis(drillName, score);
     default:
       return generateGenericAnalysis(drillName, score);
   }
 };
+
+// Function to generate analysis response with gameplay situation
+function generateAnalysisResponse(
+  videoFile: File, 
+  drillName: string, 
+  sportType: string,
+  gameplaySituation: string = "regular"
+): AnalysisResponse {
+  // Generate a deterministic but realistic score
+  const baseScore = drillName.length % 20 + 70; // Score between 70-90
+  const score = Math.min(100, Math.max(60, baseScore));
+  
+  // Choose the appropriate sport analysis based on sport type and pass the gameplay situation
+  const analysisResponse = generateSportSpecificAnalysis(
+    sportType, 
+    drillName, 
+    score, 
+    gameplaySituation
+  );
+  
+  return analysisResponse;
+}

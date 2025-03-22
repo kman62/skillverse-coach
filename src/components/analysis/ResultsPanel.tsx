@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart } from 'lucide-react';
 import EmptyState from '@/components/analysis/states/EmptyState';
 import ErrorState from '@/components/analysis/states/ErrorState';
@@ -18,6 +18,8 @@ interface ResultsPanelProps {
   sportId?: string;
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
+  onGameplayChange?: (gameplay: string) => void;
+  gameplaySituation?: string;
 }
 
 const ResultsPanel = ({ 
@@ -31,14 +33,21 @@ const ResultsPanel = ({
   analysisId,
   sportId,
   drillId,
-  onPoseAnalysis
+  onPoseAnalysis,
+  onGameplayChange,
+  gameplaySituation = "regular"
 }: ResultsPanelProps) => {
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        {gameplaySituation !== "regular" 
+          ? `Analysis Results: ${gameplaySituation.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`
+          : "Analysis Results"
+        }
+      </h2>
       
       {!analysisResult && !isAnalyzing && !apiError && (
-        <EmptyState />
+        <EmptyState onGameplayChange={onGameplayChange} />
       )}
       
       {apiError && !isAnalyzing && (
@@ -60,6 +69,7 @@ const ResultsPanel = ({
           sportId={sportId}
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
+          gameplaySituation={gameplaySituation}
         />
       )}
     </div>

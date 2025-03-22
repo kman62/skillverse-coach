@@ -18,6 +18,7 @@ interface AnalysisResultsProps {
   sportId?: string;
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
+  gameplaySituation?: string;
 }
 
 const AnalysisResults = ({
@@ -29,8 +30,23 @@ const AnalysisResults = ({
   analysisId,
   sportId,
   drillId,
-  onPoseAnalysis
+  onPoseAnalysis,
+  gameplaySituation = "regular"
 }: AnalysisResultsProps) => {
+  // Function to adjust the analysis result title based on gameplay situation
+  const getTitleWithGameplay = () => {
+    if (gameplaySituation === "regular") {
+      return analysisResult.title;
+    }
+    
+    const formattedGameplay = gameplaySituation
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+      
+    return `${analysisResult.title}: ${formattedGameplay}`;
+  };
+  
   return (
     <div className="animate-fade-in space-y-6">
       {/* Demo mode indicator */}
@@ -49,7 +65,7 @@ const AnalysisResults = ({
       )}
       
       <AnalysisCard 
-        title={analysisResult.title}
+        title={getTitleWithGameplay()}
         description={analysisResult.description}
         score={analysisResult.score}
         metrics={analysisResult.metrics}
