@@ -14,32 +14,18 @@ export const createPoseDetector = async (): Promise<Pose> => {
     }
   });
   
-  return new Promise((resolve, reject) => {
-    // Set a timeout in case something hangs
-    const timeoutId = setTimeout(() => {
-      reject(new Error('MediaPipe initialization timed out after 10 seconds'));
-    }, 10000);
-    
-    // Configure the model
-    try {
-      pose.setOptions({
-        modelComplexity: 1, // 0, 1, or 2 - higher is more accurate but slower
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        smoothSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-      
-      console.log('MediaPipe pose detector configured successfully');
-      clearTimeout(timeoutId);
-      resolve(pose);
-    } catch (error) {
-      console.error('Failed to configure MediaPipe:', error);
-      clearTimeout(timeoutId);
-      reject(error);
-    }
+  // Configure the model
+  await pose.setOptions({
+    modelComplexity: 1, // 0, 1, or 2 - higher is more accurate but slower
+    smoothLandmarks: true,
+    enableSegmentation: false,
+    smoothSegmentation: false,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
   });
+  
+  console.log('MediaPipe pose detector configured successfully');
+  return pose;
 };
 
 // Process a video frame with the pose detector
@@ -50,25 +36,21 @@ export const detectPose = async (
 ): Promise<void> => {
   // Only process if video is playing
   if (videoElement.paused || videoElement.ended) {
-    console.log('Video not playing, skipping pose detection');
     return;
   }
   
   // Check if video is ready
   if (videoElement.readyState < 2) {
-    console.warn('Video not ready for processing yet (readyState:', videoElement.readyState, ')');
+    console.log('Video not ready for processing yet');
     return;
   }
   
+  // Set the callback to receive results
+  pose.onResults(onResults);
+  
   try {
-    // Set the callback to receive results
-    pose.onResults(onResults);
-    
     // Process the current video frame
-    // Updated to match the expected InputMap type without timestamp
-    await pose.send({ 
-      image: videoElement
-    });
+    await pose.send({ image: videoElement });
   } catch (error) {
     console.error('Error processing video frame:', error);
   }

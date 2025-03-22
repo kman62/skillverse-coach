@@ -24,19 +24,15 @@ const VideoCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [poseDetected, setPoseDetected] = useState(false);
   const [poseResults, setPoseResults] = useState<Results | undefined>(undefined);
-  const [videoReady, setVideoReady] = useState(false);
   const { toast } = useToast();
   
   // Use the pose detection hook
-  const { poseDetector, processFrame } = usePoseDetection({
+  const { poseDetector } = usePoseDetection({
     videoRef,
     videoFile,
-    onPoseDetection: (detected, results) => {
+    onPoseDetection: (detected) => {
       setPoseDetected(detected);
       onPoseDetection(detected);
-      if (results) {
-        setPoseResults(results);
-      }
     },
     onPoseAnalysis,
     setDetectionActive
@@ -56,47 +52,12 @@ const VideoCanvas = ({
 
   // Tell user when video loads to play it
   const handleVideoLoaded = () => {
-    console.log('Video loaded successfully, dimensions:', 
-      videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
-    setVideoReady(true);
     toast({
       title: "Video Loaded",
       description: "Press play to begin pose detection",
       duration: 3000,
     });
   };
-
-  // Force frame processing when video is playing
-  useEffect(() => {
-    if (!videoRef.current || !poseDetector || !videoReady) return;
-    
-    const video = videoRef.current;
-    
-    // Process frames when video is playing
-    const checkVideoPlaying = () => {
-      if (!video.paused && !video.ended) {
-        console.log('Video is playing - processing frame');
-        processFrame();
-      }
-    };
-    
-    // Process frames more frequently for better detection
-    const intervalId = setInterval(checkVideoPlaying, 100);
-    
-    // Also process frames on timeupdate events
-    const onTimeUpdate = () => {
-      if (!video.paused && !video.ended) {
-        processFrame();
-      }
-    };
-    
-    video.addEventListener('timeupdate', onTimeUpdate);
-    
-    return () => {
-      clearInterval(intervalId);
-      video.removeEventListener('timeupdate', onTimeUpdate);
-    };
-  }, [poseDetector, processFrame, videoReady]);
   
   return (
     <>
@@ -104,7 +65,6 @@ const VideoCanvas = ({
         ref={videoRef}
         className="w-full aspect-video object-contain bg-black"
         controls
-        playsInline
         src={URL.createObjectURL(videoFile)}
         onLoadedData={handleVideoLoaded}
       />
