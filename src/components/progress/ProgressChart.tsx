@@ -7,9 +7,11 @@ import MetricsPanel from './MetricsPanel';
 import ProgressChartView from './ProgressChartView';
 import PerformanceMetrics from './PerformanceMetrics';
 import EmptyState from './EmptyState';
+import AccuracyMetrics from './AccuracyMetrics';
 
-const ProgressChart = ({ data, metrics, className }: ProgressChartProps) => {
+const ProgressChart = ({ data, metrics, accuracyMetrics, className }: ProgressChartProps) => {
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [activeTab, setActiveTab] = useState<'progress' | 'accuracy'>('progress');
   
   // Get average score
   const getAverageScore = () => {
@@ -27,11 +29,10 @@ const ProgressChart = ({ data, metrics, className }: ProgressChartProps) => {
         </div>
         
         <div className="mt-3 sm:mt-0 flex gap-2 items-center">
-          <span className="text-sm text-muted-foreground mr-1">View:</span>
-          <Tabs defaultValue="line" value={chartType} onValueChange={(value) => setChartType(value as 'line' | 'bar')}>
+          <Tabs defaultValue="progress" value={activeTab} onValueChange={(value) => setActiveTab(value as 'progress' | 'accuracy')}>
             <TabsList className="grid w-[180px] grid-cols-2">
-              <TabsTrigger value="line">Line</TabsTrigger>
-              <TabsTrigger value="bar">Bar</TabsTrigger>
+              <TabsTrigger value="progress">Progress</TabsTrigger>
+              <TabsTrigger value="accuracy">Accuracy</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -41,15 +42,39 @@ const ProgressChart = ({ data, metrics, className }: ProgressChartProps) => {
         <>
           <MetricsPanel data={data} />
           
-          <ProgressChartView 
-            data={data} 
-            chartType={chartType} 
-            getAverageScore={getAverageScore}
-          />
-          
-          {metrics && metrics.length > 0 && (
-            <PerformanceMetrics metrics={metrics} />
-          )}
+          <Tabs value={activeTab} className="mt-4">
+            <TabsContent value="progress" className="space-y-4">
+              <div className="mt-3 sm:mt-0 flex justify-end gap-2 items-center">
+                <span className="text-sm text-muted-foreground mr-1">View:</span>
+                <Tabs defaultValue="line" value={chartType} onValueChange={(value) => setChartType(value as 'line' | 'bar')}>
+                  <TabsList className="grid w-[120px] grid-cols-2">
+                    <TabsTrigger value="line">Line</TabsTrigger>
+                    <TabsTrigger value="bar">Bar</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              
+              <ProgressChartView 
+                data={data} 
+                chartType={chartType} 
+                getAverageScore={getAverageScore}
+              />
+              
+              {metrics && metrics.length > 0 && (
+                <PerformanceMetrics metrics={metrics} />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="accuracy" className="space-y-4">
+              {accuracyMetrics && accuracyMetrics.length > 0 ? (
+                <AccuracyMetrics metrics={accuracyMetrics} />
+              ) : (
+                <div className="p-8 text-center border border-dashed border-border rounded-lg">
+                  <p className="text-muted-foreground">No detailed accuracy metrics available yet.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </>
       ) : (
         <EmptyState />
