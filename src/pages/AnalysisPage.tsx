@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -13,6 +14,13 @@ import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
 import ResultsPanel from '@/components/analysis/ResultsPanel';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+// Add type definition for the window object to avoid TypeScript errors
+declare global {
+  interface Window {
+    usedFallbackData?: boolean;
+  }
+}
 
 const AnalysisPage = () => {
   const { sportId, drillId } = useParams<{ sportId: string; drillId: string }>();
@@ -41,6 +49,11 @@ const AnalysisPage = () => {
       setDrill(getDrillById(sportId, drillId));
     }
   }, [sportId, drillId]);
+  
+  // Log important state changes for debugging
+  useEffect(() => {
+    console.log('Auth state:', { isAuthenticated: !!user, userId: user?.id });
+  }, [user]);
   
   const handleVideoSelected = (file: File) => {
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -217,6 +230,7 @@ const AnalysisPage = () => {
     }
     
     if (!user) {
+      console.log('User not authenticated, redirecting to auth page');
       toast({
         title: "Authentication required",
         description: "Please sign in to analyze videos",
@@ -232,6 +246,7 @@ const AnalysisPage = () => {
     setAnalysisId(undefined);
     
     console.log('Starting analysis for', videoFile.name, 'in', sportId, drillId);
+    console.log('Current user:', user.id);
     
     const useLocalAnalysis = localStorage.getItem('useLocalAnalysis') === 'true';
     console.log('Using local analysis?', useLocalAnalysis);
@@ -278,6 +293,13 @@ const AnalysisPage = () => {
       
       setIsSaving(true);
       console.log('Saving analysis result to database');
+      
+      // Verify user is still authenticated before saving
+      if (!user) {
+        console.error('User is not authenticated when trying to save analysis');
+        throw new Error('Authentication required to save analysis results');
+      }
+      
       const saveResult = await saveAnalysisResult(
         videoFile,
         sportId || "generic",
@@ -289,8 +311,20 @@ const AnalysisPage = () => {
       if (saveResult?.id) {
         console.log('Analysis saved with ID:', saveResult.id);
         setAnalysisId(saveResult.id);
+        
+        // Confirm success to user
+        toast({
+          title: "Analysis Saved",
+          description: "Your analysis has been successfully saved to your account",
+          variant: "default"
+        });
       } else {
         console.warn('No ID returned from saveAnalysisResult');
+        toast({
+          title: "Warning",
+          description: "Analysis completed but there may have been an issue saving it",
+          variant: "destructive"
+        });
       }
       
       toast({
@@ -311,6 +345,13 @@ const AnalysisPage = () => {
           description: "Please upload a smaller video file (max 50MB)",
           variant: "destructive"
         });
+      } else if (error instanceof Error && error.message.includes("Authentication")) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in again to analyze videos",
+          variant: "destructive"
+        });
+        navigate('/auth');
       } else {
         toast({
           title: "Analysis Failed",

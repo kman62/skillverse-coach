@@ -177,6 +177,7 @@ export const saveAnalysisResult = async (
       throw new Error(`Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`);
     }
     
+    // Verify authentication first
     const { data: userData, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
@@ -192,19 +193,49 @@ export const saveAnalysisResult = async (
     console.log("User authenticated:", userData.user.id);
     const userId = userData.user.id;
     
+    // 1. Check if videos bucket exists, create it if it doesn't
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const videosBucketExists = buckets?.some(bucket => bucket.name === 'videos');
+    
+    if (!videosBucketExists) {
+      console.log("Videos bucket doesn't exist, creating it...");
+      
+      // Note: This requires admin privileges and may not work with public client
+      // A better approach is to create buckets beforehand in Supabase dashboard
+      const { error: bucketError } = await supabase.storage.createBucket('videos', {
+        public: true, // Make bucket publicly accessible
+      });
+      
+      if (bucketError) {
+        console.error("Error creating videos bucket:", bucketError);
+        // Continue anyway, the bucket might exist already
+      } else {
+        console.log("Videos bucket created successfully");
+      }
+    }
+    
     // 1. Upload video to Supabase Storage
     console.log("Starting video upload to Supabase storage...");
-    const videoFileName = `${userId}/${uuidv4()}-${videoFile.name}`;
+    const videoFileName = `${userId}/${uuidv4()}-${videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('videos')
-      .upload(videoFileName, videoFile);
+      .upload(videoFileName, videoFile, {
+        cacheControl: '3600',
+        upsert: false
+      });
       
     if (uploadError) {
       console.error("Error uploading video to Supabase:", uploadError);
       if (uploadError.message.includes('exceeded the maximum allowed size')) {
         throw new Error('Video file size exceeds the Supabase storage limit of 50MB.');
+      } else if (uploadError.message.includes('No bucket ID provided')) {
+        throw new Error('Videos storage bucket not found. Please contact support.');
+      } else if (uploadError.message.includes('not authenticated')) {
+        throw new Error('Authentication error. Please sign in again.');
+      } else {
+        throw new Error(`Error uploading video: ${uploadError.message}`);
       }
-      throw new Error(`Error uploading video: ${uploadError.message}`);
     }
     
     // Get public URL for the uploaded video
@@ -230,6 +261,15 @@ export const saveAnalysisResult = async (
       
     if (videoError) {
       console.error("Error saving video metadata:", videoError);
+      // If this fails because of RLS policies, log detailed info
+      if (videoError.message.includes('violates row-level security')) {
+        console.error("RLS error details:", { 
+          userId, 
+          currentUserId: userData.user.id,
+          sportId,
+          drillId
+        });
+      }
       throw new Error(`Error saving video metadata: ${videoError.message}`);
     }
     

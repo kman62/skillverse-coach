@@ -26,7 +26,22 @@ const VideoCanvas = ({
   const [poseResults, setPoseResults] = useState<Results | undefined>(undefined);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Create object URL for video when file changes
+  useEffect(() => {
+    if (videoFile) {
+      const url = URL.createObjectURL(videoFile);
+      setVideoObjectUrl(url);
+      
+      // Clean up function to revoke the object URL
+      return () => {
+        URL.revokeObjectURL(url);
+        setVideoObjectUrl(null);
+      };
+    }
+  }, [videoFile]);
   
   // Use the pose detection hook
   const { poseDetector, processFrame } = usePoseDetection({
@@ -89,6 +104,21 @@ const VideoCanvas = ({
     });
   };
   
+  // Handle play event to start detection
+  const handleVideoPlay = () => {
+    console.log('Video started playing, detection active');
+    setDetectionActive(true);
+    if (poseDetector && videoRef.current) {
+      processFrame();
+    }
+  };
+  
+  // Handle pause event to stop detection
+  const handleVideoPause = () => {
+    console.log('Video paused, detection paused');
+    setDetectionActive(false);
+  };
+  
   // Force play button to be visible for better user experience
   useEffect(() => {
     if (videoRef.current) {
@@ -98,15 +128,19 @@ const VideoCanvas = ({
 
   return (
     <>
-      <video
-        ref={videoRef}
-        className="w-full aspect-video object-contain bg-black"
-        controls
-        src={URL.createObjectURL(videoFile)}
-        onLoadedData={handleVideoLoaded}
-        onError={handleVideoError}
-        playsInline
-      />
+      {videoObjectUrl && (
+        <video
+          ref={videoRef}
+          className="w-full aspect-video object-contain bg-black"
+          controls
+          src={videoObjectUrl}
+          onLoadedData={handleVideoLoaded}
+          onError={handleVideoError}
+          onPlay={handleVideoPlay}
+          onPause={handleVideoPause}
+          playsInline
+        />
+      )}
       <canvas 
         ref={canvasRef}
         className="absolute top-0 left-0 w-full h-full pointer-events-none"
