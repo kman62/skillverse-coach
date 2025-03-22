@@ -797,12 +797,80 @@ function generateGameplayAnalysis(gameplaySituation: string, playType: string, s
   }
   
   return {
-    title,
-    description,
-    score,
-    metrics,
-    feedback,
-    coachingTips
+    result: {
+      title,
+      description,
+      score,
+      metrics,
+      feedback,
+      coachingTips
+    },
+    behavior: {
+      consistency: [
+        {
+          name: "Movement Pattern",
+          description: `Your ${playType} movement pattern is consistent.`,
+          quality: score > 75 ? "good" : "needs-improvement",
+          icon: null
+        },
+        {
+          name: "Position Stability",
+          description: `Your ${playType} position shows good stability.`,
+          quality: score > 70 ? "good" : "needs-improvement",
+          icon: null
+        }
+      ],
+      preRoutine: [
+        {
+          name: "Mental Preparation",
+          description: "Good focus before beginning the movement.",
+          quality: "good",
+          icon: null
+        },
+        {
+          name: "Position Setup",
+          description: `Your setup position for ${playType} could be more consistent.`,
+          quality: score > 85 ? "good" : "needs-improvement",
+          icon: null
+        }
+      ],
+      habits: [
+        {
+          name: "Recovery Position",
+          description: "You return to proper position between attempts.",
+          quality: score > 80 ? "good" : "needs-improvement",
+          icon: null
+        },
+        {
+          name: "Body Alignment",
+          description: `Maintain better alignment during ${playType}.`,
+          quality: score > 75 ? "good" : "needs-improvement",
+          icon: null
+        }
+      ],
+      timing: {
+        average: `${(1.5 + Math.random() * 0.8).toFixed(1)} seconds`,
+        consistency: Math.floor(score * 0.9),
+        isRushing: score < 75,
+        attempts: Array(5).fill(0).map((_, i) => ({
+          attemptNumber: i + 1,
+          duration: `${(1.3 + Math.random() * 1).toFixed(1)} seconds`
+        }))
+      },
+      fatigue: {
+        level: score > 85 ? "low" : score > 70 ? "moderate" : "high",
+        signs: [
+          "Slight decrease in form quality in later attempts",
+          "Minor variations in technique consistency",
+          "Small reduction in power output over time"
+        ],
+        recommendations: [
+          "Focus on maintaining proper technique even when tired",
+          "Consider shorter, more frequent practice sessions",
+          "Incorporate more specific conditioning for this movement"
+        ]
+      }
+    }
   };
 }
 
