@@ -115,8 +115,7 @@ export const analyzeVideo = async (
     console.warn("GPT-4o analysis failed:", gpt4oError);
     dispatchAnalysisEvent('api-failed-gpt4o', { error: String(gpt4oError) });
     
-    // Instead of falling back to mock data, throw an error to be handled by the caller
-    // This prevents automatic fallback to demo mode
-    throw new Error(`GPT-4o analysis failed: ${gpt4oError}`);
+    // Throw a clear error message - we don't attempt any alternative methods
+    throw new Error(`GPT-4o analysis failed: ${gpt4oError}. Please enable Demo Mode if you want to continue.`);
   }
 };

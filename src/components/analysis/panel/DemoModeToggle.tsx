@@ -25,7 +25,7 @@ const DemoModeToggle = ({
             disabled={disabled}
             id="demo-mode"
           />
-          <Label htmlFor="demo-mode" className="font-medium text-sm cursor-pointer">Demo Mode</Label>
+          <Label htmlFor="demo-mode" className="font-medium text-sm cursor-pointer">Use Demo Mode</Label>
         </div>
       </div>
       
@@ -42,7 +42,7 @@ const DemoModeToggle = ({
         <div className="mt-2 flex items-start gap-2">
           <Info size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-gray-600">
-            GPT-4o will be used for analysis. Enable demo mode if you don't want to use the AI service.
+            GPT-4o will be used for analysis. Enable demo mode if the GPT-4o service is unavailable or you prefer to use simulated data.
           </p>
         </div>
       )}
