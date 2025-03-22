@@ -15,17 +15,23 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export type { AnalysisResult, BehaviorAnalysis, AnalysisResponse } from './analysis/analysisTypes';
 
-// Configure API endpoint based on environment
+// Configure API endpoints based on environment
 const API_ENDPOINTS = {
-  // In production, this would use environment variables
-  development: "https://api-dev.aithlete.ai/analyze",
-  production: "https://api.aithlete.ai/analyze",
+  // Updated API endpoints
+  development: "https://api.aithlete.io/v1/analyze", 
+  production: "https://api.aithlete.io/v1/analyze",
+  fallback: "https://fallback-api.aithlete.io/analyze"
 };
 
 // Get the current environment API URL
 const getApiUrl = () => {
   // For now we'll use the development URL (in production this would be determined properly)
   return API_ENDPOINTS.development;
+};
+
+// Get fallback API URL
+const getFallbackApiUrl = () => {
+  return API_ENDPOINTS.fallback;
 };
 
 /**
@@ -47,6 +53,9 @@ export const analyzeVideo = async (
   formData.append("drillName", drillName);
   formData.append("sportId", sportId);
   
+  // Track if we're using the primary API or fallback
+  let usingFallbackApi = false;
+  
   try {
     console.log(`Sending analysis request to ${getApiUrl()} for ${sportId}/${drillName}`);
     
@@ -54,32 +63,65 @@ export const analyzeVideo = async (
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000);
     
-    const response = await fetch(getApiUrl(), {
-      method: 'POST',
-      // Don't include Content-Type here as it will be set automatically with FormData
-      headers: {
-        // In a real implementation, we would use environment variables or Supabase secrets
-        'x-api-key': 'aithlete-demo-2025',
-      },
-      body: formData,
-      signal: controller.signal
-    });
-    
-    // Clear the timeout regardless of the result
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('API error response:', errorBody);
-      throw new Error(`API responded with status: ${response.status} - ${response.statusText}`);
+    // Attempt primary API call
+    try {
+      const response = await fetch(getApiUrl(), {
+        method: 'POST',
+        headers: {
+          // In a real implementation, we would use environment variables or Supabase secrets
+          'x-api-key': 'aithlete-api-2025',
+          'x-client-id': 'web-client-v1',
+        },
+        body: formData,
+        signal: controller.signal
+      });
+      
+      // Clear the timeout regardless of the result
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('Primary API error response:', errorBody);
+        throw new Error(`Primary API responded with status: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data as AnalysisResponse;
+    } catch (primaryApiError) {
+      console.warn("Primary API connection failed:", primaryApiError);
+      
+      // If primary API fails, try fallback API
+      usingFallbackApi = true;
+      console.log(`Attempting fallback API at ${getFallbackApiUrl()}`);
+      
+      // Create a new controller for the fallback request
+      const fallbackController = new AbortController();
+      const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 45000);
+      
+      const fallbackResponse = await fetch(getFallbackApiUrl(), {
+        method: 'POST',
+        headers: {
+          'x-api-key': 'aithlete-fallback-2025',
+        },
+        body: formData,
+        signal: fallbackController.signal
+      });
+      
+      clearTimeout(fallbackTimeoutId);
+      
+      if (!fallbackResponse.ok) {
+        const fallbackErrorBody = await fallbackResponse.text();
+        console.error('Fallback API error response:', fallbackErrorBody);
+        throw new Error(`Fallback API responded with status: ${fallbackResponse.status} - ${fallbackResponse.statusText}`);
+      }
+      
+      const fallbackData = await fallbackResponse.json();
+      return fallbackData as AnalysisResponse;
     }
-    
-    const data = await response.json();
-    return data as AnalysisResponse;
   } catch (error) {
-    console.warn("API connection failed:", error);
+    console.warn("All API connections failed:", error);
     
-    // For demonstration purposes, fall back to mock data
+    // For demonstration purposes, fall back to mock data as last resort
     // In production, you might want to show a meaningful error message
     
     // If the error is a timeout or network error, we'll show a specific message
@@ -95,6 +137,9 @@ export const analyzeVideo = async (
         variant: "default"
       });
     }
+    
+    // Set global flag for demo mode
+    (window as any).usedFallbackData = true;
     
     // Simulate a brief delay to make the fallback feel more realistic
     await new Promise(resolve => setTimeout(resolve, 2000));

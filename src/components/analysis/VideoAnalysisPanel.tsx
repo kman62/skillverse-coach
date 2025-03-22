@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
-import { BarChart, Info } from 'lucide-react';
+import { BarChart, Info, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 
@@ -22,6 +22,7 @@ const VideoAnalysisPanel = ({
   const [processingProgress, setProcessingProgress] = useState(0);
   const [usesDemoData, setUsesDemoData] = useState(false);
   const [progressPhase, setProgressPhase] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
 
   // Update progress bar during "analysis"
   useEffect(() => {
@@ -65,6 +66,37 @@ const VideoAnalysisPanel = ({
     };
   }, [isAnalyzing]);
 
+  // Check API connectivity when component mounts
+  useEffect(() => {
+    const checkApiConnectivity = async () => {
+      try {
+        const response = await fetch('https://api.aithlete.io/v1/status', {
+          method: 'GET',
+          headers: {
+            'x-client-id': 'web-client-v1',
+          },
+        });
+        
+        if (response.ok) {
+          setConnectionStatus('connected');
+        } else {
+          // API is reachable but returned an error
+          setConnectionStatus('limited');
+        }
+      } catch (error) {
+        // API is not reachable
+        setConnectionStatus('offline');
+      }
+    };
+    
+    checkApiConnectivity();
+    
+    // Recheck connectivity every 5 minutes
+    const intervalId = setInterval(checkApiConnectivity, 5 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
   const handleVideoSelected = (file: File) => {
     // Check if file is too large before passing it to parent
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -99,6 +131,27 @@ const VideoAnalysisPanel = ({
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
+      
+      {/* API Status Indicator */}
+      {connectionStatus !== 'connected' && (
+        <div className={`mb-4 p-3 rounded-md flex items-start gap-2 ${
+          connectionStatus === 'limited' 
+            ? 'bg-yellow-50 border border-yellow-200' 
+            : 'bg-red-50 border border-red-200'
+        }`}>
+          <AlertTriangle size={18} className={`flex-shrink-0 mt-0.5 ${
+            connectionStatus === 'limited' ? 'text-yellow-500' : 'text-red-500'
+          }`} />
+          <p className={`text-sm ${
+            connectionStatus === 'limited' ? 'text-yellow-700' : 'text-red-700'
+          }`}>
+            {connectionStatus === 'limited' 
+              ? 'Analysis service is operating in limited capacity. Some features may be slower than usual.' 
+              : 'Analysis service is currently offline. Demo mode will be used automatically.'}
+          </p>
+        </div>
+      )}
+      
       <VideoUploader onVideoSelected={handleVideoSelected} />
       
       {usesDemoData && !isAnalyzing && (
