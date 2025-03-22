@@ -1,19 +1,20 @@
 
 project_id = "aithlete-analysis-app"
+
 [api]
+enabled = true
 port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
 [db]
 port = 54322
+
 [studio]
 port = 54323
+
 [inbucket]
 port = 54324
-[auth]
-port = 54325
-[storage]
-port = 54326
-[realtime]
-port = 54327
+
 [functions]
 [functions.analyze-video-gpt4o]
 verify_jwt = false
