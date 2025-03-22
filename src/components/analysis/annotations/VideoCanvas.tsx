@@ -32,6 +32,7 @@ const VideoCanvas = ({
   // Create object URL for video when file changes
   useEffect(() => {
     if (videoFile) {
+      console.log("Creating object URL for video:", videoFile.name);
       const url = URL.createObjectURL(videoFile);
       setVideoObjectUrl(url);
       

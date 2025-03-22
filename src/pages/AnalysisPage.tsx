@@ -48,12 +48,15 @@ const AnalysisPage = () => {
     if (sportId && drillId) {
       setDrill(getDrillById(sportId, drillId));
     }
-  }, [sportId, drillId]);
-  
-  // Log important state changes for debugging
-  useEffect(() => {
-    console.log('Auth state:', { isAuthenticated: !!user, userId: user?.id });
-  }, [user]);
+
+    // Log authentication status for debugging
+    console.log("Auth state on AnalysisPage load:", { 
+      isAuthenticated: !!user,
+      userId: user?.id,
+      sportId,
+      drillId
+    });
+  }, [sportId, drillId, user]);
   
   const handleVideoSelected = (file: File) => {
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -291,6 +294,7 @@ const AnalysisPage = () => {
         }));
       }
       
+      // Now save the analysis result to Supabase
       setIsSaving(true);
       console.log('Saving analysis result to database');
       
@@ -300,6 +304,14 @@ const AnalysisPage = () => {
         throw new Error('Authentication required to save analysis results');
       }
       
+      // Log authentication status before saving
+      const { data: authData } = await supabase.auth.getSession();
+      console.log("Auth session before saving:", {
+        hasSession: !!authData?.session,
+        userId: authData?.session?.user?.id
+      });
+
+      // Try to save the result
       const saveResult = await saveAnalysisResult(
         videoFile,
         sportId || "generic",

@@ -193,31 +193,17 @@ export const saveAnalysisResult = async (
     console.log("User authenticated:", userData.user.id);
     const userId = userData.user.id;
     
-    // 1. Check if videos bucket exists, create it if it doesn't
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const videosBucketExists = buckets?.some(bucket => bucket.name === 'videos');
-    
-    if (!videosBucketExists) {
-      console.log("Videos bucket doesn't exist, creating it...");
-      
-      // Note: This requires admin privileges and may not work with public client
-      // A better approach is to create buckets beforehand in Supabase dashboard
-      const { error: bucketError } = await supabase.storage.createBucket('videos', {
-        public: true, // Make bucket publicly accessible
-      });
-      
-      if (bucketError) {
-        console.error("Error creating videos bucket:", bucketError);
-        // Continue anyway, the bucket might exist already
-      } else {
-        console.log("Videos bucket created successfully");
-      }
-    }
-    
-    // 1. Upload video to Supabase Storage
+    // Now upload video to storage
     console.log("Starting video upload to Supabase storage...");
-    const videoFileName = `${userId}/${uuidv4()}-${videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     
+    // Create a properly formatted filename with user ID as the folder
+    const cleanFileName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const videoFileName = `${userId}/${uuidv4()}-${cleanFileName}`;
+    
+    // Log complete storage path for debugging
+    console.log(`Uploading to storage path: videos/${videoFileName}`);
+    
+    // Upload the video file
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('videos')
       .upload(videoFileName, videoFile, {
@@ -227,10 +213,14 @@ export const saveAnalysisResult = async (
       
     if (uploadError) {
       console.error("Error uploading video to Supabase:", uploadError);
-      if (uploadError.message.includes('exceeded the maximum allowed size')) {
-        throw new Error('Video file size exceeds the Supabase storage limit of 50MB.');
-      } else if (uploadError.message.includes('No bucket ID provided')) {
-        throw new Error('Videos storage bucket not found. Please contact support.');
+      console.error("Upload error details:", {
+        message: uploadError.message,
+        statusCode: uploadError.status || 'N/A',
+        details: uploadError.details || 'N/A'
+      });
+      
+      if (uploadError.message.includes('bucket_id_name_pkey')) {
+        throw new Error('Storage bucket not found. Please check your Supabase configuration.');
       } else if (uploadError.message.includes('not authenticated')) {
         throw new Error('Authentication error. Please sign in again.');
       } else {
@@ -238,12 +228,14 @@ export const saveAnalysisResult = async (
       }
     }
     
+    console.log("Video uploaded successfully:", uploadData?.path);
+    
     // Get public URL for the uploaded video
     const { data: { publicUrl } } = supabase.storage
       .from('videos')
       .getPublicUrl(videoFileName);
     
-    console.log("Video uploaded successfully, public URL:", publicUrl);
+    console.log("Video public URL:", publicUrl);
     
     // 2. Insert video metadata
     console.log("Inserting video metadata to database...");
