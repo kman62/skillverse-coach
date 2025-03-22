@@ -34,11 +34,11 @@ export const detectPose = async (
     return;
   }
   
-  // Process the current video frame
-  await pose.send({ image: videoElement });
-  
   // Set the callback to receive results
   pose.onResults(onResults);
+  
+  // Process the current video frame
+  await pose.send({ image: videoElement });
 };
 
 // Draw pose landmarks on a canvas
