@@ -6,6 +6,7 @@ import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import ProfileOverview from '@/components/profile/ProfileOverview';
 import SportAchievements from '@/components/profile/SportAchievements';
 import DetailedMetrics from '@/components/profile/DetailedMetrics';
+import AnalysisDetailsModal from '@/components/profile/AnalysisDetailsModal';
 import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2, Settings, ChevronDown, Dumbbell, Target, Star, Trophy, Medal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,7 +43,10 @@ const ProfilePage = () => {
     accuracyRate: 0,
     recentTrend: 'stable' as 'improving' | 'declining' | 'stable'
   });
-  
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [selectedAnalysisData, setSelectedAnalysisData] = useState<any | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) return;
@@ -508,6 +512,39 @@ const ProfilePage = () => {
     return (sum / recentActivities.length).toFixed(1);
   };
 
+  const fetchAnalysisDetails = async (analysisId: string) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('analysis_results')
+        .select(`
+          id,
+          sport_id,
+          drill_id,
+          score,
+          created_at,
+          analysis_data,
+          behavior_data,
+          video_id,
+          videos (video_url)
+        `)
+        .eq('id', analysisId)
+        .single();
+        
+      if (error) throw error;
+      setSelectedAnalysisData(data);
+      setIsDetailsModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching analysis details:', error);
+    }
+  };
+
+  const handleActivityRowClick = (analysisId: string) => {
+    setSelectedAnalysisId(analysisId);
+    fetchAnalysisDetails(analysisId);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -638,7 +675,11 @@ const ProfilePage = () => {
                       </TableHeader>
                       <TableBody>
                         {recentActivities.map((activity) => (
-                          <TableRow key={activity.id}>
+                          <TableRow 
+                            key={activity.id} 
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleActivityRowClick(activity.id)}
+                          >
                             <TableCell>
                               <div className="flex items-center">
                                 <span className="mr-2 text-xl">{getSportIcon(activity.sport_id)}</span>
