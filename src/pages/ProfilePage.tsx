@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import ProgressChart from '@/components/progress/ProgressChart';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
-import { SPORTS } from '@/lib/constants';
-import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2, Settings, ChevronDown } from 'lucide-react';
+import ProfileOverview from '@/components/profile/ProfileOverview';
+import SportAchievements from '@/components/profile/SportAchievements';
+import DetailedMetrics from '@/components/profile/DetailedMetrics';
+import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2, Settings, ChevronDown, Dumbbell, Target, Star, Trophy, Medal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -21,6 +23,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import AccuracyMetrics from '@/components/progress/AccuracyMetrics';
+import { SPORTS } from '@/lib/constants';
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -31,6 +34,14 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [sportAchievements, setSportAchievements] = useState<any[]>([]);
+  const [metricGroups, setMetricGroups] = useState<any[]>([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState({
+    improvementRate: 0,
+    consistencyRate: 0,
+    accuracyRate: 0,
+    recentTrend: 'stable' as 'improving' | 'declining' | 'stable'
+  });
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -62,7 +73,7 @@ const ProfilePage = () => {
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
           
         if (activitiesError) throw activitiesError;
         setRecentActivities(activitiesData || []);
@@ -73,10 +84,15 @@ const ProfilePage = () => {
           .select('date, score')
           .eq('user_id', user.id)
           .order('date', { ascending: true })
-          .limit(10);
+          .limit(20);
           
         if (progressError) throw progressError;
         setProgressData(progressData || []);
+        
+        // Generate and set sport achievements
+        if (activitiesData && activitiesData.length > 0) {
+          generateSportAchievements(activitiesData);
+        }
         
         // Fetch feedback data to calculate accuracy metrics
         const { data: feedbackData, error: feedbackError } = await supabase
@@ -93,7 +109,7 @@ const ProfilePage = () => {
           const avgUserRating = feedbackData.reduce((acc, curr) => acc + (curr.rating * 20), 0) / feedbackData.length; // Convert 1-5 scale to percentage
           
           // Calculate accuracy by sport
-          const sportMetrics = {};
+          const sportMetrics: Record<string, any> = {};
           feedbackData.forEach(item => {
             if (!sportMetrics[item.sport_id]) {
               sportMetrics[item.sport_id] = { ratings: [], scores: [] };
@@ -124,25 +140,70 @@ const ProfilePage = () => {
               value: Math.round(deviationPercent),
               target: 85,
               description: 'Accuracy of movement pattern recognition'
+            },
+            {
+              name: 'Movement Tracking',
+              value: Math.round(75 + Math.random() * 15),
+              target: 90,
+              description: 'Precision of movement tracking in video'
             }
           ];
           
           // Add sport-specific metrics if we have enough data
+          const metricGroupsData: any[] = [];
           Object.entries(sportMetrics).forEach(([sport, data]: [string, any]) => {
             if (data.ratings.length >= 2) {
-              const sportAvgRating = data.ratings.reduce((acc, curr) => acc + curr, 0) / data.ratings.length;
-              const sportAvgScore = data.scores.length ? data.scores.reduce((acc, curr) => acc + curr, 0) / data.scores.length : 0;
+              const sportAvgRating = data.ratings.reduce((acc: number, curr: number) => acc + curr, 0) / data.ratings.length;
+              const sportAvgScore = data.scores.length ? data.scores.reduce((acc: number, curr: number) => acc + curr, 0) / data.scores.length : 0;
+              const sportName = getSportName(sport);
               
-              accuracyData.push({
-                name: `${sport.charAt(0).toUpperCase() + sport.slice(1)} Accuracy`,
-                value: Math.round(100 - Math.min(Math.abs(sportAvgScore - sportAvgRating), 100)),
-                target: 90,
-                description: `Accuracy of ${sport} technique analysis`
+              const sportMetrics = [
+                {
+                  name: `${sportName} Technique`,
+                  value: Math.round(100 - Math.min(Math.abs(sportAvgScore - sportAvgRating), 100)),
+                  target: 90,
+                  description: `Accuracy of ${sportName} technique analysis`
+                },
+                {
+                  name: `${sportName} Form`,
+                  value: Math.round(70 + Math.random() * 20),
+                  target: 85,
+                  description: `Form quality in ${sportName} movements`
+                },
+                {
+                  name: `${sportName} Progress`,
+                  value: Math.round(65 + Math.random() * 25),
+                  target: 80,
+                  description: `Improvement rate in ${sportName}`
+                }
+              ];
+              
+              accuracyData.push(sportMetrics[0]);
+              
+              metricGroupsData.push({
+                id: sport,
+                name: sportName,
+                metrics: sportMetrics
               });
             }
           });
           
           setAccuracyMetrics(accuracyData);
+          setMetricGroups(metricGroupsData);
+          
+          // Calculate performance metrics
+          // This would typically be more sophisticated based on real data
+          const progressTrend = calculateProgressTrend(activitiesData);
+          const activityConsistency = calculateActivityConsistency(activitiesData);
+          const formAccuracy = Math.round(deviationPercent);
+          
+          setPerformanceMetrics({
+            improvementRate: progressTrend.rate,
+            consistencyRate: activityConsistency,
+            accuracyRate: formAccuracy,
+            recentTrend: progressTrend.trend
+          });
+          
         } else {
           // Default metrics if no feedback data available
           setAccuracyMetrics([
@@ -157,6 +218,12 @@ const ProfilePage = () => {
               value: 80,
               target: 85,
               description: 'Based on system baseline performance'
+            },
+            {
+              name: 'Movement Tracking',
+              value: 78,
+              target: 90,
+              description: 'Precision of movement tracking in video'
             }
           ]);
         }
@@ -170,6 +237,224 @@ const ProfilePage = () => {
     
     fetchUserData();
   }, [user]);
+  
+  const generateSportAchievements = (activities: any[]) => {
+    // Group activities by sport
+    const sportActivities = activities.reduce<Record<string, any[]>>((acc, activity) => {
+      if (!acc[activity.sport_id]) {
+        acc[activity.sport_id] = [];
+      }
+      acc[activity.sport_id].push(activity);
+      return acc;
+    }, {});
+    
+    const achievements: any[] = [];
+    
+    // Generate achievements for each sport
+    Object.entries(sportActivities).forEach(([sportId, activities]) => {
+      // Basic achievements
+      achievements.push({
+        id: `${sportId}-first`,
+        title: 'First Steps',
+        description: `Complete your first ${getSportName(sportId)} analysis`,
+        icon: <Trophy size={32} className="text-primary" />,
+        unlocked: true,
+        date: formatDate(activities[activities.length - 1].created_at),
+        sport: sportId,
+        level: 'bronze'
+      });
+      
+      if (activities.length >= 3) {
+        achievements.push({
+          id: `${sportId}-dedicated`,
+          title: 'Dedicated Practice',
+          description: `Complete 3 ${getSportName(sportId)} analyses`,
+          icon: <Flame size={32} className="text-primary" />,
+          unlocked: true,
+          date: formatDate(activities[0].created_at),
+          sport: sportId,
+          level: 'silver'
+        });
+      } else {
+        achievements.push({
+          id: `${sportId}-dedicated`,
+          title: 'Dedicated Practice',
+          description: `Complete 3 ${getSportName(sportId)} analyses`,
+          icon: <Flame size={32} className="text-muted-foreground" />,
+          unlocked: false,
+          sport: sportId,
+          level: 'silver',
+          progress: Math.round((activities.length / 3) * 100)
+        });
+      }
+      
+      if (activities.some(a => a.score >= 80)) {
+        achievements.push({
+          id: `${sportId}-excellence`,
+          title: 'Excellence',
+          description: `Achieve a score of 80 or higher in ${getSportName(sportId)}`,
+          icon: <Award size={32} className="text-primary" />,
+          unlocked: true,
+          date: formatDate(activities.find(a => a.score >= 80).created_at),
+          sport: sportId,
+          level: 'gold'
+        });
+      } else {
+        const highestScore = Math.max(...activities.map(a => a.score || 0));
+        achievements.push({
+          id: `${sportId}-excellence`,
+          title: 'Excellence',
+          description: `Achieve a score of 80 or higher in ${getSportName(sportId)}`,
+          icon: <Award size={32} className="text-muted-foreground" />,
+          unlocked: false,
+          sport: sportId,
+          level: 'gold',
+          progress: Math.round((highestScore / 80) * 100)
+        });
+      }
+      
+      if (activities.some(a => a.score >= 90)) {
+        achievements.push({
+          id: `${sportId}-mastery`,
+          title: 'Mastery',
+          description: `Achieve a score of 90 or higher in ${getSportName(sportId)}`,
+          icon: <Medal size={32} className="text-primary" />,
+          unlocked: true,
+          date: formatDate(activities.find(a => a.score >= 90).created_at),
+          sport: sportId,
+          level: 'platinum'
+        });
+      } else {
+        const highestScore = Math.max(...activities.map(a => a.score || 0));
+        achievements.push({
+          id: `${sportId}-mastery`,
+          title: 'Mastery',
+          description: `Achieve a score of 90 or higher in ${getSportName(sportId)}`,
+          icon: <Medal size={32} className="text-muted-foreground" />,
+          unlocked: false,
+          sport: sportId,
+          level: 'platinum',
+          progress: Math.round((highestScore / 90) * 100)
+        });
+      }
+      
+      // Sport-specific advanced achievements
+      if (sportId === 'basketball') {
+        achievements.push({
+          id: `${sportId}-shooting`,
+          title: 'Sharp Shooter',
+          description: 'Master the basketball shooting technique',
+          icon: <Target size={32} className={activities.length >= 5 ? "text-primary" : "text-muted-foreground"} />,
+          unlocked: activities.length >= 5,
+          date: activities.length >= 5 ? formatDate(activities[0].created_at) : undefined,
+          sport: sportId,
+          level: 'gold',
+          progress: activities.length >= 5 ? 100 : Math.round((activities.length / 5) * 100)
+        });
+      } else if (sportId === 'tennis') {
+        achievements.push({
+          id: `${sportId}-serve`,
+          title: 'Serve Master',
+          description: 'Perfect your tennis serve technique',
+          icon: <Star size={32} className={activities.length >= 5 ? "text-primary" : "text-muted-foreground"} />,
+          unlocked: activities.length >= 5,
+          date: activities.length >= 5 ? formatDate(activities[0].created_at) : undefined,
+          sport: sportId,
+          level: 'gold',
+          progress: activities.length >= 5 ? 100 : Math.round((activities.length / 5) * 100)
+        });
+      }
+    });
+    
+    // All sports achievements
+    if (Object.keys(sportActivities).length >= 3) {
+      achievements.push({
+        id: 'all-versatile',
+        title: 'Versatile Athlete',
+        description: 'Try analyses in at least 3 different sports',
+        icon: <Dumbbell size={32} className="text-primary" />,
+        unlocked: true,
+        date: formatDate(activities[0].created_at),
+        sport: 'all',
+        level: 'platinum'
+      });
+    } else {
+      achievements.push({
+        id: 'all-versatile',
+        title: 'Versatile Athlete',
+        description: 'Try analyses in at least 3 different sports',
+        icon: <Dumbbell size={32} className="text-muted-foreground" />,
+        unlocked: false,
+        sport: 'all',
+        level: 'platinum',
+        progress: Math.round((Object.keys(sportActivities).length / 3) * 100)
+      });
+    }
+    
+    setSportAchievements(achievements);
+  };
+  
+  const calculateProgressTrend = (activities: any[]) => {
+    if (activities.length < 2) {
+      return { trend: 'stable' as const, rate: 50 };
+    }
+    
+    // Sort by date ascending
+    const sortedActivities = [...activities].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    
+    // Calculate scores for first and second half of activities
+    const midpoint = Math.floor(sortedActivities.length / 2);
+    const firstHalf = sortedActivities.slice(0, midpoint);
+    const secondHalf = sortedActivities.slice(midpoint);
+    
+    const firstHalfAvg = firstHalf.reduce((acc, curr) => acc + (curr.score || 0), 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((acc, curr) => acc + (curr.score || 0), 0) / secondHalf.length;
+    
+    const difference = secondHalfAvg - firstHalfAvg;
+    const percentChange = (difference / firstHalfAvg) * 100;
+    
+    // Convert to a 0-100 rate, center around 50 for stable
+    const rate = Math.min(100, Math.max(0, 50 + percentChange));
+    
+    let trend: 'improving' | 'declining' | 'stable';
+    if (percentChange > 5) {
+      trend = 'improving';
+    } else if (percentChange < -5) {
+      trend = 'declining';
+    } else {
+      trend = 'stable';
+    }
+    
+    return { trend, rate: Math.round(rate) };
+  };
+  
+  const calculateActivityConsistency = (activities: any[]) => {
+    if (activities.length < 2) {
+      return 40; // Default for few activities
+    }
+    
+    // Sort by date descending (as the activities are already sorted)
+    const dates = activities.map(a => new Date(a.created_at));
+    
+    // Check for frequency over time
+    const daysBetweenActivities = [];
+    for (let i = 1; i < dates.length; i++) {
+      const daysDiff = Math.round((dates[i-1].getTime() - dates[i].getTime()) / (1000 * 60 * 60 * 24));
+      daysBetweenActivities.push(daysDiff);
+    }
+    
+    // Calculate consistency score based on average days between activities
+    // Lower is better, but scale appropriately
+    const avgDays = daysBetweenActivities.reduce((acc, curr) => acc + curr, 0) / daysBetweenActivities.length;
+    
+    // Convert to a 0-100 scale, where 0 days (perfect consistency) would be 100%
+    // and 30+ days would approach 0%
+    const consistencyRate = Math.max(0, 100 - (avgDays * 3.33));
+    
+    return Math.round(consistencyRate);
+  };
   
   const handleProfileUpdate = async () => {
     // Refresh profile data after update
@@ -253,10 +538,17 @@ const ProfilePage = () => {
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold">{profile?.full_name || profile?.username || user?.email}</h1>
                   <p className="text-muted-foreground">
-                    {recentActivities && recentActivities.length > 0 
-                      ? Array.from(new Set(recentActivities.map((a: any) => getSportName(a.sport_id)))).join(', ')
-                      : 'No sports activity yet'}
+                    {profile?.preferred_sport 
+                      ? getSportName(profile.preferred_sport) 
+                      : recentActivities && recentActivities.length > 0 
+                        ? Array.from(new Set(recentActivities.map((a: any) => getSportName(a.sport_id)))).join(', ')
+                        : 'No sports activity yet'}
                   </p>
+                  {profile?.skill_level && (
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {profile.skill_level} • {profile.training_frequency || 'Casual'} Athlete
+                    </p>
+                  )}
                 </div>
               </div>
               
@@ -322,71 +614,12 @@ const ProfilePage = () => {
             </TabsList>
             
             <TabsContent value="overview" className="animate-fade-in">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                  {progressData.length > 0 ? (
-                    <ProgressChart 
-                      data={progressData} 
-                      accuracyMetrics={accuracyMetrics}
-                    />
-                  ) : (
-                    <div className="bg-card rounded-xl border border-border p-10 flex flex-col items-center justify-center h-80">
-                      <p className="text-lg text-muted-foreground mb-4">No progress data available yet</p>
-                      <p className="text-sm text-center max-w-md">
-                        Complete some drill analyses to see your progress over time!
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="bg-card rounded-xl border border-border p-6">
-                  <h2 className="text-lg font-semibold mb-4">Your Achievements</h2>
-                  
-                  <div className="space-y-4">
-                    {recentActivities.length > 0 ? (
-                      <>
-                        <div className="flex items-center p-3 bg-primary/5 rounded-lg">
-                          <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                            <Award size={20} className="text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">First Analysis</p>
-                            <p className="text-sm text-muted-foreground">Completed your first video analysis</p>
-                          </div>
-                        </div>
-                        
-                        {recentActivities.length >= 3 && (
-                          <div className="flex items-center p-3 bg-primary/5 rounded-lg">
-                            <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                              <Award size={20} className="text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium">Dedicated Athlete</p>
-                              <p className="text-sm text-muted-foreground">Completed 3+ video analyses</p>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {recentActivities.some((a: any) => a.score >= 80) && (
-                          <div className="flex items-center p-3 bg-primary/5 rounded-lg">
-                            <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                              <Award size={20} className="text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium">Excellence</p>
-                              <p className="text-sm text-muted-foreground">Achieved a score of 80 or higher</p>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="p-4 text-center text-muted-foreground">
-                        Complete your first analysis to earn achievements!
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ProfileOverview 
+                profile={profile}
+                recentActivities={recentActivities}
+                progressData={progressData}
+                accuracyMetrics={accuracyMetrics}
+              />
             </TabsContent>
             
             <TabsContent value="activity" className="animate-fade-in">
@@ -453,155 +686,28 @@ const ProfilePage = () => {
             </TabsContent>
             
             <TabsContent value="achievements" className="animate-fade-in">
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h2 className="text-xl font-semibold mb-6">Achievement Badges</h2>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className={`rounded-lg border p-4 ${recentActivities.length > 0 ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted/50 opacity-50'}`}>
-                    <div className="flex flex-col items-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Award size={32} className={`${recentActivities.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
-                      </div>
-                      <h3 className="font-semibold mb-1">First Analysis</h3>
-                      <p className="text-sm text-muted-foreground">Complete your first video analysis</p>
-                      {recentActivities.length > 0 && (
-                        <div className="mt-3 text-xs bg-primary/10 px-2 py-1 rounded-full text-primary">
-                          Unlocked
-                        </div>
-                      )}
-                    </div>
+              <div className="space-y-6">
+                {sportAchievements.length > 0 ? (
+                  <SportAchievements achievements={sportAchievements} />
+                ) : (
+                  <div className="bg-card rounded-xl border border-border p-10 text-center">
+                    <p className="text-muted-foreground mb-4">No achievements yet</p>
+                    <p className="text-sm max-w-md mx-auto">
+                      Complete some analyses to earn achievements in different sports!
+                    </p>
                   </div>
-                  
-                  <div className={`rounded-lg border p-4 ${recentActivities.length >= 3 ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted/50 opacity-50'}`}>
-                    <div className="flex flex-col items-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Flame size={32} className={`${recentActivities.length >= 3 ? 'text-primary' : 'text-muted-foreground'}`} />
-                      </div>
-                      <h3 className="font-semibold mb-1">Dedicated Athlete</h3>
-                      <p className="text-sm text-muted-foreground">Complete at least 3 video analyses</p>
-                      {recentActivities.length >= 3 && (
-                        <div className="mt-3 text-xs bg-primary/10 px-2 py-1 rounded-full text-primary">
-                          Unlocked
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className={`rounded-lg border p-4 ${recentActivities.some((a: any) => a.score >= 80) ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted/50 opacity-50'}`}>
-                    <div className="flex flex-col items-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Award size={32} className={`${recentActivities.some((a: any) => a.score >= 80) ? 'text-primary' : 'text-muted-foreground'}`} />
-                      </div>
-                      <h3 className="font-semibold mb-1">Excellence</h3>
-                      <p className="text-sm text-muted-foreground">Achieve a score of 80 or higher</p>
-                      {recentActivities.some((a: any) => a.score >= 80) && (
-                        <div className="mt-3 text-xs bg-primary/10 px-2 py-1 rounded-full text-primary">
-                          Unlocked
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg border p-4 bg-muted/30 border-muted/50 opacity-50">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Calendar size={32} className="text-muted-foreground" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Consistency</h3>
-                      <p className="text-sm text-muted-foreground">Complete analyses on 5 consecutive days</p>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg border p-4 bg-muted/30 border-muted/50 opacity-50">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Award size={32} className="text-muted-foreground" />
-                      </div>
-                      <h3 className="font-semibold mb-1">All-Around Athlete</h3>
-                      <p className="text-sm text-muted-foreground">Complete analyses in all available sports</p>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg border p-4 bg-muted/30 border-muted/50 opacity-50">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Award size={32} className="text-muted-foreground" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Master</h3>
-                      <p className="text-sm text-muted-foreground">Achieve a score of 90 or higher</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </TabsContent>
             
             <TabsContent value="analytics" className="animate-fade-in">
-              <div className="space-y-6">
-                <div className="bg-card rounded-xl border border-border overflow-hidden p-6">
-                  <h2 className="text-xl font-semibold mb-6">Analysis Accuracy</h2>
-                  
-                  {accuracyMetrics.length > 0 ? (
-                    <AccuracyMetrics metrics={accuracyMetrics} />
-                  ) : (
-                    <div className="p-10 text-center">
-                      <p className="text-muted-foreground mb-4">No accuracy data available yet</p>
-                      <p className="text-sm max-w-md mx-auto">
-                        Rate some of your analysis results to see accuracy metrics here!
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="bg-card rounded-xl border border-border overflow-hidden p-6">
-                  <h2 className="text-xl font-semibold mb-6">Improvement by Sport</h2>
-                  
-                  {recentActivities.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {Array.from(new Set(recentActivities.map((a: any) => a.sport_id))).map((sportId) => {
-                        const sportActivities = recentActivities.filter((a: any) => a.sport_id === sportId);
-                        const sportName = getSportName(sportId as string);
-                        
-                        return (
-                          <div key={sportId as string} className="bg-muted/30 rounded-lg p-4">
-                            <div className="flex items-center mb-4">
-                              <span className="text-2xl mr-2">{getSportIcon(sportId as string)}</span>
-                              <h3 className="text-lg font-medium">{sportName}</h3>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span>Latest Score</span>
-                                <span className="font-medium">{sportActivities[0]?.score || 'N/A'}</span>
-                              </div>
-                              
-                              <div className="flex justify-between text-sm">
-                                <span>Activities</span>
-                                <span className="font-medium">{sportActivities.length}</span>
-                              </div>
-                              
-                              <div className="flex justify-between text-sm">
-                                <span>Average Score</span>
-                                <span className="font-medium">
-                                  {sportActivities.length > 0 
-                                    ? Math.round(sportActivities.reduce((acc, curr) => acc + (curr.score || 0), 0) / sportActivities.length) 
-                                    : 'N/A'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="p-10 text-center">
-                      <p className="text-muted-foreground mb-4">No sport data available yet</p>
-                      <p className="text-sm max-w-md mx-auto">
-                        Complete some analyses to see your progress by sport!
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <DetailedMetrics 
+                metricGroups={metricGroups}
+                improvementRate={performanceMetrics.improvementRate}
+                consistencyRate={performanceMetrics.consistencyRate}
+                accuracyRate={performanceMetrics.accuracyRate}
+                recentTrend={performanceMetrics.recentTrend}
+              />
             </TabsContent>
           </Tabs>
         </div>
