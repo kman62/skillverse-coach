@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/collapsible";
 import AccuracyMetrics from '@/components/progress/AccuracyMetrics';
 import { SPORTS } from '@/lib/constants';
-import { toast } from 'react-toastify';
+import { toast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
   const { user } = useAuth();
