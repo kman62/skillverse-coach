@@ -1,4 +1,3 @@
-
 import { useEffect, useState, RefObject } from 'react';
 import { createPoseDetector, detectPose, calculatePoseMetrics } from '@/utils/mediapipe/poseDetection';
 import { Results } from '@mediapipe/pose';
@@ -21,6 +20,8 @@ export const usePoseDetection = ({
   const [poseDetector, setPoseDetector] = useState<any>(null);
   const [detectionInterval, setDetectionInterval] = useState<NodeJS.Timeout | null>(null);
   const [lastProcessTime, setLastProcessTime] = useState<number>(0);
+  const [lastAnalysisTime, setLastAnalysisTime] = useState<number>(0);
+  const [alreadySentAnalysis, setAlreadySentAnalysis] = useState<boolean>(false);
 
   // Initialize MediaPipe pose detection
   const initializePoseDetection = async () => {
@@ -60,11 +61,23 @@ export const usePoseDetection = ({
           onPoseDetection(true);
           
           // Calculate metrics from pose data and pass to parent
-          if (onPoseAnalysis) {
+          if (onPoseAnalysis && !alreadySentAnalysis) {
             const metrics = calculatePoseMetrics(results);
             if (metrics) {
-              console.log('Calculated pose metrics:', metrics);
-              onPoseAnalysis(metrics);
+              // Only send analysis updates at a reasonable interval to prevent UI flickering
+              const currentTime = Date.now();
+              if (currentTime - lastAnalysisTime > 2000) {
+                console.log('Calculated pose metrics:', metrics);
+                onPoseAnalysis(metrics);
+                setLastAnalysisTime(currentTime);
+                
+                // In demo mode, once we've sent metrics and analysis is shown,
+                // we don't need to keep updating it
+                if (window.usedFallbackData) {
+                  console.log('Demo mode detected - setting alreadySentAnalysis to true');
+                  setAlreadySentAnalysis(true);
+                }
+              }
             }
           }
         } else {
@@ -100,6 +113,13 @@ export const usePoseDetection = ({
       setDetectionInterval(null);
     }
   };
+
+  // Reset analysis state when video file changes
+  useEffect(() => {
+    if (videoFile) {
+      setAlreadySentAnalysis(false);
+    }
+  }, [videoFile]);
 
   useEffect(() => {
     if (!videoRef.current || !videoFile) return;
