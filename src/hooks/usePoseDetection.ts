@@ -51,6 +51,7 @@ export const usePoseDetection = ({
     setLastProcessTime(now);
     
     try {
+      console.log('Processing video frame at time:', videoRef.current.currentTime);
       await detectPose(poseDetector, videoRef.current, (results: Results) => {
         if (results.poseLandmarks) {
           const visibleLandmarks = results.poseLandmarks.filter(lm => lm.visibility > 0.5).length;
@@ -62,6 +63,7 @@ export const usePoseDetection = ({
           if (onPoseAnalysis) {
             const metrics = calculatePoseMetrics(results);
             if (metrics) {
+              console.log('Calculated pose metrics:', metrics);
               onPoseAnalysis(metrics);
             }
           }

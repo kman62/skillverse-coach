@@ -1,4 +1,3 @@
-
 import { AnalysisResponse } from './analysis/analysisTypes';
 import { generateGenericAnalysis } from './analysis/analysisHelpers';
 import { generateBasketballAnalysis } from './analysis/basketballAnalysis';
@@ -260,7 +259,6 @@ export const saveAnalysisResult = async (
 
 /**
  * Calculate a valid score from the analysis result
- * This ensures we never get a null score which would violate DB constraints
  */
 const calculateValidScore = (analysisResult: any): number => {
   if (typeof analysisResult?.score === 'number') {
