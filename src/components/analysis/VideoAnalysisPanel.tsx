@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
-import { BarChart, Info, AlertTriangle, Camera } from 'lucide-react';
+import { BarChart, Info, AlertTriangle, Camera, Activity } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 
@@ -23,6 +24,7 @@ const VideoAnalysisPanel = ({
   const [progressPhase, setProgressPhase] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
   const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
+  const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -62,13 +64,57 @@ const VideoAnalysisPanel = ({
   }, [isAnalyzing]);
 
   useEffect(() => {
+    // Listen for analysis stages
+    const handleAnalysisStage = (event: CustomEvent) => {
+      if (event.detail?.stage) {
+        const stage = event.detail.stage;
+        console.log(`Analysis stage detected: ${stage}`, event.detail);
+        setAnalysisStage(stage);
+        
+        // Show toast notifications for important stages
+        if (stage === 'api-request-primary') {
+          toast({
+            title: "Connecting to analysis server",
+            description: "Sending video for analysis...",
+          });
+        } else if (stage === 'api-failed-primary') {
+          toast({
+            title: "Primary server unavailable",
+            description: "Trying backup server...",
+            variant: "default"
+          });
+        } else if (stage === 'api-success-primary' || stage === 'api-success-fallback') {
+          toast({
+            title: "Video analysis complete",
+            description: "Processing results...",
+          });
+        } else if (stage === 'using-demo-data') {
+          setUsesDemoData(true);
+        }
+      }
+    };
+    
+    window.addEventListener('analysis-stage' as any, handleAnalysisStage);
+    
+    return () => {
+      window.removeEventListener('analysis-stage' as any, handleAnalysisStage);
+    };
+  }, [toast]);
+
+  useEffect(() => {
     const checkApiConnectivity = async () => {
       try {
+        console.log("Checking API connectivity...");
         const response = await fetch('https://api.aithlete.io/v1/status', {
           method: 'GET',
           headers: {
             'x-client-id': 'web-client-v1',
           },
+        });
+        
+        console.log("API connectivity check result:", { 
+          status: response.status, 
+          ok: response.ok 
         });
         
         if (response.ok) {
@@ -77,6 +123,7 @@ const VideoAnalysisPanel = ({
           setConnectionStatus('limited');
         }
       } catch (error) {
+        console.error("API connectivity check failed:", error);
         setConnectionStatus('offline');
         setUseLocalAnalysis(true);
       }
@@ -97,6 +144,7 @@ const VideoAnalysisPanel = ({
     }
     
     setUsesDemoData(false);
+    setAnalysisStage(null);
     onVideoSelected(file);
   };
 
@@ -148,6 +196,13 @@ const VideoAnalysisPanel = ({
       )}
       
       <VideoUploader onVideoSelected={handleVideoSelected} />
+      
+      {analysisStage && isAnalyzing && (
+        <div className="mt-3 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700 flex items-center">
+          <Activity size={14} className="mr-1.5" />
+          <span>Current stage: {analysisStage.replace(/-/g, ' ')}</span>
+        </div>
+      )}
       
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center">
