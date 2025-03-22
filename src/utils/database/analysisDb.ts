@@ -76,10 +76,10 @@ export const saveAnalysisResults = async (
   const score = calculateValidScore(analysisResult);
   console.log("Calculated score:", score);
   
-  // Fix: Wrap the object in an array for insert
+  // Fix: Use a single object instead of an array for the insert method
   const { error: analysisError, data: analysisData } = await supabase
     .from('analysis_results')
-    .insert([{  // Changed this to an array of objects
+    .insert({
       user_id: userId,
       video_id: videoId,
       sport_id: sportId,
@@ -87,8 +87,8 @@ export const saveAnalysisResults = async (
       analysis_data: analysisResult,
       behavior_data: behaviorAnalysis,
       score: score
-    }])
-    .select('id, score')  // Added score to the returned fields
+    })
+    .select('id, score')
     .single();
     
   if (analysisError) {
@@ -117,7 +117,7 @@ export const updateUserProgress = async (
   
   const { error: progressError } = await supabase
     .from('user_progress')
-    .insert([{  // Changed this to an array of objects
+    .insert({
       user_id: userId,
       sport_id: sportId,
       drill_id: drillId,
@@ -128,7 +128,7 @@ export const updateUserProgress = async (
         consistencyScore: analysisResult?.consistencyScore || Math.round(score * 0.8),
         behaviorScore: behaviorAnalysis?.overallScore || Math.round(score * 0.85)
       }
-    }]);
+    });
     
   if (progressError) {
     console.error("Error saving user progress:", progressError);
