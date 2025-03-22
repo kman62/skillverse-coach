@@ -25,10 +25,11 @@ const VideoCanvas = ({
   const [poseDetected, setPoseDetected] = useState(false);
   const [poseResults, setPoseResults] = useState<Results | undefined>(undefined);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Use the pose detection hook
-  const { poseDetector } = usePoseDetection({
+  const { poseDetector, processFrame } = usePoseDetection({
     videoRef,
     videoFile,
     onPoseDetection: (detected) => {
@@ -48,13 +49,25 @@ const VideoCanvas = ({
         description: "Play the video to start analyzing your technique",
         duration: 3000,
       });
+      
+      // Force a frame process to check if detection works
+      if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended) {
+        console.log('Video is playing, processing initial frame');
+        processFrame();
+      }
     }
-  }, [poseDetector, toast]);
+  }, [poseDetector, toast, processFrame]);
 
   // Tell user when video loads to play it
   const handleVideoLoaded = () => {
-    console.log('Video loaded and ready for playback');
+    console.log('Video loaded and ready for playback', {
+      videoWidth: videoRef.current?.videoWidth,
+      videoHeight: videoRef.current?.videoHeight,
+      videoFile: videoFile.name,
+      fileSize: videoFile.size
+    });
     setVideoLoaded(true);
+    setVideoError(null);
     toast({
       title: "Video Loaded",
       description: "Press play to begin pose detection",
@@ -64,15 +77,25 @@ const VideoCanvas = ({
 
   // Handle errors loading video
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-    console.error('Error loading video:', e);
+    const errorMessage = (e.target as HTMLVideoElement).error?.message || 'Unknown error';
+    console.error('Error loading video:', errorMessage, e);
+    setVideoError(errorMessage);
+    setVideoLoaded(false);
     toast({
       title: "Video Error",
-      description: "There was a problem loading the video. Please try another file.",
+      description: `There was a problem loading the video: ${errorMessage}. Please try another file.`,
       variant: "destructive",
       duration: 5000,
     });
   };
   
+  // Force play button to be visible for better user experience
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.controls = true;
+    }
+  }, []);
+
   return (
     <>
       <video
@@ -82,6 +105,7 @@ const VideoCanvas = ({
         src={URL.createObjectURL(videoFile)}
         onLoadedData={handleVideoLoaded}
         onError={handleVideoError}
+        playsInline
       />
       <canvas 
         ref={canvasRef}
@@ -98,6 +122,12 @@ const VideoCanvas = ({
       {videoLoaded && !poseDetector && (
         <div className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 p-2 rounded text-xs">
           Pose detector loading...
+        </div>
+      )}
+      
+      {videoError && (
+        <div className="absolute top-2 left-2 bg-red-100 text-red-800 p-2 rounded text-xs">
+          Error: {videoError}
         </div>
       )}
     </>
