@@ -1,15 +1,68 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Camera, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const EmptyState = () => {
+interface EmptyStateProps {
+  gameplaySituation?: string;
+  playType?: string;
+  onGameplaySituationChange?: (situation: string) => void;
+  onPlayTypeChange?: (play: string) => void;
+}
+
+const EmptyState = ({
+  gameplaySituation,
+  playType,
+  onGameplaySituationChange,
+  onPlayTypeChange
+}: EmptyStateProps) => {
   const [selectedOption, setSelectedOption] = useState('upload');
-  const [selectedGameplay, setSelectedGameplay] = useState('offense');
-  const [selectedPlay, setSelectedPlay] = useState('');
+  const [selectedGameplay, setSelectedGameplay] = useState(gameplaySituation || 'offense');
+  const [selectedPlay, setSelectedPlay] = useState(playType || '');
+
+  // Update parent component when local state changes
+  useEffect(() => {
+    if (onGameplaySituationChange && selectedGameplay !== gameplaySituation) {
+      onGameplaySituationChange(selectedGameplay);
+    }
+  }, [selectedGameplay, onGameplaySituationChange, gameplaySituation]);
+
+  useEffect(() => {
+    if (onPlayTypeChange && selectedPlay !== playType) {
+      onPlayTypeChange(selectedPlay);
+    }
+  }, [selectedPlay, onPlayTypeChange, playType]);
+
+  // Update local state when props change
+  useEffect(() => {
+    if (gameplaySituation && gameplaySituation !== selectedGameplay) {
+      setSelectedGameplay(gameplaySituation);
+    }
+  }, [gameplaySituation]);
+
+  useEffect(() => {
+    if (playType && playType !== selectedPlay) {
+      setSelectedPlay(playType);
+    }
+  }, [playType]);
+
+  const handleGameplaySituationChange = (value: string) => {
+    setSelectedGameplay(value);
+    setSelectedPlay(''); // Reset play type when situation changes
+    if (onGameplaySituationChange) {
+      onGameplaySituationChange(value);
+    }
+  };
+
+  const handlePlayTypeChange = (value: string) => {
+    setSelectedPlay(value);
+    if (onPlayTypeChange) {
+      onPlayTypeChange(value);
+    }
+  };
 
   return (
     <div className="bg-card rounded-xl border border-border h-auto flex flex-col items-center justify-center p-6 text-center">
@@ -33,9 +86,9 @@ const EmptyState = () => {
               <div className="text-left mb-3">
                 <h4 className="font-medium text-sm mb-2">Select Game Situation</h4>
                 <RadioGroup 
-                  defaultValue="offense" 
+                  value={selectedGameplay} 
                   className="flex flex-col space-y-2"
-                  onValueChange={setSelectedGameplay}
+                  onValueChange={handleGameplaySituationChange}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="offense" id="offense" />
@@ -54,7 +107,7 @@ const EmptyState = () => {
               
               <div className="text-left mb-4">
                 <h4 className="font-medium text-sm mb-2">Select Specific Play</h4>
-                <Select onValueChange={setSelectedPlay}>
+                <Select value={selectedPlay} onValueChange={handlePlayTypeChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choose a play type" />
                   </SelectTrigger>

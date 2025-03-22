@@ -29,7 +29,9 @@ const AnalysisPage = () => {
     isSaving, setIsSaving,
     isDemoMode, setIsDemoMode,
     analysisId, setAnalysisId,
-    poseMetrics, setPoseMetrics
+    poseMetrics, setPoseMetrics,
+    gameplaySituation, setGameplaySituation,
+    playType, setPlayType
   } = useAnalysisState();
   
   const { handleVideoSelected, handlePoseAnalysis } = useVideoHandlers();
@@ -72,6 +74,17 @@ const AnalysisPage = () => {
     );
   };
   
+  // Handler for gameplay situation selection
+  const onGameplaySituationChange = (situation: string) => {
+    setGameplaySituation(situation);
+    setPlayType(undefined); // Reset play type when situation changes
+  };
+  
+  // Handler for play type selection
+  const onPlayTypeChange = (play: string) => {
+    setPlayType(play);
+  };
+  
   // Handler for analyze button click
   const onAnalyzeClick = () => {
     handleAnalyzeClick(
@@ -111,6 +124,10 @@ const AnalysisPage = () => {
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
           onRetry={onAnalyzeClick}
+          gameplaySituation={gameplaySituation}
+          playType={playType}
+          onGameplaySituationChange={onGameplaySituationChange}
+          onPlayTypeChange={onPlayTypeChange}
         />
       )}
     </AnalysisLayout>

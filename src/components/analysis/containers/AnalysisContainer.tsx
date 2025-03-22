@@ -22,6 +22,10 @@ interface AnalysisContainerProps {
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
   onRetry: () => void;
+  gameplaySituation?: string;
+  playType?: string;
+  onGameplaySituationChange?: (situation: string) => void;
+  onPlayTypeChange?: (play: string) => void;
 }
 
 const AnalysisContainer = ({
@@ -40,7 +44,11 @@ const AnalysisContainer = ({
   sportId,
   drillId,
   onPoseAnalysis,
-  onRetry
+  onRetry,
+  gameplaySituation,
+  playType,
+  onGameplaySituationChange,
+  onPlayTypeChange
 }: AnalysisContainerProps) => {
   return (
     <>
@@ -67,6 +75,10 @@ const AnalysisContainer = ({
           sportId={sportId}
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
+          gameplaySituation={gameplaySituation}
+          playType={playType}
+          onGameplaySituationChange={onGameplaySituationChange}
+          onPlayTypeChange={onPlayTypeChange}
         />
       </div>
     </>

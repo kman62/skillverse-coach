@@ -12,6 +12,8 @@ export interface AnalysisState {
   isDemoMode: boolean;
   analysisId: string | undefined;
   poseMetrics: any;
+  gameplaySituation: string | undefined;
+  playType: string | undefined;
 }
 
 export const useAnalysisState = () => {
@@ -24,6 +26,8 @@ export const useAnalysisState = () => {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
   const [poseMetrics, setPoseMetrics] = useState<any>(null);
+  const [gameplaySituation, setGameplaySituation] = useState<string | undefined>(undefined);
+  const [playType, setPlayType] = useState<string | undefined>(undefined);
 
   return {
     videoFile,
@@ -44,5 +48,9 @@ export const useAnalysisState = () => {
     setAnalysisId,
     poseMetrics,
     setPoseMetrics,
+    gameplaySituation,
+    setGameplaySituation,
+    playType,
+    setPlayType
   };
 };
