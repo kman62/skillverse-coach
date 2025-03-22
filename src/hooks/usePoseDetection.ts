@@ -1,3 +1,4 @@
+
 import { useEffect, useState, RefObject } from 'react';
 import { createPoseDetector, detectPose, calculatePoseMetrics } from '@/utils/mediapipe/poseDetection';
 import { Results } from '@mediapipe/pose';
@@ -106,6 +107,7 @@ export const usePoseDetection = ({
 
   useEffect(() => {
     if (videoFile) {
+      console.log('Video file changed, resetting analysis state');
       setAlreadySentAnalysis(false);
     }
   }, [videoFile]);
@@ -119,8 +121,11 @@ export const usePoseDetection = ({
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     
+    // Initialize detection on mount if video is already playing
     if (!video.paused && !video.ended) {
       handlePlay();
+    } else {
+      console.log('Video is paused initially, waiting for play event');
     }
     
     return () => {

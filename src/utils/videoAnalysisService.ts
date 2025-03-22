@@ -1,3 +1,4 @@
+
 import { AnalysisResponse } from './analysis/analysisTypes';
 import { generateGenericAnalysis } from './analysis/analysisHelpers';
 import { generateBasketballAnalysis } from './analysis/basketballAnalysis';
@@ -41,9 +42,13 @@ export const analyzeVideo = async (
   drillName: string,
   sportId: string
 ): Promise<AnalysisResponse> => {
+  console.log(`Starting video analysis for ${sportId}/${drillName}`, { fileSize: videoFile.size });
+  
   // Check file size before attempting to upload
   if (videoFile.size > MAX_FILE_SIZE) {
-    throw new Error(`Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`);
+    const errorMsg = `Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
   
   // Create form data to send the video file
@@ -138,7 +143,7 @@ export const analyzeVideo = async (
     }
     
     // Set global flag for demo mode
-    (window as any).usedFallbackData = true;
+    window.usedFallbackData = true;
     
     // Simulate a brief delay to make the fallback feel more realistic
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -158,27 +163,44 @@ export const saveAnalysisResult = async (
   analysisResult: any,
   behaviorAnalysis: any
 ) => {
+  console.log("Saving analysis to Supabase:", {
+    videoSize: Math.round(videoFile.size / 1024) + "KB",
+    sport: sportId,
+    drill: drillId,
+    hasAnalysisResult: !!analysisResult,
+    hasBehaviorAnalysis: !!behaviorAnalysis
+  });
+  
   try {
     // Check file size before attempting to upload
     if (videoFile.size > MAX_FILE_SIZE) {
       throw new Error(`Video file size (${Math.round(videoFile.size / (1024 * 1024))}MB) exceeds the 50MB limit.`);
     }
     
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error("Error getting authenticated user:", userError);
+      throw new Error(`Authentication error: ${userError.message}`);
+    }
     
     if (!userData?.user) {
+      console.error("No authenticated user found");
       throw new Error('User not authenticated');
     }
     
+    console.log("User authenticated:", userData.user.id);
     const userId = userData.user.id;
     
     // 1. Upload video to Supabase Storage
+    console.log("Starting video upload to Supabase storage...");
     const videoFileName = `${userId}/${uuidv4()}-${videoFile.name}`;
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('videos')
       .upload(videoFileName, videoFile);
       
     if (uploadError) {
+      console.error("Error uploading video to Supabase:", uploadError);
       if (uploadError.message.includes('exceeded the maximum allowed size')) {
         throw new Error('Video file size exceeds the Supabase storage limit of 50MB.');
       }
@@ -190,7 +212,10 @@ export const saveAnalysisResult = async (
       .from('videos')
       .getPublicUrl(videoFileName);
     
+    console.log("Video uploaded successfully, public URL:", publicUrl);
+    
     // 2. Insert video metadata
+    console.log("Inserting video metadata to database...");
     const { error: videoError, data: videoData } = await supabase
       .from('videos')
       .insert({
@@ -204,11 +229,15 @@ export const saveAnalysisResult = async (
       .single();
       
     if (videoError) {
+      console.error("Error saving video metadata:", videoError);
       throw new Error(`Error saving video metadata: ${videoError.message}`);
     }
     
+    console.log("Video metadata saved with ID:", videoData.id);
+    
     // 3. Insert analysis results - make sure we have a valid score
     const score = calculateValidScore(analysisResult);
+    console.log("Calculated score:", score);
                   
     const { error: analysisError, data: analysisData } = await supabase
       .from('analysis_results')
@@ -225,8 +254,11 @@ export const saveAnalysisResult = async (
       .single();
       
     if (analysisError) {
+      console.error("Error saving analysis results:", analysisError);
       throw new Error(`Error saving analysis results: ${analysisError.message}`);
     }
+    
+    console.log("Analysis results saved with ID:", analysisData.id);
     
     // 4. Update user progress
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -247,9 +279,11 @@ export const saveAnalysisResult = async (
       });
       
     if (progressError) {
+      console.error("Error saving user progress:", progressError);
       throw new Error(`Error saving user progress: ${progressError.message}`);
     }
     
+    console.log("User progress updated successfully");
     return { success: true, id: analysisData.id };
   } catch (error) {
     console.error('Error saving analysis data:', error);
@@ -283,6 +317,8 @@ const generateSportSpecificAnalysis = (sportId: string, drillName: string): Anal
   // Generate a deterministic but realistic score
   const baseScore = drillName.length % 20 + 70; // Score between 70-90
   const score = Math.min(100, Math.max(60, baseScore));
+  
+  console.log(`Generating fallback analysis for ${sportId}/${drillName} with score ${score}`);
   
   switch(sportId) {
     case "basketball":
