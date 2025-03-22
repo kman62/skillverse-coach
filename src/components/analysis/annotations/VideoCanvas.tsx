@@ -11,8 +11,6 @@ interface VideoCanvasProps {
   onPoseDetection: (poseDetected: boolean) => void;
   onPoseAnalysis?: (metrics: any) => void;
   setDetectionActive: (active: boolean) => void;
-  gameplaySituation?: string;
-  playType?: string;
 }
 
 const VideoCanvas = ({ 
@@ -20,9 +18,7 @@ const VideoCanvas = ({
   analysisResult, 
   onPoseDetection,
   onPoseAnalysis,
-  setDetectionActive,
-  gameplaySituation,
-  playType
+  setDetectionActive
 }: VideoCanvasProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,14 +27,6 @@ const VideoCanvas = ({
   const [videoReady, setVideoReady] = useState(false);
   const [processingActive, setProcessingActive] = useState(false);
   const { toast } = useToast();
-  
-  // Log gameplay analysis context when it changes
-  useEffect(() => {
-    if (gameplaySituation && playType) {
-      console.log(`Analyzing ${gameplaySituation} - ${playType}`);
-      // We could adjust pose detection parameters based on the gameplay situation
-    }
-  }, [gameplaySituation, playType]);
   
   // Use the pose detection hook
   const { poseDetector, processFrame } = usePoseDetection({
@@ -180,11 +168,6 @@ const VideoCanvas = ({
         analysisResult={analysisResult}
         poseDetected={poseDetected}
       />
-      {gameplaySituation && playType && (
-        <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-md text-xs">
-          Analyzing: {gameplaySituation} - {playType}
-        </div>
-      )}
     </>
   );
 };
