@@ -19,6 +19,7 @@ interface ResultsPanelProps {
   analysisId?: string;
   sportId?: string;
   drillId?: string;
+  onPoseAnalysis?: (metrics: any) => void;
 }
 
 const ResultsPanel = ({ 
@@ -31,7 +32,8 @@ const ResultsPanel = ({
   onRetry,
   analysisId,
   sportId,
-  drillId
+  drillId,
+  onPoseAnalysis
 }: ResultsPanelProps) => {
   const { toast } = useToast();
   
@@ -140,6 +142,7 @@ const ResultsPanel = ({
                 videoFile={videoFile} 
                 analysisResult={analysisResult}
                 isDemoMode={isDemoMode}
+                onPoseAnalysis={onPoseAnalysis}
               />
             </div>
           )}
