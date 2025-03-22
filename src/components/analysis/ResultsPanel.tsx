@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart } from 'lucide-react';
 import EmptyState from '@/components/analysis/states/EmptyState';
 import ErrorState from '@/components/analysis/states/ErrorState';
@@ -18,6 +18,8 @@ interface ResultsPanelProps {
   sportId?: string;
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
+  gameplaySituation?: string;
+  playType?: string;
 }
 
 const ResultsPanel = ({ 
@@ -31,8 +33,19 @@ const ResultsPanel = ({
   analysisId,
   sportId,
   drillId,
-  onPoseAnalysis
+  onPoseAnalysis,
+  gameplaySituation,
+  playType
 }: ResultsPanelProps) => {
+  const [selectedGameplay, setSelectedGameplay] = useState<string | undefined>(gameplaySituation);
+  const [selectedPlay, setSelectedPlay] = useState<string | undefined>(playType);
+  
+  // Update the local state when props change
+  useEffect(() => {
+    setSelectedGameplay(gameplaySituation);
+    setSelectedPlay(playType);
+  }, [gameplaySituation, playType]);
+  
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
@@ -60,6 +73,8 @@ const ResultsPanel = ({
           sportId={sportId}
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
+          gameplaySituation={selectedGameplay}
+          playType={selectedPlay}
         />
       )}
     </div>
