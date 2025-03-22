@@ -10,9 +10,11 @@ interface DrillCardProps {
   drill: Drill;
   className?: string;
   style?: React.CSSProperties;
+  gameplaySituation?: string;
+  playType?: string;
 }
 
-const DrillCard = ({ sportId, drill, className, style }: DrillCardProps) => {
+const DrillCard = ({ sportId, drill, className, style, gameplaySituation, playType }: DrillCardProps) => {
   // Map difficulty to appropriate color
   const difficultyColor = {
     beginner: "bg-green-500",
@@ -20,9 +22,26 @@ const DrillCard = ({ sportId, drill, className, style }: DrillCardProps) => {
     advanced: "bg-red-500"
   };
   
+  // Construct URL with optional gameplay parameters
+  const buildUrl = () => {
+    let url = `/sports/${sportId}/drills/${drill.id}`;
+    const params = new URLSearchParams();
+    
+    if (gameplaySituation) {
+      params.append('gameplay', gameplaySituation);
+    }
+    
+    if (playType) {
+      params.append('play', playType);
+    }
+    
+    const queryString = params.toString();
+    return queryString ? `${url}?${queryString}` : url;
+  };
+  
   return (
     <Link 
-      to={`/sports/${sportId}/drills/${drill.id}`}
+      to={buildUrl()}
       className={cn(
         "group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-1",
         className

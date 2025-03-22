@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { BarChart, Camera, Plus } from 'lucide-react';
+import { BarChart, Camera, Plus, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface EmptyStateProps {
   gameplaySituation?: string;
@@ -83,6 +84,13 @@ const EmptyState = ({
             </TabsList>
             
             <TabsContent value="gameplay" className="p-4 border rounded-md mt-4">
+              <Alert className="mb-4 bg-muted/50">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Select your game situation and specific play to get targeted analysis
+                </AlertDescription>
+              </Alert>
+              
               <div className="text-left mb-3">
                 <h4 className="font-medium text-sm mb-2">Select Game Situation</h4>
                 <RadioGroup 
@@ -111,7 +119,7 @@ const EmptyState = ({
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choose a play type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background">
                     {selectedGameplay === 'offense' && (
                       <>
                         <SelectItem value="crossover">Crossover Dribble</SelectItem>

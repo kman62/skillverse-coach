@@ -35,6 +35,21 @@ const AnalysisResults = ({
   gameplaySituation,
   playType
 }: AnalysisResultsProps) => {
+  // Create a title based on gameplay situation and play type if available
+  const renderTitle = () => {
+    if (gameplaySituation && playType) {
+      const formattedGameplay = gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1);
+      const formattedPlayType = playType
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      return `${formattedGameplay}: ${formattedPlayType}`;
+    }
+    
+    return analysisResult.title;
+  };
+  
   return (
     <div className="animate-fade-in space-y-6">
       {/* Demo mode indicator */}
@@ -53,7 +68,7 @@ const AnalysisResults = ({
       )}
       
       <AnalysisCard 
-        title={analysisResult.title}
+        title={renderTitle()}
         description={analysisResult.description}
         score={analysisResult.score}
         metrics={analysisResult.metrics}
@@ -77,7 +92,7 @@ const AnalysisResults = ({
       <FeedbackSystem 
         analysisId={analysisId}
         sportId={sportId || "generic"}
-        drillId={drillId || "technique"}
+        drillId={drillId || (playType ? playType : "technique")}
         score={analysisResult.score || 0}
       />
       

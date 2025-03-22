@@ -41,10 +41,24 @@ const ResultsPanel = ({
   onGameplaySituationChange,
   onPlayTypeChange
 }: ResultsPanelProps) => {
+  // Create a title based on gameplay and analysis state
+  const getPanelTitle = () => {
+    if (analysisResult && gameplaySituation && playType) {
+      const formattedGameplay = gameplaySituation.charAt(0).toUpperCase() + gameplaySituation.slice(1);
+      const formattedPlayType = playType
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      return `${formattedGameplay} Analysis: ${formattedPlayType}`;
+    }
+    
+    return "Analysis Results";
+  };
   
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+      <h2 className="text-xl font-semibold mb-4">{getPanelTitle()}</h2>
       
       {!analysisResult && !isAnalyzing && !apiError && (
         <EmptyState 
