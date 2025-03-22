@@ -1,165 +1,130 @@
 
-import { useToast } from "@/components/ui/use-toast";
-import { generateBasketballAnalysis } from "@/utils/analysis/basketballAnalysis";
-import { generateBaseballAnalysis } from "@/utils/analysis/baseballAnalysis";
-import { generateFootballAnalysis } from "@/utils/analysis/footballAnalysis";
-import { generateGolfAnalysis } from "@/utils/analysis/golfAnalysis";
-import { generateSoccerAnalysis } from "@/utils/analysis/soccerAnalysis";
-import { generateTennisAnalysis } from "@/utils/analysis/tennisAnalysis";
-import { v4 as uuidv4 } from 'uuid';
-
-// Mock behavior analysis generator
-const generateBehaviorAnalysis = (score: number) => {
-  return {
-    consistency: Math.floor(score * 0.9 + Math.random() * 10),
-    preRoutine: Math.floor(score * 0.85 + Math.random() * 15),
-    habits: Math.floor(score * 0.95 + Math.random() * 5),
-    timing: Math.floor(score * 0.8 + Math.random() * 20),
-    fatigue: Math.floor(score * 0.7 + Math.random() * 30),
-  };
-};
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { analyzeVideo, saveAnalysisResult, AnalysisResponse } from '@/utils/videoAnalysisService';
 
 export const useAnalysisHandler = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleAnalyzeClick = async (
     videoFile: File | null,
     drill: any,
-    sportId?: string,
-    drillId?: string,
-    poseMetrics?: any,
-    setIsAnalyzing?: (value: boolean) => void,
-    setApiError?: (value: string | null) => void,
-    setIsDemoMode?: (value: boolean) => void,
-    setAnalysisId?: (value: string) => void,
-    setAnalysisResult?: (value: any) => void,
-    setBehaviorAnalysis?: (value: any) => void,
-    onPoseAnalysis?: (metrics: any) => void,
-    setIsSaving?: (value: boolean) => void,
-    gameplaySituation?: string,
-    playType?: string
+    sportId: string | undefined,
+    drillId: string | undefined,
+    poseMetrics: any,
+    setIsAnalyzing: (isAnalyzing: boolean) => void,
+    setApiError: (error: string | null) => void,
+    setIsDemoMode: (isDemoMode: boolean) => void,
+    setAnalysisId: (id: string | undefined) => void,
+    setAnalysisResult: (result: any) => void,
+    setBehaviorAnalysis: (behavior: any) => void,
+    handlePoseAnalysis: (metrics: any) => void,
+    setIsSaving: (isSaving: boolean) => void
   ) => {
     if (!videoFile) {
       toast({
         title: "No video selected",
-        description: "Please upload a video file first",
-        variant: "destructive",
+        description: "Please upload a video to analyze",
+        variant: "destructive"
       });
       return;
     }
-
-    // Clear previous errors and set analyzing state
-    if (setApiError) setApiError(null);
-    if (setIsAnalyzing) setIsAnalyzing(true);
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to analyze videos",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    setApiError(null);
+    setIsDemoMode(false);
+    setAnalysisId(undefined);
+    
+    const useLocalAnalysis = localStorage.getItem('useLocalAnalysis') === 'true';
+    
+    if (useLocalAnalysis) {
+      setTimeout(() => {
+        if (poseMetrics) {
+          handlePoseAnalysis(poseMetrics);
+        } else {
+          setIsDemoMode(true);
+          toast({
+            title: "Local Analysis Complete",
+            description: "Using pose detection for real-time analysis",
+          });
+        }
+        setIsAnalyzing(false);
+      }, 2000);
+      return;
+    }
     
     try {
-      // Demo mode with mock data (in real app, this would use actual analysis API)
-      const score = Math.floor(70 + Math.random() * 30); // Random score between 70-100
+      const analysisData: AnalysisResponse = await analyzeVideo(
+        videoFile, 
+        drill?.name || "Technique",
+        sportId || "generic"
+      );
       
-      // Generate analysis result based on sport type
-      let analysisResult;
+      setAnalysisResult(analysisData.result);
+      setBehaviorAnalysis(analysisData.behavior);
       
-      if (sportId === "basketball") {
-        analysisResult = generateBasketballAnalysis(drill.name, score, gameplaySituation, playType);
-      } else if (sportId === "baseball") {
-        analysisResult = generateBaseballAnalysis(drill.name, score);
-      } else if (sportId === "football") {
-        analysisResult = generateFootballAnalysis(drill.name, score);
-      } else if (sportId === "golf") {
-        analysisResult = generateGolfAnalysis(drill.name, score);
-      } else if (sportId === "soccer") {
-        analysisResult = generateSoccerAnalysis(drill.name, score);
-      } else if (sportId === "tennis") {
-        analysisResult = generateTennisAnalysis(drill.name, score);
-      } else {
-        // Default generic analysis
-        analysisResult = {
-          title: `${drill.name} Analysis`,
-          description: `Detailed breakdown of your ${drill.name.toLowerCase()} technique.`,
-          score: score,
-          metrics: [
-            {
-              name: "Form",
-              value: Math.floor(score * 0.9 + Math.random() * 10),
-              target: 95,
-              unit: "%"
-            },
-            {
-              name: "Consistency",
-              value: Math.floor(score * 0.85 + Math.random() * 15),
-              target: 90,
-              unit: "%"
-            },
-            {
-              name: "Power",
-              value: Math.floor(score * 0.95 + Math.random() * 5),
-              target: 100,
-              unit: "%"
-            },
-            {
-              name: "Control",
-              value: Math.floor(score * 0.8 + Math.random() * 20),
-              target: 95,
-              unit: "%"
-            }
-          ],
-          feedback: {
-            good: [
-              "Good overall technique",
-              "Nice body position throughout the movement",
-              "Consistent execution"
-            ],
-            improve: [
-              "Focus on better follow through",
-              "Work on maintaining proper form when fatigued",
-              "Improve timing of key movement phases"
-            ]
-          },
-          coachingTips: [
-            "Practice this movement pattern daily",
-            "Record yourself to check your form regularly",
-            "Use resistance training to build specific strength for this movement",
-            "Focus on quality over quantity in practice"
-          ]
-        };
+      if ((window as any).usedFallbackData) {
+        setIsDemoMode(true);
+        window.dispatchEvent(new CustomEvent('analysis-status', { 
+          detail: { isDemoMode: true } 
+        }));
       }
       
-      // Generate behavior analysis
-      const behaviorAnalysis = generateBehaviorAnalysis(score);
+      setIsSaving(true);
+      const saveResult = await saveAnalysisResult(
+        videoFile,
+        sportId || "generic",
+        drillId || "technique",
+        analysisData.result,
+        analysisData.behavior
+      );
       
-      // Wait a bit to simulate actual processing (remove in production)
-      setTimeout(() => {
-        // Generate unique analysis ID
-        const uniqueId = uuidv4();
-        
-        if (setIsDemoMode) setIsDemoMode(true);
-        if (setAnalysisId) setAnalysisId(uniqueId);
-        if (setAnalysisResult) setAnalysisResult(analysisResult);
-        if (setBehaviorAnalysis) setBehaviorAnalysis(behaviorAnalysis);
-        if (setIsAnalyzing) setIsAnalyzing(false);
-        
-        toast({
-          title: "Analysis Complete",
-          description: "Your technique has been analyzed successfully",
-        });
-      }, 2000);
-
-    } catch (error) {
-      console.error("Analysis error:", error);
-      if (setApiError) {
-        setApiError(
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred during analysis"
-        );
+      if (saveResult?.id) {
+        setAnalysisId(saveResult.id);
       }
-      if (setIsAnalyzing) setIsAnalyzing(false);
       
       toast({
-        title: "Analysis Failed",
-        description: "There was an error analyzing your video",
-        variant: "destructive",
+        title: "Analysis Complete",
+        description: (window as any).usedFallbackData
+          ? "Your technique has been analyzed using demo mode" 
+          : "Your technique has been successfully analyzed and saved"
       });
+    } catch (error) {
+      console.error("Analysis error:", error);
+      setApiError(error instanceof Error ? error.message : "Unknown error occurred");
+      
+      if (error instanceof Error && 
+         (error.message.includes("exceeded the maximum allowed size") || 
+          error.message.includes("file size exceeds"))) {
+        toast({
+          title: "Video too large",
+          description: "Please upload a smaller video file (max 50MB)",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: "There was an error analyzing your video. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } finally {
+      setIsAnalyzing(false);
+      setIsSaving(false);
     }
   };
 

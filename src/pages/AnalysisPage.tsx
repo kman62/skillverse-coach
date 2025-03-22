@@ -100,9 +100,7 @@ const AnalysisPage = () => {
       setAnalysisResult,
       setBehaviorAnalysis,
       onPoseAnalysis,
-      setIsSaving,
-      gameplaySituation,
-      playType
+      setIsSaving
     );
   };
 
