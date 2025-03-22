@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analysis_feedback: {
+        Row: {
+          analysis_id: string | null
+          comments: string | null
+          created_at: string
+          drill_id: string
+          id: string
+          original_score: number | null
+          rating: number
+          sport_id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          comments?: string | null
+          created_at?: string
+          drill_id: string
+          id?: string
+          original_score?: number | null
+          rating: number
+          sport_id: string
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          comments?: string | null
+          created_at?: string
+          drill_id?: string
+          id?: string
+          original_score?: number | null
+          rating?: number
+          sport_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_feedback_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analysis_results: {
         Row: {
           analysis_data: Json

@@ -50,18 +50,16 @@ const FeedbackSystem = ({ analysisId, sportId, drillId, score }: FeedbackSystemP
     setIsSubmitting(true);
 
     try {
-      // Submit feedback to Supabase
-      const { error } = await supabase
-        .from('analysis_feedback')
-        .insert({
-          user_id: user.id,
-          analysis_id: analysisId || null,
-          sport_id: sportId,
-          drill_id: drillId,
-          rating: rating,
-          comments: feedback,
-          original_score: score
-        });
+      // Submit feedback to Supabase using raw query
+      const { error } = await supabase.rpc('insert_analysis_feedback', {
+        p_user_id: user.id,
+        p_analysis_id: analysisId || null,
+        p_sport_id: sportId,
+        p_drill_id: drillId,
+        p_rating: rating,
+        p_comments: feedback,
+        p_original_score: score
+      });
 
       if (error) throw error;
 
