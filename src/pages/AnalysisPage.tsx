@@ -28,6 +28,7 @@ const AnalysisPage = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -84,6 +85,7 @@ const AnalysisPage = () => {
     setIsAnalyzing(true);
     setApiError(null);
     setIsDemoMode(false);
+    setAnalysisId(undefined);
     
     try {
       // Pass sportId to the analysis function
@@ -107,13 +109,18 @@ const AnalysisPage = () => {
       
       // Save the analysis results to Supabase
       setIsSaving(true);
-      await saveAnalysisResult(
+      const saveResult = await saveAnalysisResult(
         videoFile,
         sportId || "generic",
         drillId || "technique",
         analysisData.result,
         analysisData.behavior
       );
+      
+      // Set the analysis ID if available
+      if (saveResult?.id) {
+        setAnalysisId(saveResult.id);
+      }
       
       toast({
         title: "Analysis Complete",
@@ -186,6 +193,9 @@ const AnalysisPage = () => {
               apiError={apiError}
               isDemoMode={isDemoMode}
               onRetry={handleAnalyzeClick}
+              analysisId={analysisId}
+              sportId={sportId}
+              drillId={drillId}
             />
           </div>
         </div>

@@ -6,6 +6,7 @@ import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import VideoAnnotation from '@/components/analysis/VideoAnnotation';
+import FeedbackSystem from '@/components/analysis/FeedbackSystem';
 
 interface ResultsPanelProps {
   isAnalyzing: boolean;
@@ -15,6 +16,9 @@ interface ResultsPanelProps {
   apiError?: string | null;
   isDemoMode?: boolean;
   onRetry?: () => void;
+  analysisId?: string;
+  sportId?: string;
+  drillId?: string;
 }
 
 const ResultsPanel = ({ 
@@ -24,7 +28,10 @@ const ResultsPanel = ({
   videoFile, 
   apiError,
   isDemoMode,
-  onRetry 
+  onRetry,
+  analysisId,
+  sportId,
+  drillId
 }: ResultsPanelProps) => {
   const { toast } = useToast();
   
@@ -169,6 +176,14 @@ const ResultsPanel = ({
               ))}
             </div>
           </div>
+          
+          {/* Feedback System */}
+          <FeedbackSystem 
+            analysisId={analysisId}
+            sportId={sportId || "generic"}
+            drillId={drillId || "technique"}
+            score={analysisResult.score || 0}
+          />
           
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 pt-2">

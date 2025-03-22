@@ -166,7 +166,7 @@ export const saveAnalysisResult = async (
     // 3. Insert analysis results - make sure we have a valid score
     const score = calculateValidScore(analysisResult);
                   
-    const { error: analysisError } = await supabase
+    const { error: analysisError, data: analysisData } = await supabase
       .from('analysis_results')
       .insert({
         user_id: userId,
@@ -176,7 +176,9 @@ export const saveAnalysisResult = async (
         analysis_data: analysisResult,
         behavior_data: behaviorAnalysis,
         score: score
-      });
+      })
+      .select('id')
+      .single();
       
     if (analysisError) {
       throw new Error(`Error saving analysis results: ${analysisError.message}`);
@@ -204,7 +206,7 @@ export const saveAnalysisResult = async (
       throw new Error(`Error saving user progress: ${progressError.message}`);
     }
     
-    return { success: true };
+    return { success: true, id: analysisData.id };
   } catch (error) {
     console.error('Error saving analysis data:', error);
     throw error;
