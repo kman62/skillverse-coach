@@ -1,8 +1,9 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Results } from '@mediapipe/pose';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
 import PoseCanvas from './PoseCanvas';
+import { useToast } from '@/components/ui/use-toast';
 
 interface VideoCanvasProps {
   videoFile: File;
@@ -23,9 +24,10 @@ const VideoCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [poseDetected, setPoseDetected] = useState(false);
   const [poseResults, setPoseResults] = useState<Results | undefined>(undefined);
+  const { toast } = useToast();
   
   // Use the pose detection hook
-  usePoseDetection({
+  const { poseDetector } = usePoseDetection({
     videoRef,
     videoFile,
     onPoseDetection: (detected) => {
@@ -35,6 +37,27 @@ const VideoCanvas = ({
     onPoseAnalysis,
     setDetectionActive
   });
+
+  // Notify user when pose detection is initialized
+  useEffect(() => {
+    if (poseDetector) {
+      console.log('MediaPipe pose detector is ready');
+      toast({
+        title: "Pose Detection Ready",
+        description: "Play the video to start analyzing your technique",
+        duration: 3000,
+      });
+    }
+  }, [poseDetector, toast]);
+
+  // Tell user when video loads to play it
+  const handleVideoLoaded = () => {
+    toast({
+      title: "Video Loaded",
+      description: "Press play to begin pose detection",
+      duration: 3000,
+    });
+  };
   
   return (
     <>
@@ -43,6 +66,7 @@ const VideoCanvas = ({
         className="w-full aspect-video object-contain bg-black"
         controls
         src={URL.createObjectURL(videoFile)}
+        onLoadedData={handleVideoLoaded}
       />
       <canvas 
         ref={canvasRef}

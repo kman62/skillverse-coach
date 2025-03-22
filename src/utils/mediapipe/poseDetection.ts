@@ -4,9 +4,13 @@ import { calculatePoseMetrics } from './poseMetrics';
 
 // Initialize pose model with the desired options
 export const createPoseDetector = async (): Promise<Pose> => {
+  console.log('Creating pose detector with MediaPipe...');
+  
   const pose = new Pose({
     locateFile: (file) => {
-      return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+      const url = `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+      console.log(`Loading MediaPipe file: ${url}`);
+      return url;
     }
   });
   
@@ -20,6 +24,7 @@ export const createPoseDetector = async (): Promise<Pose> => {
     minTrackingConfidence: 0.5
   });
   
+  console.log('MediaPipe pose detector configured successfully');
   return pose;
 };
 
@@ -34,11 +39,21 @@ export const detectPose = async (
     return;
   }
   
+  // Check if video is ready
+  if (videoElement.readyState < 2) {
+    console.log('Video not ready for processing yet');
+    return;
+  }
+  
   // Set the callback to receive results
   pose.onResults(onResults);
   
-  // Process the current video frame
-  await pose.send({ image: videoElement });
+  try {
+    // Process the current video frame
+    await pose.send({ image: videoElement });
+  } catch (error) {
+    console.error('Error processing video frame:', error);
+  }
 };
 
 // Draw pose landmarks on a canvas
@@ -90,16 +105,14 @@ export const drawPoseLandmarks = (
   }
   
   // Draw visibility scores for debugging
-  if (process.env.NODE_ENV === 'development') {
-    const visibleLandmarks = results.poseLandmarks.filter(lm => lm.visibility > 0.7).length;
-    const totalLandmarks = results.poseLandmarks.length;
-    
-    ctx.fillStyle = 'white';
-    ctx.fillRect(10, 10, 200, 30);
-    ctx.fillStyle = 'black';
-    ctx.font = '12px Arial';
-    ctx.fillText(`Landmarks detected: ${visibleLandmarks}/${totalLandmarks}`, 15, 30);
-  }
+  const visibleLandmarks = results.poseLandmarks.filter(lm => lm.visibility > 0.7).length;
+  const totalLandmarks = results.poseLandmarks.length;
+  
+  ctx.fillStyle = 'white';
+  ctx.fillRect(10, 10, 200, 30);
+  ctx.fillStyle = 'black';
+  ctx.font = '12px Arial';
+  ctx.fillText(`Landmarks detected: ${visibleLandmarks}/${totalLandmarks}`, 15, 30);
 };
 
 // Export the metric calculation function for use in other components
