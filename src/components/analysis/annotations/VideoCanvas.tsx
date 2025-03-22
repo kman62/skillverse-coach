@@ -11,8 +11,6 @@ interface VideoCanvasProps {
   onPoseDetection: (poseDetected: boolean) => void;
   onPoseAnalysis?: (metrics: any) => void;
   setDetectionActive: (active: boolean) => void;
-  gameplaySituation?: string;
-  playType?: string;
 }
 
 const VideoCanvas = ({ 
@@ -20,25 +18,14 @@ const VideoCanvas = ({
   analysisResult, 
   onPoseDetection,
   onPoseAnalysis,
-  setDetectionActive,
-  gameplaySituation,
-  playType
+  setDetectionActive
 }: VideoCanvasProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [poseDetected, setPoseDetected] = useState(false);
   const [poseResults, setPoseResults] = useState<Results | undefined>(undefined);
   const [videoReady, setVideoReady] = useState(false);
-  const [processingActive, setProcessingActive] = useState(false);
   const { toast } = useToast();
-  
-  // Log gameplay analysis context when it changes
-  useEffect(() => {
-    if (gameplaySituation && playType) {
-      console.log(`Analyzing ${gameplaySituation} - ${playType}`);
-      // We could adjust pose detection parameters based on the gameplay situation
-    }
-  }, [gameplaySituation, playType]);
   
   // Use the pose detection hook
   const { poseDetector, processFrame } = usePoseDetection({
@@ -49,8 +36,6 @@ const VideoCanvas = ({
       onPoseDetection(detected);
       if (results) {
         setPoseResults(results);
-        console.log('Received pose results with landmarks:', 
-          results.poseLandmarks ? results.poseLandmarks.length : 0);
       }
     },
     onPoseAnalysis,
@@ -79,72 +64,26 @@ const VideoCanvas = ({
       description: "Press play to begin pose detection",
       duration: 3000,
     });
-    
-    // Force an initial frame processing to check if pose can be detected
-    setTimeout(() => {
-      if (videoRef.current && poseDetector) {
-        console.log('Attempting initial frame processing');
-        processFrame();
-      }
-    }, 1000);
   };
 
-  // Handle video play/pause to control processing
-  useEffect(() => {
-    if (!videoRef.current || !poseDetector) return;
-    
-    const video = videoRef.current;
-    
-    const handlePlay = () => {
-      console.log('Video playback started');
-      setProcessingActive(true);
-    };
-    
-    const handlePause = () => {
-      console.log('Video playback paused');
-      setProcessingActive(false);
-    };
-    
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-    
-    return () => {
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-    };
-  }, [poseDetector]);
-  
   // Force frame processing when video is playing
   useEffect(() => {
-    if (!videoRef.current || !poseDetector || !videoReady || !processingActive) return;
+    if (!videoRef.current || !poseDetector || !videoReady) return;
     
-    console.log('Setting up frame processing intervals');
     const video = videoRef.current;
     
-    // Process frames when video is playing - increased frequency
+    // Process frames when video is playing
     const checkVideoPlaying = () => {
       if (!video.paused && !video.ended) {
-        console.log('Processing frame at time:', video.currentTime.toFixed(2));
+        console.log('Video is playing - processing frame');
         processFrame();
-        
-        // Force trigger pose analysis after a few seconds of playback
-        if (video.currentTime > 2 && onPoseAnalysis && poseResults?.poseLandmarks) {
-          console.log('Triggering pose analysis from detected landmarks');
-          const metrics = {
-            symmetry: Math.round(70 + Math.random() * 20),
-            stability: Math.round(75 + Math.random() * 15),
-            posture: Math.round(65 + Math.random() * 25),
-            form: Math.round(70 + Math.random() * 20),
-          };
-          onPoseAnalysis(metrics);
-        }
       }
     };
     
-    // Process frames more frequently (every 100ms) for better detection
+    // Process frames more frequently for better detection
     const intervalId = setInterval(checkVideoPlaying, 100);
     
-    // Also process frames on timeupdate events for smoother detection
+    // Also process frames on timeupdate events
     const onTimeUpdate = () => {
       if (!video.paused && !video.ended) {
         processFrame();
@@ -157,7 +96,7 @@ const VideoCanvas = ({
       clearInterval(intervalId);
       video.removeEventListener('timeupdate', onTimeUpdate);
     };
-  }, [poseDetector, processFrame, videoReady, processingActive, poseResults, onPoseAnalysis]);
+  }, [poseDetector, processFrame, videoReady]);
   
   return (
     <>
@@ -180,11 +119,6 @@ const VideoCanvas = ({
         analysisResult={analysisResult}
         poseDetected={poseDetected}
       />
-      {gameplaySituation && playType && (
-        <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-md text-xs">
-          Analyzing: {gameplaySituation} - {playType}
-        </div>
-      )}
     </>
   );
 };
