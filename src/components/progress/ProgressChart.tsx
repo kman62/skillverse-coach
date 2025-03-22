@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +6,7 @@ import MetricsPanel from './MetricsPanel';
 import ProgressChartView from './ProgressChartView';
 import PerformanceMetrics from './PerformanceMetrics';
 import EmptyState from './EmptyState';
-import AccuracyMetrics from './AccuracyMetrics';
+import AccuracyMetrics from '@/components/progress/AccuracyMetrics';
 
 const ProgressChart = ({ data, metrics, accuracyMetrics, className }: ProgressChartProps) => {
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
