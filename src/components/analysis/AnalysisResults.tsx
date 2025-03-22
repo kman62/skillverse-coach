@@ -18,6 +18,8 @@ interface AnalysisResultsProps {
   sportId?: string;
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
+  gameplaySituation?: string;
+  playType?: string;
 }
 
 const AnalysisResults = ({
@@ -29,7 +31,9 @@ const AnalysisResults = ({
   analysisId,
   sportId,
   drillId,
-  onPoseAnalysis
+  onPoseAnalysis,
+  gameplaySituation,
+  playType
 }: AnalysisResultsProps) => {
   return (
     <div className="animate-fade-in space-y-6">
