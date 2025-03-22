@@ -4,7 +4,16 @@ project_id = "aithlete-analysis-app"
 port = 54321
 [db]
 port = 54322
+[studio]
+port = 54323
+[inbucket]
+port = 54324
+[auth]
+port = 54325
+[storage]
+port = 54326
+[realtime]
+port = 54327
 [functions]
-port = 9999
 [functions.analyze-video-gpt4o]
 verify_jwt = false
