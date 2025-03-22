@@ -6,6 +6,11 @@ import { getSportById, getDrillById } from '@/lib/constants';
 import { useToast } from '@/components/ui/use-toast';
 import { analyzeVideo, saveAnalysisResult, AnalysisResponse } from '@/utils/videoAnalysisService';
 import { useAuth } from '@/contexts/AuthContext';
+import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
+import DrillInfo from '@/components/analysis/DrillInfo';
+import NotFoundMessage from '@/components/analysis/NotFoundMessage';
+import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
+import ResultsPanel from '@/components/analysis/ResultsPanel';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
