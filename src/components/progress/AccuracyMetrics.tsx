@@ -98,11 +98,12 @@ const AccuracyMetrics = ({ metrics }: AccuracyMetricsProps) => {
               <Progress 
                 value={metric.value} 
                 className="h-2" 
-                indicatorClassName={
+                // Changed indicatorClassName to className with a specific selector for the indicator
+                className={`h-2 [&>div]:${
                   metric.value >= 80 ? "bg-green-500" : 
                   metric.value >= 60 ? "bg-yellow-500" : 
                   "bg-red-500"
-                }
+                }`}
               />
               {metric.target && (
                 <div className="flex justify-end">

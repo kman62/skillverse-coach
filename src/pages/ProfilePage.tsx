@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import ProgressChart from '@/components/ui/ProgressChart';
+import ProgressChart from '@/components/progress/ProgressChart';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import { SPORTS } from '@/lib/constants';
 import { User, Award, Flame, Calendar, ChevronRight, Clock, Loader2, Settings, ChevronDown } from 'lucide-react';
@@ -20,6 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import AccuracyMetrics from '@/components/progress/AccuracyMetrics';
 
 const ProfilePage = () => {
   const { user } = useAuth();
