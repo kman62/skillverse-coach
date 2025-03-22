@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import VideoUploader from '@/components/ui/VideoUploader';
-import { BarChart, Info, AlertTriangle } from 'lucide-react';
+import { BarChart, Info, AlertTriangle, Camera } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 
@@ -23,8 +22,8 @@ const VideoAnalysisPanel = ({
   const [usesDemoData, setUsesDemoData] = useState(false);
   const [progressPhase, setProgressPhase] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
-
-  // Update progress bar during "analysis"
+  const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
+  
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -32,7 +31,6 @@ const VideoAnalysisPanel = ({
       setProcessingProgress(0);
       interval = setInterval(() => {
         setProcessingProgress(prev => {
-          // Different speed for different phases
           const phaseThresholds = [
             { threshold: 20, phase: 'Initializing analysis...' },
             { threshold: 40, phase: 'Processing video frames...' },
@@ -41,7 +39,6 @@ const VideoAnalysisPanel = ({
             { threshold: 90, phase: 'Finalizing results...' },
           ];
           
-          // Update the phase text based on progress
           for (const { threshold, phase } of phaseThresholds) {
             if (prev < threshold) {
               setProgressPhase(phase);
@@ -49,14 +46,12 @@ const VideoAnalysisPanel = ({
             }
           }
           
-          // Slowly increase progress, capping at 90% until complete
           const increment = Math.random() * 3 + (prev < 30 ? 2 : prev < 60 ? 1 : 0.5);
           const newProgress = prev + increment;
           return newProgress < 90 ? newProgress : 90;
         });
       }, 200);
     } else {
-      // Reset or complete progress
       setProcessingProgress(isAnalyzing ? 90 : 0);
       setProgressPhase('');
     }
@@ -66,7 +61,6 @@ const VideoAnalysisPanel = ({
     };
   }, [isAnalyzing]);
 
-  // Check API connectivity when component mounts
   useEffect(() => {
     const checkApiConnectivity = async () => {
       try {
@@ -80,40 +74,32 @@ const VideoAnalysisPanel = ({
         if (response.ok) {
           setConnectionStatus('connected');
         } else {
-          // API is reachable but returned an error
           setConnectionStatus('limited');
         }
       } catch (error) {
-        // API is not reachable
         setConnectionStatus('offline');
+        setUseLocalAnalysis(true);
       }
     };
     
     checkApiConnectivity();
     
-    // Recheck connectivity every 5 minutes
     const intervalId = setInterval(checkApiConnectivity, 5 * 60 * 1000);
     
     return () => clearInterval(intervalId);
   }, []);
 
   const handleVideoSelected = (file: File) => {
-    // Check if file is too large before passing it to parent
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
     
     if (file.size > MAX_FILE_SIZE) {
-      // This error is now handled in the VideoUploader component
-      // But we still check here to prevent passing large files up
       return;
     }
     
-    // Reset the demo data indicator when a new video is selected
     setUsesDemoData(false);
     onVideoSelected(file);
   };
 
-  // Handler for connection failures (when we use mock data)
-  // This is called by AnalysisPage after catching a connection error
   useEffect(() => {
     const handleConnectionStatus = (event: CustomEvent) => {
       if (event.detail?.isDemoMode) {
@@ -128,11 +114,20 @@ const VideoAnalysisPanel = ({
     };
   }, []);
 
+  const toggleAnalysisMode = () => {
+    setUseLocalAnalysis(!useLocalAnalysis);
+    toast({
+      title: !useLocalAnalysis ? "Local Analysis Enabled" : "Cloud Analysis Enabled",
+      description: !useLocalAnalysis 
+        ? "Using on-device MediaPipe for real-time pose detection" 
+        : "Using cloud AI for comprehensive analysis"
+    });
+  };
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Upload Your Technique</h2>
       
-      {/* API Status Indicator */}
       {connectionStatus !== 'connected' && (
         <div className={`mb-4 p-3 rounded-md flex items-start gap-2 ${
           connectionStatus === 'limited' 
@@ -147,18 +142,50 @@ const VideoAnalysisPanel = ({
           }`}>
             {connectionStatus === 'limited' 
               ? 'Analysis service is operating in limited capacity. Some features may be slower than usual.' 
-              : 'Analysis service is currently offline. Demo mode will be used automatically.'}
+              : 'Analysis service is currently offline. Local analysis will be used automatically.'}
           </p>
         </div>
       )}
       
       <VideoUploader onVideoSelected={handleVideoSelected} />
       
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <span className="text-sm text-muted-foreground mr-2">Analysis Mode:</span>
+          <button 
+            onClick={toggleAnalysisMode}
+            className={`flex items-center text-xs px-2 py-1 rounded ${
+              useLocalAnalysis 
+                ? 'bg-green-100 text-green-700 border border-green-200' 
+                : 'bg-blue-100 text-blue-700 border border-blue-200'
+            }`}
+          >
+            {useLocalAnalysis ? (
+              <>
+                <Camera size={12} className="mr-1" /> 
+                Local MediaPipe
+              </>
+            ) : (
+              <>
+                <BarChart size={12} className="mr-1" /> 
+                Cloud AI
+              </>
+            )}
+          </button>
+        </div>
+        
+        <div className="text-xs text-muted-foreground">
+          {useLocalAnalysis ? 'Real-time processing' : 'Advanced feedback'}
+        </div>
+      </div>
+      
       {usesDemoData && !isAnalyzing && (
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start gap-2">
           <Info size={18} className="text-yellow-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-yellow-700">
-            Using demo mode. The API connection could not be established, so simulated analysis data will be shown.
+            Using demo mode. The API connection could not be established, so {
+              useLocalAnalysis ? 'local' : 'simulated'
+            } analysis data will be shown.
           </p>
         </div>
       )}
@@ -183,7 +210,10 @@ const VideoAnalysisPanel = ({
         )}
         
         <button
-          onClick={onAnalyzeClick}
+          onClick={() => {
+            window.localStorage.setItem('useLocalAnalysis', useLocalAnalysis.toString());
+            onAnalyzeClick();
+          }}
           disabled={!videoFile || isAnalyzing}
           className={`w-full py-3 rounded-lg text-white font-medium flex items-center justify-center transition-colors ${
             !videoFile || isAnalyzing 
@@ -201,7 +231,7 @@ const VideoAnalysisPanel = ({
             </>
           ) : (
             <>
-              <BarChart size={18} className="mr-2" />
+              {useLocalAnalysis ? <Camera size={18} className="mr-2" /> : <BarChart size={18} className="mr-2" />}
               Analyze Technique
             </>
           )}
@@ -226,6 +256,11 @@ const VideoAnalysisPanel = ({
           <li className="text-muted-foreground text-sm list-disc">
             Keep videos under 50MB for optimal processing
           </li>
+          {useLocalAnalysis && (
+            <li className="text-muted-foreground text-sm list-disc font-medium text-green-700">
+              Make sure your face and full body are visible for better pose detection
+            </li>
+          )}
         </ul>
       </div>
     </div>

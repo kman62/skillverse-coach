@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -29,6 +28,7 @@ const AnalysisPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
+  const [poseMetrics, setPoseMetrics] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -60,6 +60,142 @@ const AnalysisPage = () => {
     setBehaviorAnalysis(null);
     setApiError(null);
     setIsDemoMode(false);
+    setPoseMetrics(null);
+  };
+  
+  const handlePoseAnalysis = (metrics: any) => {
+    if (!metrics) return;
+    
+    // Store the latest metrics
+    setPoseMetrics(metrics);
+    
+    // If we're in the middle of analysis, don't update the UI
+    if (isAnalyzing) return;
+    
+    // If we have metrics but no analysis result yet, create a simple one
+    // based on the MediaPipe detection
+    if (metrics && !analysisResult) {
+      // Convert pose metrics to our analysis format
+      const localAnalysis: AnalysisResponse = {
+        result: {
+          title: `${drill?.name || 'Technique'} Analysis`,
+          description: "MediaPipe pose detection analysis",
+          score: Math.round((metrics.symmetry + metrics.stability + metrics.posture + metrics.form) / 4),
+          metrics: [
+            {
+              name: "Form Quality",
+              value: Math.round(metrics.form),
+              target: 95,
+              unit: "%"
+            },
+            {
+              name: "Posture",
+              value: Math.round(metrics.posture),
+              target: 90,
+              unit: "%"
+            },
+            {
+              name: "Balance",
+              value: Math.round(metrics.stability),
+              target: 95,
+              unit: "%"
+            },
+            {
+              name: "Symmetry",
+              value: Math.round(metrics.symmetry),
+              target: 90,
+              unit: "%"
+            }
+          ],
+          feedback: {
+            good: [
+              "Real-time pose detection is working",
+              "Your movement is being tracked successfully",
+              `Your overall form score is ${Math.round(metrics.form)}%`
+            ],
+            improve: [
+              "Make sure your full body is visible in the frame",
+              "Try to maintain better posture during the movement",
+              "Focus on balanced, symmetric movements"
+            ]
+          },
+          coachingTips: [
+            "Continue with slow, controlled movements for better tracking",
+            "Try different angles to ensure all key body parts are visible",
+            "Maintain good lighting for more accurate pose detection",
+            "Compare your form with reference videos of proper technique"
+          ]
+        },
+        behavior: {
+          consistency: [
+            {
+              name: "Movement Pattern",
+              description: "Your movement pattern shows good consistency.",
+              quality: metrics.stability > 80 ? "good" : "needs-improvement",
+              icon: null
+            },
+            {
+              name: "Position Stability",
+              description: "Your position stability could be improved.",
+              quality: metrics.stability > 85 ? "good" : "needs-improvement",
+              icon: null
+            }
+          ],
+          preRoutine: [
+            {
+              name: "Setup Position",
+              description: "Your initial position looks good.",
+              quality: metrics.posture > 80 ? "good" : "needs-improvement",
+              icon: null
+            },
+            {
+              name: "Balance",
+              description: "Your balance is stable throughout the movement.",
+              quality: metrics.stability > 80 ? "good" : "needs-improvement",
+              icon: null
+            }
+          ],
+          habits: [
+            {
+              name: "Body Alignment",
+              description: "Your body alignment is good during the movement.",
+              quality: metrics.posture > 75 ? "good" : "needs-improvement",
+              icon: null
+            },
+            {
+              name: "Movement Flow",
+              description: "Your movement flow is smooth and controlled.",
+              quality: metrics.form > 80 ? "good" : "needs-improvement",
+              icon: null
+            }
+          ],
+          timing: {
+            average: "Real-time analysis",
+            consistency: Math.round(metrics.stability),
+            isRushing: false,
+            attempts: [{ attemptNumber: 1, duration: "Real-time" }]
+          },
+          fatigue: {
+            level: "low",
+            signs: [
+              "MediaPipe analysis doesn't track fatigue",
+              "Consider recording multiple attempts for fatigue analysis"
+            ],
+            recommendations: [
+              "Focus on maintaining proper form throughout the movement",
+              "Take breaks between attempts to prevent fatigue"
+            ]
+          }
+        }
+      };
+      
+      // Update the analysis result with the local MediaPipe analysis
+      setAnalysisResult(localAnalysis.result);
+      setBehaviorAnalysis(localAnalysis.behavior);
+      
+      // Set demo mode flag since this is local analysis
+      setIsDemoMode(true);
+    }
   };
   
   const handleAnalyzeClick = async () => {
@@ -87,8 +223,25 @@ const AnalysisPage = () => {
     setIsDemoMode(false);
     setAnalysisId(undefined);
     
+    const useLocalAnalysis = localStorage.getItem('useLocalAnalysis') === 'true';
+    
+    if (useLocalAnalysis) {
+      setTimeout(() => {
+        if (poseMetrics) {
+          handlePoseAnalysis(poseMetrics);
+        } else {
+          setIsDemoMode(true);
+          toast({
+            title: "Local Analysis Complete",
+            description: "Using pose detection for real-time analysis",
+          });
+        }
+        setIsAnalyzing(false);
+      }, 2000);
+      return;
+    }
+    
     try {
-      // Pass sportId to the analysis function
       const analysisData: AnalysisResponse = await analyzeVideo(
         videoFile, 
         drill?.name || "Technique",
@@ -98,16 +251,13 @@ const AnalysisPage = () => {
       setAnalysisResult(analysisData.result);
       setBehaviorAnalysis(analysisData.behavior);
       
-      // If we received analysis data but it was from the fallback, set demo mode
       if ((window as any).usedFallbackData) {
         setIsDemoMode(true);
-        // Notify the VideoAnalysisPanel via a custom event
         window.dispatchEvent(new CustomEvent('analysis-status', { 
           detail: { isDemoMode: true } 
         }));
       }
       
-      // Save the analysis results to Supabase
       setIsSaving(true);
       const saveResult = await saveAnalysisResult(
         videoFile,
@@ -117,7 +267,6 @@ const AnalysisPage = () => {
         analysisData.behavior
       );
       
-      // Set the analysis ID if available
       if (saveResult?.id) {
         setAnalysisId(saveResult.id);
       }
@@ -174,9 +323,7 @@ const AnalysisPage = () => {
           <BreadcrumbNav sport={sport} drill={drill} />
           <DrillInfo drill={drill} />
           
-          {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Left Column: Video Upload */}
             <VideoAnalysisPanel
               videoFile={videoFile}
               isAnalyzing={isAnalyzing || isSaving}
@@ -184,7 +331,6 @@ const AnalysisPage = () => {
               onAnalyzeClick={handleAnalyzeClick}
             />
             
-            {/* Right Column: Analysis Results */}
             <ResultsPanel
               isAnalyzing={isAnalyzing || isSaving}
               analysisResult={analysisResult}
@@ -196,6 +342,7 @@ const AnalysisPage = () => {
               analysisId={analysisId}
               sportId={sportId}
               drillId={drillId}
+              onPoseAnalysis={handlePoseAnalysis}
             />
           </div>
         </div>

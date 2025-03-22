@@ -1,16 +1,26 @@
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPoseDetector, detectPose, drawPoseLandmarks, calculatePoseMetrics } from '@/utils/mediapipe/poseDetection';
+import { Results } from '@mediapipe/pose';
 
 interface VideoAnnotationProps {
   videoFile: File | null;
   analysisResult: any | null;
   isDemoMode?: boolean;
+  onPoseAnalysis?: (metrics: any) => void;
 }
 
-const VideoAnnotation = ({ videoFile, analysisResult, isDemoMode }: VideoAnnotationProps) => {
+const VideoAnnotation = ({ 
+  videoFile, 
+  analysisResult, 
+  isDemoMode,
+  onPoseAnalysis 
+}: VideoAnnotationProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [poseDetected, setPoseDetected] = useState(false);
+  const [detectionActive, setDetectionActive] = useState(false);
   
   // Setup canvas and video synchronization
   useEffect(() => {
@@ -29,80 +39,150 @@ const VideoAnnotation = ({ videoFile, analysisResult, isDemoMode }: VideoAnnotat
         canvas.height = video.videoHeight;
       }
     };
+
+    // Initialize MediaPipe pose detection
+    let poseDetector: any = null;
+    let detectionInterval: NodeJS.Timeout | null = null;
     
-    // Draw annotations based on current video time
-    const drawAnnotations = () => {
-      if (!ctx || !analysisResult) return;
-      
-      // Clear the canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Generate some demo annotations if we have analysis results
-      if (analysisResult) {
-        // Draw frame
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-        
-        // Draw different annotations based on video time
-        const currentTime = video.currentTime;
-        const totalTime = video.duration || 1;
-        const progress = currentTime / totalTime;
-        
-        // Simulate different annotations at different points in the video
-        if (progress < 0.33) {
-          // Initial stance analysis
-          drawStanceAnalysis(ctx, canvas.width, canvas.height);
-        } else if (progress < 0.66) {
-          // Movement analysis
-          drawMovementAnalysis(ctx, canvas.width, canvas.height, currentTime);
-        } else {
-          // Form completion analysis
-          drawCompletionAnalysis(ctx, canvas.width, canvas.height);
-        }
-        
-        // Always show score
-        const score = analysisResult.score || 75;
-        drawScore(ctx, score, canvas.width, canvas.height);
+    const initializePoseDetection = async () => {
+      try {
+        setDetectionActive(true);
+        poseDetector = await createPoseDetector();
+        console.log('MediaPipe Pose detector initialized');
+      } catch (error) {
+        console.error('Error initializing pose detector:', error);
+        setDetectionActive(false);
       }
+    };
+    
+    // Process video frames
+    const processFrame = async () => {
+      if (!poseDetector || !video || video.paused || video.ended) return;
       
-      // Request next frame if video is playing
-      if (!video.paused && !video.ended) {
-        requestAnimationFrame(drawAnnotations);
+      try {
+        await detectPose(poseDetector, video, (results: Results) => {
+          // Clear the canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw pose landmarks
+          if (results.poseLandmarks) {
+            setPoseDetected(true);
+            drawPoseLandmarks(ctx, results, canvas.width, canvas.height);
+            
+            // Calculate metrics from pose data
+            const metrics = calculatePoseMetrics(results);
+            
+            // Pass metrics to parent component if callback provided
+            if (metrics && onPoseAnalysis) {
+              onPoseAnalysis(metrics);
+            }
+          } else {
+            setPoseDetected(false);
+            // Draw a message if no pose is detected
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(canvas.width/2 - 100, 20, 200, 30);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No pose detected', canvas.width/2, 40);
+          }
+          
+          // Draw custom annotations based on analysis result
+          if (analysisResult) {
+            drawAnalysisAnnotations(ctx, canvas.width, canvas.height, video.currentTime, video.duration);
+          }
+          
+          // Add timestamp for debugging
+          ctx.fillStyle = 'white';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(`Time: ${video.currentTime.toFixed(1)}s`, canvas.width - 10, canvas.height - 10);
+        });
+      } catch (error) {
+        console.error('Error in pose detection:', error);
       }
     };
     
     // Handle video events
     const handlePlay = () => {
       setIsPlaying(true);
-      drawAnnotations();
+      if (!poseDetector) {
+        initializePoseDetection();
+      }
+      
+      // Start detection loop
+      if (detectionInterval) clearInterval(detectionInterval);
+      detectionInterval = setInterval(processFrame, 100); // Process every 100ms
     };
     
     const handlePause = () => {
       setIsPlaying(false);
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+      }
     };
     
-    const handleTimeUpdate = () => {
-      if (video.paused || video.ended) {
-        drawAnnotations();
+    // Draw analysis annotations based on current video time
+    const drawAnalysisAnnotations = (
+      ctx: CanvasRenderingContext2D, 
+      width: number, 
+      height: number,
+      currentTime: number,
+      totalDuration: number
+    ) => {
+      // Only draw if we have analysis results
+      if (!analysisResult) return;
+      
+      // Calculate progress through video
+      const progress = totalDuration ? currentTime / totalDuration : 0;
+      
+      // Frame around the video
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(10, 10, width - 20, height - 20);
+      
+      // Draw different annotations based on video time
+      if (progress < 0.33) {
+        drawStanceAnalysis(ctx, width, height);
+      } else if (progress < 0.66) {
+        drawMovementAnalysis(ctx, width, height, currentTime);
+      } else {
+        drawCompletionAnalysis(ctx, width, height);
       }
+      
+      // Always show score
+      const score = analysisResult.score || 75;
+      drawScore(ctx, score, width, height);
     };
     
     // Set up event listeners
     video.addEventListener('loadedmetadata', updateCanvasDimensions);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
-    video.addEventListener('timeupdate', handleTimeUpdate);
+    
+    // Initialize pose detection if video is already playing
+    if (!video.paused && !video.ended) {
+      handlePlay();
+    }
     
     // Clean up
     return () => {
       video.removeEventListener('loadedmetadata', updateCanvasDimensions);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
+      
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+      }
+      
+      if (poseDetector) {
+        poseDetector.close();
+      }
     };
   }, [videoRef.current, canvasRef.current, videoFile, analysisResult]);
   
+  // These are the original annotation drawing functions
   const drawStanceAnalysis = (
     ctx: CanvasRenderingContext2D, 
     width: number, 
@@ -269,11 +349,18 @@ const VideoAnnotation = ({ videoFile, analysisResult, isDemoMode }: VideoAnnotat
         ref={canvasRef}
         className="absolute top-0 left-0 w-full h-full pointer-events-none"
       />
-      {isDemoMode && (
-        <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-          Demo Annotations
-        </div>
-      )}
+      <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {detectionActive && (
+          <div className={`px-2 py-1 rounded text-xs ${poseDetected ? 'bg-green-600/70' : 'bg-yellow-600/70'} text-white`}>
+            {poseDetected ? 'Pose Detected' : 'Searching...'}
+          </div>
+        )}
+        {isDemoMode && (
+          <div className="bg-black/70 text-white px-2 py-1 rounded text-xs">
+            Demo Annotations
+          </div>
+        )}
+      </div>
     </div>
   );
 };
