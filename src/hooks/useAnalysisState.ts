@@ -71,16 +71,10 @@ export function useAnalysisState() {
     // based on the MediaPipe detection
     if (metrics && !analysisResult) {
       console.log('Creating local analysis from MediaPipe metrics');
-      // Convert pose metrics to our analysis format
-      const localAnalysis = createLocalAnalysisFromMetrics(metrics, drill);
       
-      console.log('Setting analysis result with local MediaPipe data');
-      // Update the analysis result with the local MediaPipe analysis
-      setAnalysisResult(localAnalysis.result);
-      setBehaviorAnalysis(localAnalysis.behavior);
-      
-      // Set demo mode flag since this is local analysis
-      setIsDemoMode(true);
+      // Note: We no longer create an immediate analysis here, this is now
+      // handled by the useVideoAnalysis hook when using local analysis mode
+      // This ensures the results are properly saved to the database
     }
   };
 
@@ -107,121 +101,5 @@ export function useAnalysisState() {
     handleVideoSelected,
     handlePoseAnalysis,
     navigate
-  };
-}
-
-// Helper function to create a local analysis based on pose metrics
-function createLocalAnalysisFromMetrics(metrics: any, drill: any) {
-  return {
-    result: {
-      title: `${drill?.name || 'Technique'} Analysis`,
-      description: "MediaPipe pose detection analysis",
-      score: Math.round((metrics.symmetry + metrics.stability + metrics.posture + metrics.form) / 4),
-      metrics: [
-        {
-          name: "Form Quality",
-          value: Math.round(metrics.form),
-          target: 95,
-          unit: "%"
-        },
-        {
-          name: "Posture",
-          value: Math.round(metrics.posture),
-          target: 90,
-          unit: "%"
-        },
-        {
-          name: "Balance",
-          value: Math.round(metrics.stability),
-          target: 95,
-          unit: "%"
-        },
-        {
-          name: "Symmetry",
-          value: Math.round(metrics.symmetry),
-          target: 90,
-          unit: "%"
-        }
-      ],
-      feedback: {
-        good: [
-          "Real-time pose detection is working",
-          "Your movement is being tracked successfully",
-          `Your overall form score is ${Math.round(metrics.form)}%`
-        ],
-        improve: [
-          "Make sure your full body is visible in the frame",
-          "Try to maintain better posture during the movement",
-          "Focus on balanced, symmetric movements"
-        ]
-      },
-      coachingTips: [
-        "Continue with slow, controlled movements for better tracking",
-        "Try different angles to ensure all key body parts are visible",
-        "Maintain good lighting for more accurate pose detection",
-        "Compare your form with reference videos of proper technique"
-      ]
-    },
-    behavior: {
-      consistency: [
-        {
-          name: "Movement Pattern",
-          description: "Your movement pattern shows good consistency.",
-          quality: metrics.stability > 80 ? "good" : "needs-improvement",
-          icon: null
-        },
-        {
-          name: "Position Stability",
-          description: "Your position stability could be improved.",
-          quality: metrics.stability > 85 ? "good" : "needs-improvement",
-          icon: null
-        }
-      ],
-      preRoutine: [
-        {
-          name: "Setup Position",
-          description: "Your initial position looks good.",
-          quality: metrics.posture > 80 ? "good" : "needs-improvement",
-          icon: null
-        },
-        {
-          name: "Balance",
-          description: "Your balance is stable throughout the movement.",
-          quality: metrics.stability > 80 ? "good" : "needs-improvement",
-          icon: null
-        }
-      ],
-      habits: [
-        {
-          name: "Body Alignment",
-          description: "Your body alignment is good during the movement.",
-          quality: metrics.posture > 75 ? "good" : "needs-improvement",
-          icon: null
-        },
-        {
-          name: "Movement Flow",
-          description: "Your movement flow is smooth and controlled.",
-          quality: metrics.form > 80 ? "good" : "needs-improvement",
-          icon: null
-        }
-      ],
-      timing: {
-        average: "Real-time analysis",
-        consistency: Math.round(metrics.stability),
-        isRushing: false,
-        attempts: [{ attemptNumber: 1, duration: "Real-time" }]
-      },
-      fatigue: {
-        level: "low",
-        signs: [
-          "MediaPipe analysis doesn't track fatigue",
-          "Consider recording multiple attempts for fatigue analysis"
-        ],
-        recommendations: [
-          "Focus on maintaining proper form throughout the movement",
-          "Take breaks between attempts to prevent fatigue"
-        ]
-      }
-    }
   };
 }
