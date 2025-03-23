@@ -54,10 +54,10 @@ const AnalysisContent = ({
         <VideoAnalysisPanel
           videoFile={videoFile}
           isAnalyzing={isAnalyzing || isSaving}
-          onVideoSelected={onVideoSelected}
-          onAnalyzeClick={onAnalyzeClick}
           isDemoMode={isDemoMode}
           onDemoModeChange={onDemoModeChange}
+          onVideoSelected={onVideoSelected}
+          onAnalyzeClick={onAnalyzeClick}
         />
         
         <ResultsPanel

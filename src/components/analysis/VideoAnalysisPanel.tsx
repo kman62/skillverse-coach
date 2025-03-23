@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,33 +9,21 @@ import DemoModeToggle from './panel/DemoModeToggle';
 import ApiKeyValidator from './panel/ApiKeyValidator';
 
 interface VideoAnalysisPanelProps {
-  sport: string;
-  drill: string;
   videoFile: File | null;
   isAnalyzing: boolean;
-  isSaving: boolean;
-  analysisResult: any;
-  apiError: string | null;
   isDemoMode: boolean;
   onDemoModeChange: (enabled: boolean) => void;
   onVideoSelected: (file: File) => void;
   onAnalyzeClick: () => void;
-  onRetry: () => void;
 }
 
 const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
-  sport,
-  drill,
   videoFile,
   isAnalyzing,
-  isSaving,
-  analysisResult,
-  apiError,
   isDemoMode,
   onDemoModeChange,
   onVideoSelected,
-  onAnalyzeClick,
-  onRetry
+  onAnalyzeClick
 }) => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -48,7 +37,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
       <CardHeader>
         <CardTitle>Video Analysis</CardTitle>
         <CardDescription>
-          Analyze your {sport} {drill} technique.
+          Analyze your technique with AI
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -79,19 +68,12 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
           </label>
         </div>
 
-        {isAnalyzing && !analysisResult && (
+        {isAnalyzing && (
           <Progress value={50} className="w-full" />
-        )}
-
-        {apiError && (
-          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            {apiError}
-          </div>
         )}
       </CardContent>
       <CardFooter className="flex justify-between items-center">
-        {!isAnalyzing && !analysisResult && (
+        {!isAnalyzing && (
           <>
             <DemoModeToggle 
               isDemoMode={isDemoMode} 
@@ -102,20 +84,11 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
           </>
         )}
 
-        {analysisResult && (
-          <div className="text-sm text-muted-foreground flex items-center">
-            <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
-            Analysis Complete
-          </div>
-        )}
-
         {isAnalyzing ? (
           <Button variant="secondary" disabled>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Analyzing...
           </Button>
-        ) : analysisResult ? (
-          <Button onClick={onRetry}>Retry Analysis</Button>
         ) : (
           <Button onClick={onAnalyzeClick} disabled={!videoFile}>
             Analyze Technique
