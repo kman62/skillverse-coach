@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnalysisState } from '@/hooks/useAnalysisState';
@@ -10,6 +10,7 @@ import AnalysisContent from '@/components/analysis/AnalysisContent';
 const AnalysisPage = () => {
   const { sportId, drillId } = useParams<{ sportId: string; drillId: string }>();
   const { user } = useAuth();
+  const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   const {
     sport,
     drill,
@@ -46,9 +47,37 @@ const AnalysisPage = () => {
       sportId,
       drillId
     });
-  }, [sportId, drillId, user]);
+    
+    // Listen for analysis stage updates
+    const handleAnalysisStage = (event: CustomEvent) => {
+      console.log("Analysis stage update:", event.detail.stage);
+      setAnalysisStage(event.detail.stage);
+      
+      // Automatically clear the loading states when analysis is complete
+      if (event.detail.stage === 'analysis-complete' || 
+          event.detail.stage === 'api-success-gpt4o' || 
+          event.detail.stage.includes('failed') || 
+          event.detail.stage.includes('error')) {
+        
+        // Add a small delay to ensure the results are displayed
+        setTimeout(() => {
+          setIsAnalyzing(false);
+          setIsSaving(false);
+        }, 500);
+      }
+    };
+    
+    window.addEventListener('analysis-stage', handleAnalysisStage as EventListener);
+    
+    return () => {
+      window.removeEventListener('analysis-stage', handleAnalysisStage as EventListener);
+    };
+  }, [sportId, drillId, user, setIsAnalyzing, setIsSaving]);
 
   const handleAnalyzeClick = async () => {
+    // Reset analysis stage
+    setAnalysisStage('started');
+    
     await handleAnalyzeVideo(
       videoFile,
       sportId,
@@ -62,9 +91,20 @@ const AnalysisPage = () => {
         onAnalysisComplete: (result, behavior) => {
           setAnalysisResult(result);
           setBehaviorAnalysis(behavior);
+          
+          // Explicitly set the final stage
+          setAnalysisStage('analysis-complete');
+          
+          // Ensure loading state is cleared
+          setIsAnalyzing(false);
+          setIsSaving(false);
         },
         onAnalysisError: (error) => {
           setApiError(error.message);
+          
+          // Ensure loading state is cleared
+          setIsAnalyzing(false);
+          setIsSaving(false);
         },
         forceDemoMode: isDemoMode
       }
@@ -79,6 +119,7 @@ const AnalysisPage = () => {
     if (analysisResult) {
       setAnalysisResult(null);
       setBehaviorAnalysis(null);
+      setAnalysisStage(null);
     }
   };
 
@@ -102,6 +143,7 @@ const AnalysisPage = () => {
         onAnalyzeClick={handleAnalyzeClick}
         onRetry={handleAnalyzeClick}
         onPoseAnalysis={handlePoseAnalysis}
+        analysisStage={analysisStage}
       />
     </AnalysisPageLayout>
   );

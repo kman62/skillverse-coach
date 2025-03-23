@@ -1,7 +1,11 @@
 
 import React from 'react';
 
-const LoadingState = () => {
+interface LoadingStateProps {
+  analysisStage?: string | null;
+}
+
+const LoadingState = ({ analysisStage }: LoadingStateProps) => {
   return (
     <div className="bg-card rounded-xl border border-border h-[500px] flex items-center justify-center p-6 text-center animate-pulse">
       <div>
@@ -13,7 +17,11 @@ const LoadingState = () => {
         </div>
         <h3 className="text-lg font-medium">Analyzing Your Technique</h3>
         <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-          Please wait while our AI analyzes your movement patterns...
+          {analysisStage === 'processing-video' ? 'Processing video frames...' : 
+           analysisStage === 'analyzing-technique' ? 'Analyzing your movement patterns...' :
+           analysisStage === 'generating-feedback' ? 'Generating personalized feedback...' :
+           analysisStage === 'saving-results' ? 'Saving your analysis...' :
+           'Please wait while our AI analyzes your movement patterns...'}
         </p>
       </div>
     </div>

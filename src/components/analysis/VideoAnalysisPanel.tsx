@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,7 @@ interface VideoAnalysisPanelProps {
   onDemoModeChange: (enabled: boolean) => void;
   onVideoSelected: (file: File) => void;
   onAnalyzeClick: () => void;
+  analysisStage?: string | null;
 }
 
 const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
@@ -27,24 +27,20 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
   isDemoMode,
   onDemoModeChange,
   onVideoSelected,
-  onAnalyzeClick
+  onAnalyzeClick,
+  analysisStage
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
-  const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   const [processingProgress, setProcessingProgress] = useState(0);
   const { toast } = useToast();
   
   useEffect(() => {
-    // Check connection status on component mount
     checkConnectionStatus();
     
-    // Add event listener for analysis stages
     const handleAnalysisStage = (event: CustomEvent) => {
       console.log("Analysis stage event:", event.detail);
-      setAnalysisStage(event.detail.stage);
       
-      // Update progress based on stage
       const stageProgressMap: Record<string, number> = {
         'started': 10,
         'api-request-gpt4o': 20,
@@ -59,13 +55,18 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         setProcessingProgress(stageProgressMap[event.detail.stage]);
       }
       
-      // If we get an error, show toast notification
       if (event.detail.stage.includes('error') || event.detail.stage.includes('failed')) {
         toast({
           title: "Analysis Error",
           description: "There was an error analyzing your video. Try using Demo Mode instead.",
           variant: "destructive",
         });
+      }
+      
+      if (event.detail.stage === 'analysis-complete') {
+        setTimeout(() => {
+          setProcessingProgress(0);
+        }, 1000);
       }
     };
     
@@ -91,7 +92,6 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
           variant: "default",
         });
       } else {
-        // If the API key check fails but we have some connection, set to limited
         setConnectionStatus('limited');
         toast({
           title: "Limited Connection",
@@ -100,7 +100,6 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         });
       }
     } catch (error) {
-      // If we can't even reach the check endpoint, set to offline
       console.error('Connection check failed:', error);
       setConnectionStatus('offline');
       toast({

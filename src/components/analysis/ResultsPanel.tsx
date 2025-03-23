@@ -18,6 +18,7 @@ interface ResultsPanelProps {
   sportId?: string;
   drillId?: string;
   onPoseAnalysis?: (metrics: any) => void;
+  analysisStage?: string | null;
 }
 
 const ResultsPanel = ({ 
@@ -31,7 +32,8 @@ const ResultsPanel = ({
   analysisId,
   sportId,
   drillId,
-  onPoseAnalysis
+  onPoseAnalysis,
+  analysisStage
 }: ResultsPanelProps) => {
   // Log the state to help debug
   if (analysisResult) {
@@ -42,6 +44,14 @@ const ResultsPanel = ({
       hasFeedback: !!analysisResult.feedback,
       hasCoachingTips: !!analysisResult.coachingTips,
       provider: analysisResult.provider || 'unknown'
+    });
+  }
+  
+  // Log analysis state to help debug
+  if (isAnalyzing) {
+    console.log('Analysis in progress:', {
+      stage: analysisStage || 'unknown',
+      timestamp: new Date().toISOString()
     });
   }
   
@@ -61,7 +71,7 @@ const ResultsPanel = ({
       )}
       
       {isAnalyzing && (
-        <LoadingState />
+        <LoadingState analysisStage={analysisStage} />
       )}
       
       {analysisResult && !isAnalyzing && (

@@ -24,6 +24,7 @@ interface AnalysisContentProps {
   onAnalyzeClick: () => void;
   onRetry: () => void;
   onPoseAnalysis: (metrics: any) => void;
+  analysisStage?: string | null;
 }
 
 const AnalysisContent = ({
@@ -43,7 +44,8 @@ const AnalysisContent = ({
   onVideoSelected,
   onAnalyzeClick,
   onRetry,
-  onPoseAnalysis
+  onPoseAnalysis,
+  analysisStage
 }: AnalysisContentProps) => {
   return (
     <>
@@ -58,6 +60,7 @@ const AnalysisContent = ({
           onDemoModeChange={onDemoModeChange}
           onVideoSelected={onVideoSelected}
           onAnalyzeClick={onAnalyzeClick}
+          analysisStage={analysisStage}
         />
         
         <ResultsPanel
@@ -72,6 +75,7 @@ const AnalysisContent = ({
           sportId={sportId}
           drillId={drillId}
           onPoseAnalysis={onPoseAnalysis}
+          analysisStage={analysisStage}
         />
       </div>
     </>
