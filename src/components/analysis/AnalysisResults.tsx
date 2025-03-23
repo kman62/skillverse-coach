@@ -7,6 +7,7 @@ import FeedbackSystem from '@/components/analysis/FeedbackSystem';
 import DemoModeIndicator from '@/components/analysis/DemoModeIndicator';
 import CoachingTips from '@/components/analysis/CoachingTips';
 import ActionButtons from '@/components/analysis/ActionButtons';
+import { Badge } from '@/components/ui/badge';
 
 interface AnalysisResultsProps {
   analysisResult: any;
@@ -33,6 +34,15 @@ const AnalysisResults = ({
 }: AnalysisResultsProps) => {
   return (
     <div className="animate-fade-in space-y-6">
+      {/* Provider Badge */}
+      {analysisResult.provider && (
+        <div className="flex justify-end">
+          <Badge variant="outline" className="bg-primary/10 text-primary">
+            {analysisResult.provider === 'gpt-4o' ? 'Analyzed by GPT-4o' : analysisResult.provider}
+          </Badge>
+        </div>
+      )}
+      
       {/* Demo mode indicator */}
       {isDemoMode && <DemoModeIndicator />}
       
@@ -49,11 +59,11 @@ const AnalysisResults = ({
       )}
       
       <AnalysisCard 
-        title={analysisResult.title}
-        description={analysisResult.description}
-        score={analysisResult.score}
-        metrics={analysisResult.metrics}
-        feedback={analysisResult.feedback}
+        title={analysisResult.title || 'Technique Analysis'}
+        description={analysisResult.description || 'Analysis of your technique and performance'}
+        score={analysisResult.score || 0}
+        metrics={analysisResult.metrics || []}
+        feedback={analysisResult.feedback || { good: [], improve: [] }}
       />
       
       {behaviorAnalysis && (
@@ -67,7 +77,9 @@ const AnalysisResults = ({
       )}
       
       {/* Coaching Tips Section */}
-      <CoachingTips tips={analysisResult.coachingTips} />
+      {analysisResult.coachingTips && analysisResult.coachingTips.length > 0 && (
+        <CoachingTips tips={analysisResult.coachingTips} />
+      )}
       
       {/* Feedback System */}
       <FeedbackSystem 

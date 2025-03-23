@@ -33,9 +33,24 @@ const ResultsPanel = ({
   drillId,
   onPoseAnalysis
 }: ResultsPanelProps) => {
+  // Log the state to help debug
+  if (analysisResult) {
+    console.log('Analysis Results being displayed:', {
+      hasResult: !!analysisResult,
+      score: analysisResult.score,
+      hasTitle: !!analysisResult.title,
+      hasFeedback: !!analysisResult.feedback,
+      hasCoachingTips: !!analysisResult.coachingTips,
+      provider: analysisResult.provider || 'unknown'
+    });
+  }
+  
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+      <h2 className="text-xl font-semibold mb-4 flex items-center">
+        <BarChart className="mr-2 h-5 w-5 text-primary" />
+        Analysis Results
+      </h2>
       
       {!analysisResult && !isAnalyzing && !apiError && (
         <EmptyState />
