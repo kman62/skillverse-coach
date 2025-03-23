@@ -143,25 +143,10 @@ export const analyzeVideo = async (
       throw error;
     }
   } catch (gpt4oError) {
-    console.warn("GPT-4o analysis failed, automatically falling back to demo mode:", gpt4oError);
+    console.error("GPT-4o analysis failed:", gpt4oError);
     dispatchAnalysisEvent('api-failed-gpt4o', { error: String(gpt4oError) });
     
-    // Auto-fallback to demo mode
-    console.log("Automatically falling back to demo mode after API failure");
-    toast({
-      title: "Using Demo Mode",
-      description: "AI analysis service unavailable. Automatically switched to demo mode.",
-      variant: "default"
-    });
-    
-    window.usedFallbackData = true;
-    dispatchAnalysisEvent('api-fallback-to-demo');
-    
-    // Generate demo analysis data based on drill name and sport
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
-    const mockData = generateSportSpecificAnalysis(sportId, drillName);
-    dispatchAnalysisEvent('demo-data-generated');
-    
-    return mockData;
+    // Instead of falling back to demo mode, throw the error
+    throw new Error(`GPT-4o analysis failed: ${gpt4oError instanceof Error ? gpt4oError.message : String(gpt4oError)}`);
   }
 };

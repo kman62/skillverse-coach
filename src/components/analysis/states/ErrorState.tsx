@@ -23,7 +23,7 @@ const ErrorState = ({ errorMessage, onRetry }: ErrorStateProps) => {
         <h3 className="text-lg font-medium">Analysis Error</h3>
         <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
           {isEdgeFunctionError 
-            ? "The AI service is temporarily unavailable. The system will automatically switch to Demo Mode for your analysis." 
+            ? "The AI service is temporarily unavailable. Please try again later or use Demo Mode manually if needed." 
             : errorMessage || "There was an error analyzing your video. Please try again."}
         </p>
         <div className="mt-6 space-y-3">
