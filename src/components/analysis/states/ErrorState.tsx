@@ -9,6 +9,10 @@ interface ErrorStateProps {
 }
 
 const ErrorState = ({ errorMessage, onRetry }: ErrorStateProps) => {
+  const isEdgeFunctionError = errorMessage.includes("Edge function") || 
+                            errorMessage.includes("Failed to send") ||
+                            errorMessage.includes("GPT-4o");
+  
   return (
     <div className="bg-card rounded-xl border border-destructive h-[500px] flex items-center justify-center p-6 text-center">
       <div>
@@ -17,18 +21,26 @@ const ErrorState = ({ errorMessage, onRetry }: ErrorStateProps) => {
         </div>
         <h3 className="text-lg font-medium">Analysis Error</h3>
         <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-          {errorMessage || "There was an error analyzing your video. Please try again."}
+          {isEdgeFunctionError 
+            ? "Could not connect to the AI analysis service. Please try enabling Demo Mode instead." 
+            : errorMessage || "There was an error analyzing your video. Please try again."}
         </p>
-        {onRetry && (
-          <Button 
-            variant="outline"
-            className="mt-4"
-            onClick={onRetry}
-          >
-            <RefreshCw size={16} className="mr-2" />
-            Try Again
-          </Button>
-        )}
+        <div className="mt-6 space-y-3">
+          {onRetry && (
+            <Button 
+              variant="outline"
+              onClick={onRetry}
+            >
+              <RefreshCw size={16} className="mr-2" />
+              Try Again
+            </Button>
+          )}
+          {isEdgeFunctionError && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Error details: {errorMessage}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
