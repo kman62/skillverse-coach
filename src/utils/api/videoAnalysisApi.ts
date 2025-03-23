@@ -77,8 +77,8 @@ export const analyzeVideo = async (
     // First, verify Edge Function availability
     try {
       // Check if Supabase client is properly initialized
-      // Get the Supabase URL from the client.ts file instead of trying to access the protected property
-      const supabaseURL = process.env.SUPABASE_URL || "https://aghjbyysvchicvekbamg.supabase.co";
+      // Use a hardcoded URL for the Supabase project - no process.env in browser
+      const supabaseURL = "https://aghjbyysvchicvekbamg.supabase.co";
       
       console.log("Checking Supabase client configuration:", {
         isInitialized: !!supabase,
