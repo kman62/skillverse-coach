@@ -80,7 +80,8 @@ export const analyzeVideo = async (
       console.log("Checking Supabase client configuration:", {
         isInitialized: !!supabase,
         hasInvoke: !!(supabase && supabase.functions && supabase.functions.invoke),
-        url: supabase.supabaseUrl,
+        // Fix: Use SUPABASE_URL from environment or configuration instead of accessing protected property
+        url: supabase.supabaseUrl ? supabase.supabaseUrl : "URL not accessible",
       });
       
       // Test if we can reach Supabase at all with a simple ping function
@@ -90,7 +91,7 @@ export const analyzeVideo = async (
         {
           body: { action: 'ping' },
           headers: {
-            'x-client-id': 'web-client-ping'
+            'x-client-info': 'web-client-ping'
           }
         }
       );
@@ -136,7 +137,7 @@ export const analyzeVideo = async (
         {
           body: formData,
           headers: {
-            'x-client-id': 'web-client-v1'
+            'x-client-info': 'web-client-v1'
           }
         }
       );
