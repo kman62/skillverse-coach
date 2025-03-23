@@ -1,3 +1,4 @@
+
 export interface Sport {
   id: string;
   name: string;
@@ -43,7 +44,7 @@ export const SPORTS: Sport[] = [
         name: "Jump Shot",
         description: "Improve your jump shot mechanics and accuracy",
         difficulty: "intermediate",
-        coverImage: "https://images.unsplash.com/photo-1629385701021-6d289475d8ee?q=80&w=1480&auto=format&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=1471&auto=format&fit=crop"
       },
       {
         id: "crossover-dribble",
