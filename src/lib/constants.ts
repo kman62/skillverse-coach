@@ -1,4 +1,3 @@
-
 export interface Sport {
   id: string;
   name: string;
@@ -6,6 +5,7 @@ export interface Sport {
   description: string;
   coverImage: string;
   drills: Drill[];
+  teamAnalysis?: TeamAnalysis[];
 }
 
 export interface Drill {
@@ -15,6 +15,15 @@ export interface Drill {
   difficulty: "beginner" | "intermediate" | "advanced";
   coverImage: string;
   videoUrl?: string;
+}
+
+export interface TeamAnalysis {
+  id: string;
+  name: string;
+  description: string;
+  coverImage: string;
+  players: number;
+  duration: string;
 }
 
 export const SPORTS: Sport[] = [
@@ -52,6 +61,24 @@ export const SPORTS: Sport[] = [
         description: "Master the crossover dribble for better ball handling",
         difficulty: "intermediate",
         coverImage: "https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=1374&auto=format&fit=crop"
+      }
+    ],
+    teamAnalysis: [
+      {
+        id: "full-court-gameplay",
+        name: "Full Court Game Analysis",
+        description: "Analyze team positioning, ball movement, and game strategy with 5v5 full court play",
+        coverImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1600&auto=format&fit=crop",
+        players: 10,
+        duration: "40-48 min"
+      },
+      {
+        id: "offensive-sets",
+        name: "Team Offensive Sets",
+        description: "Evaluate team offensive patterns, spacing, and execution of set plays",
+        coverImage: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=1600&auto=format&fit=crop",
+        players: 10,
+        duration: "15-20 min"
       }
     ]
   },
@@ -186,4 +213,9 @@ export const getDrillById = (sportId: string, drillId: string): Drill | undefine
 
 export const getSportById = (id: string): Sport | undefined => {
   return SPORTS.find(sport => sport.id === id);
+};
+
+export const getTeamAnalysisById = (sportId: string, analysisId: string): TeamAnalysis | undefined => {
+  const sport = SPORTS.find(s => s.id === sportId);
+  return sport?.teamAnalysis?.find(a => a.id === analysisId);
 };
