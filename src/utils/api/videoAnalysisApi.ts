@@ -74,6 +74,41 @@ export const analyzeVideo = async (
       timestamp: new Date().toISOString()
     });
     
+    // First, verify Edge Function availability
+    try {
+      // Check if Supabase client is properly initialized
+      console.log("Checking Supabase client configuration:", {
+        isInitialized: !!supabase,
+        hasInvoke: !!(supabase && supabase.functions && supabase.functions.invoke),
+        url: supabase.supabaseUrl,
+      });
+      
+      // Test if we can reach Supabase at all with a simple ping function
+      dispatchAnalysisEvent('checking-supabase-connection');
+      const { data: pingData, error: pingError } = await supabase.functions.invoke(
+        'analyze-video-gpt4o',
+        {
+          body: { action: 'ping' },
+          headers: {
+            'x-client-id': 'web-client-ping'
+          }
+        }
+      );
+      
+      if (pingError) {
+        console.warn('Edge Function ping test failed:', pingError);
+        dispatchAnalysisEvent('edge-function-connection-failed', { error: pingError });
+        throw new Error(`Edge function connectivity issue: ${pingError.message}`);
+      }
+      
+      console.log('Edge Function ping successful', pingData);
+      dispatchAnalysisEvent('edge-function-connection-ok');
+    } catch (pingError) {
+      console.error('Failed to ping Edge Function:', pingError);
+      dispatchAnalysisEvent('edge-function-unreachable', { error: String(pingError) });
+      throw new Error(`Edge function unreachable: ${pingError instanceof Error ? pingError.message : String(pingError)}`);
+    }
+    
     // Add timeout handling
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {

@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -19,6 +18,32 @@ serve(async (req) => {
   }
 
   try {
+    // Handle ping request to check if edge function is accessible
+    try {
+      // Check if this is a ping request
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const jsonData = await req.json();
+        if (jsonData.action === 'ping') {
+          console.log("Received ping request");
+          return new Response(
+            JSON.stringify({ 
+              status: 'ok', 
+              message: 'Edge function is accessible',
+              timestamp: new Date().toISOString(),
+              apiKeyConfigured: !!openAIApiKey
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
+    } catch (pingError) {
+      // If there's an error parsing JSON, it's not a ping request
+      console.log("Not a ping request, continuing with normal processing");
+    }
+
     // Check if this is a diagnostic API key check request
     const url = new URL(req.url);
     if (url.pathname.endsWith('/check-api-key')) {
@@ -126,7 +151,10 @@ serve(async (req) => {
     } catch (formDataError) {
       console.error("Error parsing form data:", formDataError);
       return new Response(
-        JSON.stringify({ error: 'Invalid form data provided. Could not parse request body.' }),
+        JSON.stringify({ 
+          error: 'Invalid form data provided. Could not parse request body.',
+          errorDetails: formDataError.message
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -286,13 +314,8 @@ function generatePromptForSport(sportId: string, drillName: string): string {
 
 // Process GPT-4o's text response into our structured analysis format
 function processGPT4oResponse(gptResponse: string, sportId: string, drillName: string): any {
-  // In a real implementation, you would parse GPT's output more carefully
-  // For demonstration, we'll generate a structured response that matches our expected format
-
-  // Extract key points from GPT's response
   const lines = gptResponse.split('\n').filter(line => line.trim().length > 0);
   
-  // Try to find an overall score in the response
   let extractedScore = null;
   const scorePattern = /score:?\s*(\d+)/i;
   for (const line of lines) {
@@ -305,10 +328,8 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     }
   }
   
-  // Generate a reasonable score if we couldn't extract one
   const overallScore = extractedScore || Math.floor(Math.random() * 30) + 65;
   
-  // Find good points and areas for improvement
   const goodPoints = lines
     .filter(line => line.toLowerCase().includes('good') || line.toLowerCase().includes('well'))
     .map(line => line.replace(/^[-*•]+\s*/, '').trim())
@@ -332,7 +353,6 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     .map(line => line.replace(/^[-*•]+\s*/, '').trim())
     .slice(0, 4);
 
-  // Default values if extraction fails
   const defaultGoodPoints = [
     "Good overall technique execution",
     "Maintained proper body alignment",
@@ -352,7 +372,6 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     "Incorporate balance exercises into your training routine"
   ];
 
-  // Prepare metrics based on the sport
   const metricsMap: Record<string, any[]> = {
     basketball: [
       { name: "Ball Control", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 95, unit: "%" },
@@ -369,7 +388,6 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     // Add more sports as needed
   };
 
-  // Default metrics if sport isn't specifically handled
   const defaultMetrics = [
     { name: "Form", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 90, unit: "%" },
     { name: "Technique", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 95, unit: "%" },
@@ -377,7 +395,6 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     { name: "Balance", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 90, unit: "%" }
   ];
 
-  // Construct the analysis response in the expected format
   return {
     result: {
       title: `${drillName} Analysis from GPT-4o`,
