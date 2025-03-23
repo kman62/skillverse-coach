@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { FileVideo, Upload, Loader2 } from 'lucide-react';
 import DemoModeToggle from './panel/DemoModeToggle';
 import ConnectionStatus from './panel/ConnectionStatus';
+import AnalysisStageIndicator from './panel/AnalysisStageIndicator';
 import { checkOpenAIApiKey } from '@/utils/api/apiKeyValidator';
 
 interface VideoAnalysisPanelProps {
@@ -28,16 +29,32 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+  const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   
   useEffect(() => {
     // Check connection status on component mount
     checkConnectionStatus();
+    
+    // Add event listener for analysis stages
+    const handleAnalysisStage = (event: CustomEvent) => {
+      console.log("Analysis stage event:", event.detail);
+      setAnalysisStage(event.detail.stage);
+    };
+    
+    window.addEventListener('analysis-stage', handleAnalysisStage as EventListener);
+    
+    return () => {
+      window.removeEventListener('analysis-stage', handleAnalysisStage as EventListener);
+    };
   }, []);
   
   const checkConnectionStatus = async () => {
     setIsCheckingConnection(true);
     try {
+      console.log("Testing OpenAI API key validity...");
       const result = await checkOpenAIApiKey();
+      console.log("API key check response:", result);
+      
       if (result.isValid) {
         setConnectionStatus('connected');
       } else {
@@ -101,6 +118,11 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         {isAnalyzing && (
           <Progress value={50} className="w-full" />
         )}
+        
+        <AnalysisStageIndicator 
+          analysisStage={analysisStage}
+          isAnalyzing={isAnalyzing}
+        />
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         {!isAnalyzing && (

@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -139,9 +140,20 @@ serve(async (req) => {
     // Get the video file
     const videoFile = formData.get('video');
     if (!videoFile || !(videoFile instanceof File)) {
-      console.error("No video file provided");
+      console.error("No video file provided or invalid video file");
+      
+      // Debug the actual content received
+      console.log("FormData keys:", [...formData.keys()]);
+      console.log("Video file type:", typeof videoFile);
+      console.log("Is File instance:", videoFile instanceof File);
+      
       return new Response(
-        JSON.stringify({ error: 'No video file provided in the request.' }),
+        JSON.stringify({ 
+          error: 'No video file provided in the request.',
+          receivedKeys: [...formData.keys()],
+          videoFileType: typeof videoFile,
+          isFileInstance: videoFile instanceof File
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -154,6 +166,9 @@ serve(async (req) => {
       fileSize: videoFile.size,
       fileType: videoFile.type
     });
+    
+    // Log that we're sending to OpenAI
+    console.log("Preparing OpenAI GPT-4o request for video analysis");
 
     // Create a detailed prompt for GPT-4o based on the sport and drill
     const prompt = generatePromptForSport(sportId, drillName);
@@ -188,7 +203,11 @@ serve(async (req) => {
         const errorData = await response.text();
         console.error("OpenAI API error:", errorData);
         return new Response(
-          JSON.stringify({ error: `OpenAI API error: ${response.status} ${response.statusText}` }),
+          JSON.stringify({ 
+            error: `OpenAI API error: ${response.status} ${response.statusText}`,
+            details: errorData,
+            timestamp: new Date().toISOString()
+          }),
           { 
             status: 502, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -197,6 +216,7 @@ serve(async (req) => {
       }
 
       const data = await response.json();
+      console.log("Successfully received response from OpenAI");
       const gpt4oOutput = data.choices[0].message.content;
       
       // Transform GPT-4o output into our expected analysis format
@@ -211,7 +231,9 @@ serve(async (req) => {
       console.error("OpenAI API call failed:", openAIError);
       return new Response(
         JSON.stringify({ 
-          error: `Error calling OpenAI API: ${openAIError.message || 'Unknown error'}` 
+          error: `Error calling OpenAI API: ${openAIError.message || 'Unknown error'}`,
+          timestamp: new Date().toISOString(),
+          stack: openAIError.stack
         }),
         { 
           status: 502, 
@@ -223,7 +245,9 @@ serve(async (req) => {
     console.error("Unhandled error in video analysis:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "An unexpected error occurred during video analysis" 
+        error: error.message || "An unexpected error occurred during video analysis",
+        stack: error.stack,
+        timestamp: new Date().toISOString()
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

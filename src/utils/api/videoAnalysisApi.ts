@@ -67,7 +67,13 @@ export const analyzeVideo = async (
   // Try to use Supabase Edge Function for GPT-4o analysis
   try {
     dispatchAnalysisEvent('api-request-gpt4o', { provider: 'supabase-edge-function' });
-    console.log('Attempting to use GPT-4o via Supabase Edge Function');
+    console.log('Attempting to use GPT-4o via Supabase Edge Function', {
+      videoSize: Math.round(videoFile.size / 1024) + "KB",
+      videoName: videoFile.name,
+      drillName,
+      sportId,
+      timestamp: new Date().toISOString()
+    });
     
     // Add timeout handling
     const controller = new AbortController();
@@ -77,7 +83,21 @@ export const analyzeVideo = async (
     }, 60000);
     
     try {
+      dispatchAnalysisEvent('processing-video');
+      
+      // Debug the form data being sent
+      console.log("FormData contents:", {
+        hasVideoFile: formData.has('video'),
+        hasDrillName: formData.has('drillName'),
+        hasSportId: formData.has('sportId'),
+        drillNameValue: formData.get('drillName'),
+        sportIdValue: formData.get('sportId')
+      });
+      
       // Use direct invocation to avoid POST issues
+      dispatchAnalysisEvent('analyzing-technique');
+      console.log("Invoking Supabase Edge Function 'analyze-video-gpt4o'");
+      
       const { data: edgeFunctionResult, error: edgeFunctionError } = await supabase.functions.invoke(
         'analyze-video-gpt4o',
         {
@@ -97,18 +117,31 @@ export const analyzeVideo = async (
         throw new Error(`Edge function error: ${edgeFunctionError.message}`);
       }
       
-      console.log('GPT-4o analysis complete via Supabase Edge Function');
+      console.log('GPT-4o analysis complete via Supabase Edge Function:', {
+        success: true,
+        hasResult: !!edgeFunctionResult?.result,
+        hasBehavior: !!edgeFunctionResult?.behavior,
+        timestamp: new Date().toISOString()
+      });
+      
       dispatchAnalysisEvent('api-success-gpt4o');
+      dispatchAnalysisEvent('generating-feedback');
       
       // Add GPT-4o marker to the result
       if (edgeFunctionResult.result && !edgeFunctionResult.result.provider) {
         edgeFunctionResult.result.provider = "gpt-4o";
       }
       
+      dispatchAnalysisEvent('analysis-complete');
       return edgeFunctionResult as AnalysisResponse;
     } catch (error) {
       // Clear the timeout in case of error
       clearTimeout(timeoutId);
+      console.error("Error during edge function invocation:", error);
+      dispatchAnalysisEvent('api-failed-detail', { 
+        message: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      });
       throw error;
     }
   } catch (gpt4oError) {
