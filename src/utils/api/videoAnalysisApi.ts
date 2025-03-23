@@ -116,6 +116,6 @@ export const analyzeVideo = async (
     dispatchAnalysisEvent('api-failed-gpt4o', { error: String(gpt4oError) });
     
     // Throw a clear error message - we don't attempt any alternative methods
-    throw new Error(`GPT-4o analysis failed: ${gpt4oError}. Please enable Demo Mode if you want to continue.`);
+    throw new Error(`The AI analysis service is currently unavailable. Please enable Demo Mode if you want to continue.`);
   }
 };

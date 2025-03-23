@@ -2,7 +2,6 @@
 import React from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Info } from 'lucide-react';
 
 interface DemoModeToggleProps {
   isDemoMode: boolean;
@@ -10,42 +9,25 @@ interface DemoModeToggleProps {
   disabled?: boolean;
 }
 
-const DemoModeToggle = ({ 
-  isDemoMode, 
-  onToggle, 
-  disabled = false 
-}: DemoModeToggleProps) => {
+const DemoModeToggle = ({ isDemoMode, onToggle, disabled = false }: DemoModeToggleProps) => {
   return (
-    <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            checked={isDemoMode} 
-            onCheckedChange={onToggle}
-            disabled={disabled}
-            id="demo-mode"
-          />
-          <Label htmlFor="demo-mode" className="font-medium text-sm cursor-pointer">Use Demo Mode</Label>
+    <div className="flex items-center space-x-2">
+      <Switch
+        id="demo-mode"
+        checked={isDemoMode}
+        onCheckedChange={onToggle}
+        disabled={disabled}
+      />
+      <Label htmlFor="demo-mode" className="text-sm cursor-pointer">
+        Demo Mode {isDemoMode ? '(ON)' : '(OFF)'}
+      </Label>
+      <div className="relative group">
+        <div className="cursor-help text-sm text-muted-foreground ml-1">ⓘ</div>
+        <div className="absolute bottom-full mb-2 left-0 w-64 bg-popover p-3 rounded-md shadow-md hidden group-hover:block text-xs">
+          <p className="font-medium mb-1">Demo Mode</p>
+          <p>When enabled, analyses are simulated locally instead of using the GPT-4o AI service. Use this if the AI service is unavailable or if you want to test without using API credits.</p>
         </div>
       </div>
-      
-      {isDemoMode && (
-        <div className="mt-2 flex items-start gap-2">
-          <Info size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-gray-600">
-            Demo mode is enabled. Analysis will use simulated data instead of GPT-4o.
-          </p>
-        </div>
-      )}
-      
-      {!isDemoMode && (
-        <div className="mt-2 flex items-start gap-2">
-          <Info size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-gray-600">
-            GPT-4o will be used for analysis. Enable demo mode if the GPT-4o service is unavailable or you prefer to use simulated data.
-          </p>
-        </div>
-      )}
     </div>
   );
 };

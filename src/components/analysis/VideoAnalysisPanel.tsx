@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress"
 import { FileVideo, Upload, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import DemoModeToggle from './panel/DemoModeToggle';
 import ApiKeyValidator from './panel/ApiKeyValidator';
+import ConnectionStatus from './panel/ConnectionStatus';
+import { checkOpenAIApiKey } from '@/utils/api/apiKeyValidator';
 
 interface VideoAnalysisPanelProps {
   videoFile: File | null;
@@ -25,6 +27,33 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
   onVideoSelected,
   onAnalyzeClick
 }) => {
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+  
+  useEffect(() => {
+    // Check connection status on component mount
+    checkConnectionStatus();
+  }, []);
+  
+  const checkConnectionStatus = async () => {
+    setIsCheckingConnection(true);
+    try {
+      const result = await checkOpenAIApiKey();
+      if (result.isValid) {
+        setConnectionStatus('connected');
+      } else {
+        // If the API key check fails but we have some connection, set to limited
+        setConnectionStatus('limited');
+      }
+    } catch (error) {
+      // If we can't even reach the check endpoint, set to offline
+      console.error('Connection check failed:', error);
+      setConnectionStatus('offline');
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -41,6 +70,8 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
+        <ConnectionStatus connectionStatus={connectionStatus} />
+        
         <div className="flex items-center space-x-4">
           {videoFile ? (
             <div className="flex items-center">
@@ -80,6 +111,15 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
               onToggle={onDemoModeChange} 
               disabled={isAnalyzing} 
             />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={checkConnectionStatus} 
+              disabled={isCheckingConnection}
+              className="mr-2"
+            >
+              {isCheckingConnection ? 'Checking...' : 'Check Connection'}
+            </Button>
             <ApiKeyValidator />
           </>
         )}
@@ -90,8 +130,13 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
             Analyzing...
           </Button>
         ) : (
-          <Button onClick={onAnalyzeClick} disabled={!videoFile}>
-            Analyze Technique
+          <Button 
+            onClick={onAnalyzeClick} 
+            disabled={!videoFile || (connectionStatus === 'offline' && !isDemoMode)}
+          >
+            {connectionStatus === 'offline' && !isDemoMode 
+              ? 'Enable Demo Mode to Analyze' 
+              : 'Analyze Technique'}
           </Button>
         )}
       </CardFooter>
