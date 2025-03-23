@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from "@/components/ui/progress"
-import { FileVideo, Upload, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { FileVideo, Upload, Loader2 } from 'lucide-react';
 import DemoModeToggle from './panel/DemoModeToggle';
-import ApiKeyValidator from './panel/ApiKeyValidator';
 import ConnectionStatus from './panel/ConnectionStatus';
 import { checkOpenAIApiKey } from '@/utils/api/apiKeyValidator';
 
@@ -116,11 +115,9 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
               size="sm" 
               onClick={checkConnectionStatus} 
               disabled={isCheckingConnection}
-              className="mr-2"
             >
               {isCheckingConnection ? 'Checking...' : 'Check Connection'}
             </Button>
-            <ApiKeyValidator />
           </>
         )}
 
