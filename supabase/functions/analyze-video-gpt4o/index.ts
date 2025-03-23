@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -19,6 +18,91 @@ serve(async (req) => {
   }
 
   try {
+    // Check if this is a diagnostic API key check request
+    const url = new URL(req.url);
+    if (url.pathname.endsWith('/check-api-key')) {
+      console.log("Received API key validation request");
+      
+      // Check for OpenAI API key
+      if (!openAIApiKey) {
+        console.error("OpenAI API key not configured");
+        return new Response(
+          JSON.stringify({ 
+            error: 'OpenAI API key not configured', 
+            status: 'missing' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      // Try a small test call to OpenAI
+      try {
+        console.log("Testing OpenAI API key with a small request");
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: 'You are a helpful assistant.' },
+              { role: 'user', content: 'Say "API key is valid" if you can read this message.' }
+            ],
+            max_tokens: 20,
+            temperature: 0.7,
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("OpenAI API key validation error:", errorData);
+          return new Response(
+            JSON.stringify({ 
+              error: `API key validation failed: ${response.status} ${response.statusText}`, 
+              details: errorData,
+              status: 'invalid'
+            }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        const data = await response.json();
+        return new Response(
+          JSON.stringify({ 
+            message: 'OpenAI API key is valid',
+            response: data.choices[0].message.content,
+            model: data.model,
+            status: 'valid'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } catch (apiTestError) {
+        console.error("Error testing OpenAI API key:", apiTestError);
+        return new Response(
+          JSON.stringify({ 
+            error: `Error testing API key: ${apiTestError.message}`,
+            status: 'error'
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
+    console.log("Received video analysis request");
+    
     // Check for OpenAI API key
     if (!openAIApiKey) {
       console.error("OpenAI API key not configured");
@@ -33,8 +117,6 @@ serve(async (req) => {
       );
     }
 
-    console.log("Received video analysis request");
-    
     // Parse the request body
     let formData;
     try {
