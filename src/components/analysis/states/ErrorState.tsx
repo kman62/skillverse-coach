@@ -11,7 +11,8 @@ interface ErrorStateProps {
 const ErrorState = ({ errorMessage, onRetry }: ErrorStateProps) => {
   const isEdgeFunctionError = errorMessage.includes("Edge function") || 
                             errorMessage.includes("Failed to send") ||
-                            errorMessage.includes("GPT-4o");
+                            errorMessage.includes("GPT-4o") ||
+                            errorMessage.includes("failed");
   
   return (
     <div className="bg-card rounded-xl border border-destructive h-[500px] flex items-center justify-center p-6 text-center">
@@ -22,7 +23,7 @@ const ErrorState = ({ errorMessage, onRetry }: ErrorStateProps) => {
         <h3 className="text-lg font-medium">Analysis Error</h3>
         <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
           {isEdgeFunctionError 
-            ? "Could not connect to the AI analysis service. Please try enabling Demo Mode instead." 
+            ? "The AI service is temporarily unavailable. The system will automatically switch to Demo Mode for your analysis." 
             : errorMessage || "There was an error analyzing your video. Please try again."}
         </p>
         <div className="mt-6 space-y-3">
@@ -37,7 +38,7 @@ const ErrorState = ({ errorMessage, onRetry }: ErrorStateProps) => {
           )}
           {isEdgeFunctionError && (
             <p className="text-xs text-muted-foreground mt-2">
-              Error details: {errorMessage}
+              Technical details: {errorMessage}
             </p>
           )}
         </div>

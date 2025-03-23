@@ -63,8 +63,7 @@ export const analyzeVideo = async (
   formData.append("sportId", sportId);
   
   dispatchAnalysisEvent('started');
-  
-  // Try to use Supabase Edge Function for GPT-4o analysis
+
   try {
     dispatchAnalysisEvent('api-request-gpt4o', { provider: 'supabase-edge-function' });
     console.log('Attempting to use GPT-4o via Supabase Edge Function', {
@@ -94,30 +93,8 @@ export const analyzeVideo = async (
         sportIdValue: formData.get('sportId')
       });
       
-      // Use direct invocation to avoid POST issues
       dispatchAnalysisEvent('analyzing-technique');
       console.log("Invoking Supabase Edge Function 'analyze-video-gpt4o'");
-      
-      // Instead of using Supabase Edge Function, use demo mode temporarily
-      // since the edge function is failing. This is a failsafe.
-      const edgeFunctionUnavailable = true; // Set to true to force demo mode when edge function fails
-      
-      if (edgeFunctionUnavailable) {
-        console.log("Edge function appears unavailable, falling back to demo mode");
-        window.usedFallbackData = true;
-        dispatchAnalysisEvent('edge-function-unavailable');
-        dispatchAnalysisEvent('using-demo-data-fallback');
-        
-        // Generate demo analysis data based on drill name and sport
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate processing time
-        const mockData = generateSportSpecificAnalysis(sportId, drillName);
-        dispatchAnalysisEvent('demo-data-generated');
-        
-        // Clear the timeout
-        clearTimeout(timeoutId);
-        
-        return mockData;
-      }
       
       const { data: edgeFunctionResult, error: edgeFunctionError } = await supabase.functions.invoke(
         'analyze-video-gpt4o',
@@ -166,11 +143,17 @@ export const analyzeVideo = async (
       throw error;
     }
   } catch (gpt4oError) {
-    console.warn("GPT-4o analysis failed:", gpt4oError);
+    console.warn("GPT-4o analysis failed, automatically falling back to demo mode:", gpt4oError);
     dispatchAnalysisEvent('api-failed-gpt4o', { error: String(gpt4oError) });
     
-    // Fall back to demo mode instead of throwing an error
-    console.log("Falling back to demo mode after API failure");
+    // Auto-fallback to demo mode
+    console.log("Automatically falling back to demo mode after API failure");
+    toast({
+      title: "Using Demo Mode",
+      description: "AI analysis service unavailable. Automatically switched to demo mode.",
+      variant: "default"
+    });
+    
     window.usedFallbackData = true;
     dispatchAnalysisEvent('api-fallback-to-demo');
     
