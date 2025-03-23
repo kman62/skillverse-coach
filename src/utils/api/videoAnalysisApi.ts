@@ -77,11 +77,13 @@ export const analyzeVideo = async (
     // First, verify Edge Function availability
     try {
       // Check if Supabase client is properly initialized
+      // Get the Supabase URL from the client.ts file instead of trying to access the protected property
+      const supabaseURL = process.env.SUPABASE_URL || "https://aghjbyysvchicvekbamg.supabase.co";
+      
       console.log("Checking Supabase client configuration:", {
         isInitialized: !!supabase,
         hasInvoke: !!(supabase && supabase.functions && supabase.functions.invoke),
-        // Fix: Use SUPABASE_URL from environment or configuration instead of accessing protected property
-        url: supabase.supabaseUrl ? supabase.supabaseUrl : "URL not accessible",
+        url: supabaseURL
       });
       
       // Test if we can reach Supabase at all with a simple ping function
