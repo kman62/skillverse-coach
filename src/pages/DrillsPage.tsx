@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, BookOpen, Users } from "lucide-react";
@@ -35,6 +36,16 @@ const DrillsPage = () => {
         </Button>
         <h1 className="text-3xl font-bold">{sport.name} Training</h1>
       </div>
+
+      {sport.id === "rugby" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Perfect your rugby skills with these specialized drills designed for players of all levels. 
+            From passing and tackling to advanced ruck techniques, these drills will help you develop 
+            the fundamental skills needed for success on the field.
+          </p>
+        </div>
+      )}
 
       <div className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center">

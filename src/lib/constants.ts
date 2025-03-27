@@ -388,7 +388,7 @@ export const SPORTS: Sport[] = [
         name: "Passing Technique",
         description: "Perfect your rugby passing form for accurate and quick ball distribution",
         difficulty: "beginner",
-        coverImage: "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?q=80&w=1600&auto=format&fit=crop",
+        coverImage: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?q=80&w=1600&auto=format&fit=crop",
         steps: [
           "Stand with feet shoulder-width apart, knees slightly bent",
           "Hold the ball with both hands, fingers spread across the surface",
@@ -407,7 +407,7 @@ export const SPORTS: Sport[] = [
         name: "Tackling Technique",
         description: "Learn safe and effective tackling form for defensive play",
         difficulty: "intermediate",
-        coverImage: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?q=80&w=1600&auto=format&fit=crop",
+        coverImage: "https://images.unsplash.com/photo-1569074187119-c87815b476da?q=80&w=1600&auto=format&fit=crop",
         steps: [
           "Position yourself in front of the ball carrier with feet shoulder-width apart",
           "Bend your knees and keep your back straight (rugby-ready position)",
@@ -427,7 +427,7 @@ export const SPORTS: Sport[] = [
         name: "Ruck Technique",
         description: "Master proper body position and technique for effective rucking",
         difficulty: "intermediate",
-        coverImage: "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?q=80&w=1600&auto=format&fit=crop",
+        coverImage: "https://images.unsplash.com/photo-1580980407668-7c61bfdf04a0?q=80&w=1600&auto=format&fit=crop",
         steps: [
           "Identify when a teammate has been tackled and the ball is on the ground",
           "Approach the ruck area from your side of the ball",
@@ -448,7 +448,7 @@ export const SPORTS: Sport[] = [
         id: "scrum-analysis",
         name: "Scrum Formation Analysis",
         description: "Analyze scrum technique, binding, and power generation with full team participation",
-        coverImage: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?q=80&w=1600&auto=format&fit=crop",
+        coverImage: "https://images.unsplash.com/photo-1591491655675-95314c9cb3a6?q=80&w=1600&auto=format&fit=crop",
         players: 16,
         duration: "15-20 min"
       },
@@ -456,7 +456,7 @@ export const SPORTS: Sport[] = [
         id: "lineout-analysis",
         name: "Lineout Organization",
         description: "Evaluate lineout calls, timing, lifting technique and throw accuracy",
-        coverImage: "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?q=80&w=1600&auto=format&fit=crop",
+        coverImage: "https://images.unsplash.com/photo-1583506727849-da2964e9d9d8?q=80&w=1600&auto=format&fit=crop",
         players: 8,
         duration: "10-15 min"
       }

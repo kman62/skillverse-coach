@@ -35,6 +35,7 @@ const DrillCard = ({ sportId, drill, className, style }: DrillCardProps) => {
             src={drill.coverImage} 
             alt={drill.name} 
             className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
           />
         </div>
       </div>
