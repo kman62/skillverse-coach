@@ -37,6 +37,16 @@ const DrillsPage = () => {
         <h1 className="text-3xl font-bold">{sport.name} Training</h1>
       </div>
 
+      {sport.id === "basketball" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Develop your basketball skills with these specialized drills designed for players of all levels.
+            Master shooting, dribbling, and passing techniques to elevate your game and become a
+            more complete player on the court.
+          </p>
+        </div>
+      )}
+
       {sport.id === "rugby" && (
         <div className="mb-6">
           <p className="text-muted-foreground">
