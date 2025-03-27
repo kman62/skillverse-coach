@@ -174,6 +174,24 @@ export const SPORTS: Sport[] = [
         duration: "20-30 minutes",
         benefits: ["Improved bat speed", "Better contact rate", "Increased hitting power"]
       }
+    ],
+    teamAnalysis: [
+      {
+        id: "batting-practice",
+        name: "Team Batting Practice",
+        description: "Analyze batting mechanics and hitting approach across the lineup",
+        coverImage: "https://images.unsplash.com/photo-1543468707-8ba78357cac7?q=80&w=1600&auto=format&fit=crop",
+        players: 9,
+        duration: "30-45 min"
+      },
+      {
+        id: "infield-defense",
+        name: "Infield Defense Coordination",
+        description: "Evaluate double play timing, field coverage, and defensive shifts",
+        coverImage: "https://images.unsplash.com/photo-1589956861092-bc5ad1ef06e9?q=80&w=1600&auto=format&fit=crop",
+        players: 6,
+        duration: "20-30 min"
+      }
     ]
   },
   {
@@ -237,6 +255,24 @@ export const SPORTS: Sport[] = [
         duration: "25-35 minutes",
         benefits: ["Increased kicking distance", "Better accuracy", "More consistent kicks"]
       }
+    ],
+    teamAnalysis: [
+      {
+        id: "passing-offense",
+        name: "Passing Offense Breakdown",
+        description: "Analyze route combinations, quarterback reads, and timing in the passing game",
+        coverImage: "https://images.unsplash.com/photo-1596332978753-58916187c0a2?q=80&w=1600&auto=format&fit=crop",
+        players: 11,
+        duration: "25-35 min"
+      },
+      {
+        id: "defensive-coverage",
+        name: "Defensive Coverage Analysis",
+        description: "Evaluate coverage assignments, communication, and reaction to offensive formations",
+        coverImage: "https://images.unsplash.com/photo-1493171681599-82c9321a0d1b?q=80&w=1600&auto=format&fit=crop",
+        players: 11,
+        duration: "20-30 min"
+      }
     ]
   },
   {
@@ -281,6 +317,24 @@ export const SPORTS: Sport[] = [
         equipment: ["Tennis racket", "Tennis balls", "Tennis court or practice wall"],
         duration: "25-35 minutes",
         benefits: ["Improved power and control", "Better consistency", "More spin on the ball"]
+      }
+    ],
+    teamAnalysis: [
+      {
+        id: "doubles-positioning",
+        name: "Doubles Positioning",
+        description: "Analyze court coverage, positioning strategies, and partner communication in doubles play",
+        coverImage: "https://images.unsplash.com/photo-1551889885-43a62f30d5f1?q=80&w=1600&auto=format&fit=crop",
+        players: 4,
+        duration: "30-45 min"
+      },
+      {
+        id: "mixed-doubles-strategy",
+        name: "Mixed Doubles Strategy",
+        description: "Evaluate serving patterns, return positioning, and net play tactics in mixed doubles",
+        coverImage: "https://images.unsplash.com/photo-1622279488168-bacd37e2d47f?q=80&w=1600&auto=format&fit=crop",
+        players: 4,
+        duration: "25-35 min"
       }
     ]
   },
@@ -328,6 +382,24 @@ export const SPORTS: Sport[] = [
         duration: "20-30 minutes",
         benefits: ["Improved distance control", "Better accuracy", "Fewer three-putts"]
       }
+    ],
+    teamAnalysis: [
+      {
+        id: "foursome-strategy",
+        name: "Foursome Strategy Analysis",
+        description: "Analyze course management, shot selection, and partner dynamics in foursome format",
+        coverImage: "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?q=80&w=1600&auto=format&fit=crop",
+        players: 4,
+        duration: "3-4 hours"
+      },
+      {
+        id: "best-ball-tactics",
+        name: "Best Ball Team Tactics",
+        description: "Evaluate risk management, complementary play styles, and strategic decision-making in best ball format",
+        coverImage: "https://images.unsplash.com/photo-1592919505780-303950717480?q=80&w=1600&auto=format&fit=crop",
+        players: 4,
+        duration: "3-4 hours"
+      }
     ]
   },
   {
@@ -373,6 +445,24 @@ export const SPORTS: Sport[] = [
         equipment: ["Soccer ball", "Cones (optional)", "Open space"],
         duration: "20-30 minutes",
         benefits: ["Better ball control", "Improved maneuverability", "Enhanced ability to beat defenders"]
+      }
+    ],
+    teamAnalysis: [
+      {
+        id: "attacking-patterns",
+        name: "Team Attacking Patterns",
+        description: "Analyze build-up play, attacking movements, and final third decision-making",
+        coverImage: "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?q=80&w=1600&auto=format&fit=crop",
+        players: 11,
+        duration: "25-35 min"
+      },
+      {
+        id: "defensive-organization",
+        name: "Defensive Organization",
+        description: "Evaluate defensive shape, pressing triggers, and recovery runs when out of possession",
+        coverImage: "https://images.unsplash.com/photo-1560159010-8baaa2d73fd2?q=80&w=1600&auto=format&fit=crop",
+        players: 11,
+        duration: "20-30 min"
       }
     ]
   },
