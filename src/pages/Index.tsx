@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import SportsCard from '@/components/ui/SportsCard';
-import { SPORTS } from '@/lib/constants';
+import { SPORTS } from '@/lib/sports';
 import { ChevronRight, Search } from 'lucide-react';
 
 const Index = () => {

@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, BookOpen, Users } from "lucide-react";
-import { getSportById } from "@/lib/constants";
+import { getSportById } from "@/lib/sports";
 import DrillCard from "@/components/ui/DrillCard";
 import TeamAnalysisCard from "@/components/ui/TeamAnalysisCard";
 import { Button } from "@/components/ui/button";

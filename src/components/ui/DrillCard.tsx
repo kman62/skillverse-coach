@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
-import { Drill } from '@/lib/constants';
+import { Drill } from '@/lib/sports';
 
 interface DrillCardProps {
   sportId: string;

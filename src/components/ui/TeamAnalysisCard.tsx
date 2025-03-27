@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Clock, ChevronRight } from "lucide-react";
-import { TeamAnalysis } from "@/lib/constants";
+import { TeamAnalysis } from "@/lib/sports";
 import { Link } from "react-router-dom";
 
 interface TeamAnalysisCardProps {

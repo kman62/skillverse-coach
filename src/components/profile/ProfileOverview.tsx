@@ -5,7 +5,7 @@ import ProgressChart from '@/components/progress/ProgressChart';
 import { AccuracyMetric } from '@/components/progress/types';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Button } from '@/components/ui/button';
-import { SPORTS } from '@/lib/constants';
+import { SPORTS } from '@/lib/sports';
 
 interface ProfileOverviewProps {
   profile: any;
