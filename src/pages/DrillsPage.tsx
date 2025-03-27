@@ -47,6 +47,56 @@ const DrillsPage = () => {
         </div>
       )}
 
+      {sport.id === "baseball" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Enhance your baseball skills with these carefully designed drills for players of all abilities.
+            Focus on pitching, batting, and fielding techniques to improve your overall performance and
+            become a more versatile player on the diamond.
+          </p>
+        </div>
+      )}
+
+      {sport.id === "football" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Elevate your football skills with these specialized drills designed for all skill levels.
+            Improve your throwing, catching, and footwork techniques to increase your effectiveness
+            on the field and contribute more to your team's success.
+          </p>
+        </div>
+      )}
+
+      {sport.id === "tennis" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Refine your tennis skills with these targeted drills suitable for players at every level.
+            Perfect your serve, forehand, backhand, and volley techniques to gain consistency and
+            confidence in your game and outperform your opponents on the court.
+          </p>
+        </div>
+      )}
+
+      {sport.id === "golf" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Polish your golf skills with these focused drills appropriate for all handicap levels.
+            Improve your swing mechanics, putting technique, and overall course management to
+            lower your scores and enjoy more consistent performance on the links.
+          </p>
+        </div>
+      )}
+
+      {sport.id === "soccer" && (
+        <div className="mb-6">
+          <p className="text-muted-foreground">
+            Develop your soccer abilities with these purpose-built drills for players of every age and skill level.
+            Enhance your dribbling, passing, and shooting techniques to become a more complete player
+            and make a greater impact during matches.
+          </p>
+        </div>
+      )}
+
       {sport.id === "rugby" && (
         <div className="mb-6">
           <p className="text-muted-foreground">
