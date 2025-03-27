@@ -1,6 +1,11 @@
 
 import { AnalysisResponse } from './analysisTypes';
-import { getRandomItems } from './analysisHelpers';
+
+// Create our own getRandomItems function since it's not exported from analysisHelpers
+const getRandomItems = <T>(array: T[], count: number): T[] => {
+  const shuffled = [...array].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+};
 
 const rugbyMetrics = [
   { name: "Technique", value: 0, target: 95, unit: "%" },
@@ -132,8 +137,7 @@ export const generateRugbyAnalysis = (drillName: string, baseScore: number): Ana
         good: getRandomItems(goodFeedbackPool, 3),
         improve: getRandomItems(improveFeedbackPool, 3)
       },
-      coachingTips: getRandomItems(coachingTipsPool, 4),
-      provider: "ai-coach"
+      coachingTips: getRandomItems(coachingTipsPool, 4)
     },
     behavior: {
       consistency: [
@@ -173,7 +177,7 @@ export const generateRugbyAnalysis = (drillName: string, baseScore: number): Ana
         attempts: [{ attemptNumber: 1, duration: "1.8s" }]
       },
       fatigue: {
-        level: baseScore > 75 ? "low" : baseScore > 65 ? "medium" : "high",
+        level: baseScore > 75 ? "low" : baseScore > 65 ? "moderate" : "high",
         signs: baseScore > 75 
           ? ["Maintained energy throughout", "Consistent performance"] 
           : ["Slight decrease in form over time", "Recovery needed between attempts"],
