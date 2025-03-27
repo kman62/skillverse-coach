@@ -7,6 +7,7 @@ import { generateFootballAnalysis } from './footballAnalysis';
 import { generateTennisAnalysis } from './tennisAnalysis';
 import { generateGolfAnalysis } from './golfAnalysis';
 import { generateSoccerAnalysis } from './soccerAnalysis';
+import { generateRugbyAnalysis } from './rugbyAnalysis';
 
 // Sport-specific analysis generator (used as fallback if API fails)
 export const generateSportSpecificAnalysis = (sportId: string, drillName: string): AnalysisResponse => {
@@ -29,6 +30,8 @@ export const generateSportSpecificAnalysis = (sportId: string, drillName: string
       return generateGolfAnalysis(drillName, score);
     case "soccer":
       return generateSoccerAnalysis(drillName, score);
+    case "rugby":
+      return generateRugbyAnalysis(drillName, score);
     default:
       return generateGenericAnalysis(drillName, score);
   }
