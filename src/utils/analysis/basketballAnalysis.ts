@@ -7,8 +7,9 @@ import { generateGenericBasketballAnalysis } from './basketball/genericBasketbal
 
 // Basketball-specific analysis
 export const generateBasketballAnalysis = (drillName: string, score: number): AnalysisResponse => {
-  // Determine if this is a free throw analysis
-  if (drillName.toLowerCase().includes("free throw")) {
+  // Determine if this is a free throw analysis - make sure to catch both "free throw" and "free-throw" formats
+  if (drillName.toLowerCase().includes("free throw") || 
+      drillName.toLowerCase().includes("free-throw")) {
     console.log(`🏀 Basketball Analysis routing to Free Throw Analysis for "${drillName}"`);
     return generateFreeThrowAnalysis(drillName, score);
   }
