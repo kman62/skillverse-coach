@@ -9,7 +9,14 @@ import { generateGolfAnalysis } from './golfAnalysis';
 import { generateSoccerAnalysis } from './soccerAnalysis';
 import { generateRugbyAnalysis } from './rugbyAnalysis';
 
-// Sport-specific analysis generator (used as fallback if API fails)
+/**
+ * Generates sport-specific analysis for a drill based on the sport ID.
+ * This function serves as a selector/router to the appropriate sport analysis module.
+ * 
+ * @param sportId - The identifier for the sport (e.g. "basketball", "football")
+ * @param drillName - The name of the drill being analyzed
+ * @returns An AnalysisResponse with sport and drill-specific metrics
+ */
 export const generateSportSpecificAnalysis = (sportId: string, drillName: string): AnalysisResponse => {
   // Generate a deterministic but realistic score
   const baseScore = drillName.length % 20 + 70; // Score between 70-90
@@ -17,6 +24,7 @@ export const generateSportSpecificAnalysis = (sportId: string, drillName: string
   
   console.log(`Generating fallback analysis for ${sportId}/${drillName} with score ${score}`);
   
+  // Route to the correct sport-specific analysis generator
   switch(sportId) {
     case "basketball":
       return generateBasketballAnalysis(drillName, score);
