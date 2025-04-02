@@ -1,4 +1,3 @@
-
 import { AnalysisResponse } from '../analysisTypes';
 import { buildAnalysisResponse } from '../analysisHelpers';
 
@@ -6,6 +5,9 @@ import { buildAnalysisResponse } from '../analysisHelpers';
  * Specialized analysis function for Free Throw technique based on 5 key criteria
  */
 export const generateFreeThrowAnalysis = (drillName: string, score: number): AnalysisResponse => {
+  const timestamp = new Date().toISOString();
+  console.log(`🏀 [${timestamp}] Free Throw Analysis triggered for "${drillName}" with base score ${score}`);
+  
   // Calculate individual component scores
   const baselineScore = score;
   
@@ -15,6 +17,15 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
   const aimingScore = Math.min(100, Math.max(50, baselineScore + (Math.random() * 10 - 5)));
   const motionScore = Math.min(100, Math.max(50, baselineScore + (Math.random() * 10 - 5)));
   const evaluationScore = Math.min(100, Math.max(50, baselineScore + (Math.random() * 10 - 5)));
+  
+  // Log the component scores for debugging
+  console.log(`🏀 Free Throw Analysis components: 
+    - Preparation: ${Math.round(preparationScore)}
+    - Hand Placement: ${Math.round(handPlacementScore)}
+    - Aiming & Focus: ${Math.round(aimingScore)}
+    - Shooting Motion: ${Math.round(motionScore)}
+    - Adjustment: ${Math.round(evaluationScore)}
+  `);
   
   // Define the metrics based on the 5 key criteria
   const metrics = [
@@ -122,6 +133,33 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
     "Create a consistent pre-shot routine with the same number of dribbles and breaths every time",
     "Practice free throws when physically tired to simulate game conditions"
   ];
+  
+  // Create a localStorage record of the analysis execution
+  try {
+    const analysisLog = JSON.parse(localStorage.getItem('freeThrowAnalysisLog') || '[]');
+    analysisLog.push({
+      timestamp,
+      drillName,
+      score,
+      components: {
+        preparation: Math.round(preparationScore),
+        handPlacement: Math.round(handPlacementScore),
+        aiming: Math.round(aimingScore),
+        motion: Math.round(motionScore),
+        evaluation: Math.round(evaluationScore)
+      }
+    });
+    // Keep only the last 50 entries
+    if (analysisLog.length > 50) {
+      analysisLog.shift();
+    }
+    localStorage.setItem('freeThrowAnalysisLog', JSON.stringify(analysisLog));
+  } catch (error) {
+    console.error('Error logging free throw analysis:', error);
+  }
+  
+  // Log completion of analysis
+  console.log(`🏀 [${timestamp}] Free Throw Analysis completed for "${drillName}"`);
   
   // Return the complete free throw analysis
   return buildAnalysisResponse(
