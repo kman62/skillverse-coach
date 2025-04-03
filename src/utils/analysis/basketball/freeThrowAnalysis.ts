@@ -1,3 +1,4 @@
+
 import { AnalysisResponse } from '../analysisTypes';
 import { buildAnalysisResponse } from '../analysisHelpers';
 
@@ -27,7 +28,7 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
     - Adjustment: ${Math.round(evaluationScore)}
   `);
   
-  // Define the metrics based on the 5 key criteria
+  // Define the metrics based on the 5 key criteria for free throws
   const metrics = [
     {
       name: "Preparation",
