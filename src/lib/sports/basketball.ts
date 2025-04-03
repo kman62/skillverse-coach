@@ -24,7 +24,8 @@ export const BASKETBALL: Sport = {
       ],
       equipment: ["Basketball", "Basketball court with free throw line"],
       duration: "15-20 minutes",
-      benefits: ["Improved free throw accuracy", "Consistent shooting form", "Better game-time confidence"]
+      benefits: ["Improved free throw accuracy", "Consistent shooting form", "Better game-time confidence"],
+      analysisType: "freeThrow" // Add this identifier to help with analysis routing
     },
     {
       id: "free-throw-side",
@@ -42,7 +43,8 @@ export const BASKETBALL: Sport = {
       ],
       equipment: ["Basketball", "Basketball court with free throw line"],
       duration: "15-20 minutes",
-      benefits: ["Better shooting alignment", "Improved shooting arc", "Consistent release point"]
+      benefits: ["Better shooting alignment", "Improved shooting arc", "Consistent release point"],
+      analysisType: "freeThrow" // Add this identifier to help with analysis routing
     },
     {
       id: "jump-shot",

@@ -159,11 +159,18 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
     console.error('Error logging free throw analysis:', error);
   }
   
+  // Set a flag to help debug if the free throw analysis was executed
+  try {
+    window.localStorage.setItem('lastFreeThrowAnalysisTime', timestamp);
+  } catch (error) {
+    console.error('Error setting lastFreeThrowAnalysisTime:', error);
+  }
+  
   // Log completion of analysis
-  console.log(`🏀 [${timestamp}] Free Throw Analysis completed for "${drillName}"`);
+  console.log(`🏀 [${timestamp}] Free Throw Analysis completed for "${drillName}" with metrics:`, metrics);
   
   // Return the complete free throw analysis
-  return buildAnalysisResponse(
+  const result = buildAnalysisResponse(
     drillName,
     score,
     metrics,
@@ -173,4 +180,9 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
     },
     coachingTips
   );
+  
+  // Add an identifier that this came from free throw analysis
+  result.analysisType = "freeThrow";
+  
+  return result;
 };
