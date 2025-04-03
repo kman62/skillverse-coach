@@ -56,4 +56,5 @@ export interface BehaviorAnalysis {
 export interface AnalysisResponse {
   result: AnalysisResult;
   behavior: BehaviorAnalysis;
+  analysisType?: string; // Added this optional property
 }

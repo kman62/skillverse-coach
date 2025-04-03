@@ -20,6 +20,7 @@ export interface Drill {
   equipment?: string[];
   duration?: string;
   benefits?: string[];
+  analysisType?: string; // Added this optional property
 }
 
 export interface TeamAnalysis {
