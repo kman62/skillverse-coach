@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from "@/components/ui/progress"
-import { FileVideo, Upload, Loader2, AlertTriangle } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
+import { AlertTriangle } from 'lucide-react';
 import DemoModeToggle from './panel/DemoModeToggle';
 import ConnectionStatus from './panel/ConnectionStatus';
 import AnalysisStageIndicator from './panel/AnalysisStageIndicator';
 import AnalysisButton from './panel/AnalysisButton';
+import FileSelector from './panel/FileSelector';
+import ConnectionCheck from './panel/ConnectionCheck';
 import { useToast } from '@/hooks/use-toast';
 import { checkOpenAIApiKey } from '@/utils/api/apiKeyValidator';
 
@@ -112,13 +114,6 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      onVideoSelected(file);
-    }
-  };
-
   const showDemoModeAlert = connectionStatus === 'offline' && !isDemoMode;
 
   return (
@@ -132,32 +127,11 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
       <CardContent className="grid gap-4">
         <ConnectionStatus connectionStatus={connectionStatus} />
         
-        <div className="flex items-center space-x-4">
-          {videoFile ? (
-            <div className="flex items-center">
-              <FileVideo className="h-4 w-4 mr-2 text-gray-500" />
-              <span className="text-sm truncate max-w-[200px]">{videoFile.name}</span>
-            </div>
-          ) : (
-            <>
-              <Upload className="h-4 w-4 mr-2 text-gray-500" />
-              <span>Upload a video file</span>
-            </>
-          )}
-          <Input
-            id="video-upload"
-            type="file"
-            accept="video/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <label
-            htmlFor="video-upload"
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium cursor-pointer hover:bg-gray-200 transition-colors duration-200"
-          >
-            {videoFile ? 'Change Video' : 'Select Video'}
-          </label>
-        </div>
+        <FileSelector 
+          videoFile={videoFile} 
+          onVideoSelected={onVideoSelected} 
+          disabled={isAnalyzing}
+        />
 
         {isAnalyzing && (
           <Progress value={processingProgress} className="w-full" />
@@ -194,14 +168,10 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
             disabled={isAnalyzing} 
           />
           
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={checkConnectionStatus} 
-            disabled={isCheckingConnection}
-          >
-            {isCheckingConnection ? 'Checking...' : 'Check Connection'}
-          </Button>
+          <ConnectionCheck 
+            isCheckingConnection={isCheckingConnection}
+            onCheckConnection={checkConnectionStatus}
+          />
         </div>
       </CardFooter>
     </Card>
