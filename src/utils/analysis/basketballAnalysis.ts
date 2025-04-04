@@ -19,7 +19,10 @@ export const generateBasketballAnalysis = (drillName: string, score: number): An
       normalizedDrillName === "free-throw-front" ||
       normalizedDrillName === "free-throw-side") {
     console.log(`🏀 Basketball Analysis routing to Free Throw Analysis for "${drillName}"`);
-    return generateFreeThrowAnalysis(drillName, score);
+    const result = generateFreeThrowAnalysis(drillName, score);
+    console.log(`🏀 Free Throw Analysis complete. Analysis type: ${result.analysisType}, Metrics:`, 
+      result.result.metrics.map(m => m.name).join(', '));
+    return result;
   }
   
   // Determine drill-specific metrics and feedback for other basketball drills

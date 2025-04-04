@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -27,6 +27,11 @@ const AnalysisCard = ({
   feedback,
   className 
 }: AnalysisCardProps) => {
+  // Log metrics on render for debugging
+  useEffect(() => {
+    console.log('AnalysisCard rendering with metrics:', metrics.map(m => m.name).join(', '));
+  }, [metrics]);
+  
   // Determine score color
   const getScoreColor = (score: number) => {
     if (score >= 85) return "text-green-500";

@@ -529,7 +529,7 @@ function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): 
   const motionScore = extractCriteriaScore(lines, "shooting motion") || Math.min(100, Math.max(50, overallScore + (Math.random() * 10 - 5)));
   const evaluationScore = extractCriteriaScore(lines, "evaluation") || Math.min(100, Math.max(50, overallScore + (Math.random() * 10 - 5)));
   
-  // Define the metrics based on the 5 key criteria
+  // Define the metrics based on the 5 key criteria for free throws
   const metrics = [
     {
       name: "Preparation",
@@ -613,7 +613,7 @@ function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): 
     "Practice free throws when physically tired to simulate game conditions"
   ];
   
-  return {
+  const result = {
     result: {
       title: `Free Throw Analysis from GPT-4o`,
       description: `GPT-4o Analysis for Basketball Free Throw Technique`,
@@ -624,7 +624,8 @@ function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): 
         improve: improvementPoints.length > 0 ? improvementPoints : defaultImprovementPoints
       },
       coachingTips: coachingTips.length > 0 ? coachingTips : defaultCoachingTips,
-      provider: "gpt-4o"
+      provider: "gpt-4o",
+      analysisType: "freeThrow"
     },
     behavior: {
       consistency: [
@@ -683,8 +684,14 @@ function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): 
           "Focus on maintaining consistent form regardless of game situation"
         ]
       }
-    }
+    },
+    analysisType: "freeThrow"
   };
+  
+  console.log("Free Throw GPT-4o Response processed. Analysis Type:", result.analysisType);
+  console.log("Metrics:", result.result.metrics.map(m => m.name).join(', '));
+  
+  return result;
 }
 
 // Helper function to extract criteria scores from GPT response

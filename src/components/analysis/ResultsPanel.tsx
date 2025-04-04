@@ -36,16 +36,20 @@ const ResultsPanel = ({
   analysisStage
 }: ResultsPanelProps) => {
   // Log the state to help debug
-  if (analysisResult) {
-    console.log('Analysis Results being displayed:', {
-      hasResult: !!analysisResult,
-      score: analysisResult.score,
-      hasTitle: !!analysisResult.title,
-      hasFeedback: !!analysisResult.feedback,
-      hasCoachingTips: !!analysisResult.coachingTips,
-      provider: analysisResult.provider || 'unknown'
-    });
-  }
+  React.useEffect(() => {
+    if (analysisResult) {
+      console.log('Analysis Results being displayed in ResultsPanel:', {
+        hasResult: !!analysisResult,
+        score: analysisResult.score,
+        hasTitle: !!analysisResult.title,
+        hasFeedback: !!analysisResult.feedback,
+        hasCoachingTips: !!analysisResult.coachingTips,
+        provider: analysisResult.provider || 'unknown',
+        analysisType: analysisResult.analysisType,
+        metrics: analysisResult.metrics?.map((m: any) => m.name).join(', ')
+      });
+    }
+  }, [analysisResult]);
   
   // Log analysis state to help debug
   if (isAnalyzing) {

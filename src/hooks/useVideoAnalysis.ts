@@ -74,7 +74,16 @@ export function useVideoAnalysis() {
         callbacks.forceDemoMode
       );
       
-      console.log('Analysis completed successfully:', analysisData);
+      console.log('Analysis completed successfully:', {
+        analysisType: analysisData.analysisType,
+        metrics: analysisData.result.metrics?.map((m: any) => m.name).join(', ')
+      });
+      
+      // Ensure the analysisType is preserved in the callback
+      if (analysisData.analysisType) {
+        analysisData.result.analysisType = analysisData.analysisType;
+      }
+      
       callbacks.onAnalysisComplete(analysisData.result, analysisData.behavior);
       
       if (window.usedFallbackData || callbacks.forceDemoMode) {

@@ -32,6 +32,17 @@ const AnalysisResults = ({
   drillId,
   onPoseAnalysis
 }: AnalysisResultsProps) => {
+  // Log analysis data for debugging
+  React.useEffect(() => {
+    if (analysisResult) {
+      console.log("Analysis Results Component Rendering:", {
+        title: analysisResult.title,
+        metrics: analysisResult.metrics?.map((m: any) => m.name).join(', '),
+        analysisType: analysisResult.analysisType || "undefined"
+      });
+    }
+  }, [analysisResult]);
+
   return (
     <div className="animate-fade-in space-y-6">
       {/* Provider Badge */}
