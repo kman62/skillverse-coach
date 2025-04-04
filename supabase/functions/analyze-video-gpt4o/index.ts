@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -6,57 +5,148 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
-// CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Handle ping request to check if edge function is accessible
-    try {
-      // Check if this is a ping request
-      const contentType = req.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const jsonData = await req.json();
-        if (jsonData.action === 'ping') {
-          console.log("Received ping request");
+    if (req.method === 'POST') {
+      // Handle ping request to check if edge function is accessible
+      try {
+        const contentType = req.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const jsonData = await req.json();
+          if (jsonData.action === 'ping') {
+            console.log("Received ping request");
+            return new Response(
+              JSON.stringify({ 
+                status: 'ok', 
+                message: 'Edge function is accessible',
+                timestamp: new Date().toISOString(),
+                apiKeyConfigured: !!openAIApiKey
+              }),
+              { 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
+        }
+      } catch (pingError) {
+        console.log("Not a ping request, continuing with normal processing");
+      }
+
+      // Check if this is a diagnostic API key check request
+      const url = new URL(req.url);
+      if (url.pathname.endsWith('/check-api-key')) {
+        console.log("Received API key validation request");
+        
+        if (!openAIApiKey) {
+          console.error("OpenAI API key not configured");
           return new Response(
             JSON.stringify({ 
-              status: 'ok', 
-              message: 'Edge function is accessible',
-              timestamp: new Date().toISOString(),
-              apiKeyConfigured: !!openAIApiKey
+              error: 'OpenAI API key not configured', 
+              status: 'missing' 
+            }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        try {
+          console.log("Testing OpenAI API key with a small request");
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: 'You are a helpful assistant.' },
+                { role: 'user', content: 'Say "API key is valid" if you can read this message.' }
+              ],
+              max_tokens: 20,
+              temperature: 0.7,
+            }),
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error("OpenAI API key validation error:", errorData);
+            return new Response(
+              JSON.stringify({ 
+                error: `API key validation failed: ${response.status} ${response.statusText}`, 
+                details: errorData,
+                status: 'invalid'
+              }),
+              { 
+                status: 400, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
+          
+          const data = await response.json();
+          return new Response(
+            JSON.stringify({ 
+              message: 'OpenAI API key is valid',
+              response: data.choices[0].message.content,
+              model: data.model,
+              status: 'valid'
             }),
             { 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
+        } catch (apiTestError) {
+          console.error("Error testing OpenAI API key:", apiTestError);
+          return new Response(
+            JSON.stringify({ 
+              error: `Error testing API key: ${apiTestError.message}`,
+              status: 'error'
+            }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
         }
       }
-    } catch (pingError) {
-      // If there's an error parsing JSON, it's not a ping request
-      console.log("Not a ping request, continuing with normal processing");
-    }
 
-    // Check if this is a diagnostic API key check request
-    const url = new URL(req.url);
-    if (url.pathname.endsWith('/check-api-key')) {
-      console.log("Received API key validation request");
+      console.log("Received video analysis request");
       
-      // Check for OpenAI API key
       if (!openAIApiKey) {
         console.error("OpenAI API key not configured");
         return new Response(
           JSON.stringify({ 
-            error: 'OpenAI API key not configured', 
-            status: 'missing' 
+            error: 'OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable.' 
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      let formData;
+      try {
+        formData = await req.formData();
+        console.log("Request form data parsed successfully");
+      } catch (formDataError) {
+        console.error("Error parsing form data:", formDataError);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid form data provided. Could not parse request body.',
+            errorDetails: formDataError.message
           }),
           { 
             status: 400, 
@@ -65,9 +155,55 @@ serve(async (req) => {
         );
       }
       
-      // Try a small test call to OpenAI
+      const sportId = formData.get('sportId')?.toString() || 'generic';
+      const drillName = formData.get('drillName')?.toString() || 'technique';
+      
+      const isFreeThrowDrill = 
+        sportId === 'basketball' && 
+        (drillName.toLowerCase().includes('free throw') || 
+         drillName.toLowerCase().includes('free-throw') ||
+         drillName === 'free-throw-front' ||
+         drillName === 'free-throw-side');
+      
+      if (isFreeThrowDrill) {
+        console.log(`Detected Free Throw analysis request for ${drillName}`);
+      }
+      
+      const videoFile = formData.get('video');
+      if (!videoFile || !(videoFile instanceof File)) {
+        console.error("No video file provided or invalid video file");
+        
+        console.log("FormData keys:", [...formData.keys()]);
+        console.log("Video file type:", typeof videoFile);
+        console.log("Is File instance:", videoFile instanceof File);
+        
+        return new Response(
+          JSON.stringify({ 
+            error: 'No video file provided in the request.',
+            receivedKeys: [...formData.keys()],
+            videoFileType: typeof videoFile,
+            isFileInstance: videoFile instanceof File
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      console.log(`Processing video analysis for ${sportId}/${drillName}`, {
+        fileName: videoFile.name,
+        fileSize: videoFile.size,
+        fileType: videoFile.type,
+        isFreeThrowDrill
+      });
+      
+      console.log("Preparing OpenAI GPT-4o request for video analysis");
+
+      const prompt = generatePromptForSport(sportId, drillName);
+
+      console.log("Calling GPT-4o API for analysis...");
       try {
-        console.log("Testing OpenAI API key with a small request");
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -77,165 +213,63 @@ serve(async (req) => {
           body: JSON.stringify({
             model: 'gpt-4o',
             messages: [
-              { role: 'system', content: 'You are a helpful assistant.' },
-              { role: 'user', content: 'Say "API key is valid" if you can read this message.' }
+              { 
+                role: 'system', 
+                content: `You are AIthlete, an advanced sports technique analyzer. You specialize in providing detailed, constructive feedback on athletic techniques for ${sportId}, particularly for the ${drillName} drill.` 
+              },
+              { 
+                role: 'user', 
+                content: prompt 
+              }
             ],
-            max_tokens: 20,
             temperature: 0.7,
-          }),
+            max_tokens: 1500,
+          })
         });
-        
+
         if (!response.ok) {
           const errorData = await response.text();
-          console.error("OpenAI API key validation error:", errorData);
+          console.error("OpenAI API error:", errorData);
           return new Response(
             JSON.stringify({ 
-              error: `API key validation failed: ${response.status} ${response.statusText}`, 
+              error: `OpenAI API error: ${response.status} ${response.statusText}`,
               details: errorData,
-              status: 'invalid'
+              timestamp: new Date().toISOString()
             }),
             { 
-              status: 400, 
+              status: 502, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
         }
-        
+
         const data = await response.json();
+        console.log("Successfully received response from OpenAI");
+        const gpt4oOutput = data.choices[0].message.content;
+        
+        const analysisData = processGPT4oResponse(gpt4oOutput, sportId, drillName);
+        
+        if (isFreeThrowDrill) {
+          console.log("Setting explicit free throw analysis type");
+          analysisData.analysisType = "freeThrow";
+          analysisData.result.analysisType = "freeThrow";
+          
+          console.log("Free Throw Analysis metrics:", 
+            analysisData.result.metrics.map((m: any) => m.name).join(', '));
+        }
+        
+        console.log("Analysis completed successfully");
+        
+        return new Response(JSON.stringify(analysisData), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (openAIError) {
+        console.error("OpenAI API call failed:", openAIError);
         return new Response(
           JSON.stringify({ 
-            message: 'OpenAI API key is valid',
-            response: data.choices[0].message.content,
-            model: data.model,
-            status: 'valid'
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      } catch (apiTestError) {
-        console.error("Error testing OpenAI API key:", apiTestError);
-        return new Response(
-          JSON.stringify({ 
-            error: `Error testing API key: ${apiTestError.message}`,
-            status: 'error'
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-    }
-
-    console.log("Received video analysis request");
-    
-    // Check for OpenAI API key
-    if (!openAIApiKey) {
-      console.error("OpenAI API key not configured");
-      return new Response(
-        JSON.stringify({ 
-          error: 'OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable.' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Parse the request body
-    let formData;
-    try {
-      formData = await req.formData();
-      console.log("Request form data parsed successfully");
-    } catch (formDataError) {
-      console.error("Error parsing form data:", formDataError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid form data provided. Could not parse request body.',
-          errorDetails: formDataError.message
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-    
-    const sportId = formData.get('sportId')?.toString() || 'generic';
-    const drillName = formData.get('drillName')?.toString() || 'technique';
-    
-    // Get the video file
-    const videoFile = formData.get('video');
-    if (!videoFile || !(videoFile instanceof File)) {
-      console.error("No video file provided or invalid video file");
-      
-      // Debug the actual content received
-      console.log("FormData keys:", [...formData.keys()]);
-      console.log("Video file type:", typeof videoFile);
-      console.log("Is File instance:", videoFile instanceof File);
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'No video file provided in the request.',
-          receivedKeys: [...formData.keys()],
-          videoFileType: typeof videoFile,
-          isFileInstance: videoFile instanceof File
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log(`Processing video analysis for ${sportId}/${drillName}`, {
-      fileName: videoFile.name,
-      fileSize: videoFile.size,
-      fileType: videoFile.type
-    });
-    
-    // Log that we're sending to OpenAI
-    console.log("Preparing OpenAI GPT-4o request for video analysis");
-
-    // Create a detailed prompt for GPT-4o based on the sport and drill
-    const prompt = generatePromptForSport(sportId, drillName);
-
-    // Call OpenAI API with GPT-4o
-    console.log("Calling GPT-4o API for analysis...");
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { 
-              role: 'system', 
-              content: `You are AIthlete, an advanced sports technique analyzer. You specialize in providing detailed, constructive feedback on athletic techniques for ${sportId}, particularly for the ${drillName} drill.` 
-            },
-            { 
-              role: 'user', 
-              content: prompt 
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1500,
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("OpenAI API error:", errorData);
-        return new Response(
-          JSON.stringify({ 
-            error: `OpenAI API error: ${response.status} ${response.statusText}`,
-            details: errorData,
-            timestamp: new Date().toISOString()
+            error: `Error calling OpenAI API: ${openAIError.message || 'Unknown error'}`,
+            timestamp: new Date().toISOString(),
+            stack: openAIError.stack
           }),
           { 
             status: 502, 
@@ -243,32 +277,6 @@ serve(async (req) => {
           }
         );
       }
-
-      const data = await response.json();
-      console.log("Successfully received response from OpenAI");
-      const gpt4oOutput = data.choices[0].message.content;
-      
-      // Transform GPT-4o output into our expected analysis format
-      const analysisData = processGPT4oResponse(gpt4oOutput, sportId, drillName);
-      
-      console.log("Analysis completed successfully");
-      
-      return new Response(JSON.stringify(analysisData), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (openAIError) {
-      console.error("OpenAI API call failed:", openAIError);
-      return new Response(
-        JSON.stringify({ 
-          error: `Error calling OpenAI API: ${openAIError.message || 'Unknown error'}`,
-          timestamp: new Date().toISOString(),
-          stack: openAIError.stack
-        }),
-        { 
-          status: 502, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
     }
   } catch (error) {
     console.error("Unhandled error in video analysis:", error);
@@ -285,10 +293,13 @@ serve(async (req) => {
   }
 });
 
-// Generate an appropriate prompt based on sport and drill
 function generatePromptForSport(sportId: string, drillName: string): string {
-  // Special case for free throw analysis
-  if (sportId === "basketball" && drillName.toLowerCase().includes("free throw")) {
+  if (sportId === "basketball" && 
+      (drillName.toLowerCase().includes("free throw") || 
+       drillName.toLowerCase().includes("free-throw") ||
+       drillName === "free-throw-front" ||
+       drillName === "free-throw-side")) {
+    console.log("Using specialized free throw processing for:", drillName);
     return `
     Analyze a basketball player performing a free throw. Please evaluate the following 5 key criteria:
     
@@ -353,10 +364,13 @@ function generatePromptForSport(sportId: string, drillName: string): string {
   return sportSpecificPrompts[sportId] || basePrompt;
 }
 
-// Process GPT-4o's text response into our structured analysis format
 function processGPT4oResponse(gptResponse: string, sportId: string, drillName: string): any {
-  // Special processing for free throw analysis
-  if (sportId === "basketball" && drillName.toLowerCase().includes("free throw")) {
+  if (sportId === "basketball" && 
+      (drillName.toLowerCase().includes("free throw") || 
+       drillName.toLowerCase().includes("free-throw") ||
+       drillName === "free-throw-front" ||
+       drillName === "free-throw-side")) {
+    console.log("Using specialized free throw processing for:", drillName);
     return processFreeThrowGPT4oResponse(gptResponse, drillName);
   }
 
@@ -377,7 +391,8 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
   const overallScore = extractedScore || Math.floor(Math.random() * 30) + 65;
   
   const goodPoints = lines
-    .filter(line => line.toLowerCase().includes('good') || line.toLowerCase().includes('well'))
+    .filter(line => line.toLowerCase().includes('good') || 
+                    line.toLowerCase().includes('well'))
     .map(line => line.replace(/^[-*•]+\s*/, '').trim())
     .slice(0, 3);
   
@@ -503,8 +518,9 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
   };
 }
 
-// Special processor for free throw analysis responses from GPT-4o
 function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): any {
+  console.log("Processing free throw response from GPT-4o");
+  
   const lines = gptResponse.split('\n').filter(line => line.trim().length > 0);
   
   // Extract overall score
@@ -614,6 +630,8 @@ function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): 
     "Practice free throws when physically tired to simulate game conditions"
   ];
   
+  console.log("Free throw analysis metrics:", metrics.map(m => m.name).join(', '));
+  
   return {
     result: {
       title: `Free Throw Analysis from GPT-4o`,
@@ -678,7 +696,6 @@ function processFreeThrowGPT4oResponse(gptResponse: string, drillName: string): 
   };
 }
 
-// Helper function to extract criteria scores from GPT-4o response
 function extractCriteriaScore(lines: string[], criteriaName: string): number | null {
   const criteriaRegex = new RegExp(`${criteriaName}.*?score:?\\s*(\\d+)`, 'i');
   

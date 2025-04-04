@@ -68,6 +68,7 @@ const AnalysisResults = ({
         score={analysisResult.score || 0}
         metrics={analysisResult.metrics || []}
         feedback={analysisResult.feedback || { good: [], improve: [] }}
+        analysisType={analysisResult.analysisType}
       />
       
       {behaviorAnalysis && (

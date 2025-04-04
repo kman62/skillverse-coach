@@ -1,22 +1,28 @@
 
-import React, { useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, XCircle } from 'lucide-react';
 
-interface AnalysisMetric {
+interface Metric {
   name: string;
   value: number;
-  target: number;
-  unit: string;
+  target?: number;
+  unit?: string;
+}
+
+interface Feedback {
+  good: string[];
+  improve: string[];
 }
 
 interface AnalysisCardProps {
   title: string;
   description: string;
   score: number;
-  metrics: AnalysisMetric[];
-  feedback: { good: string[]; improve: string[] };
-  className?: string;
+  metrics: Metric[];
+  feedback: Feedback;
+  analysisType?: string;
 }
 
 const AnalysisCard = ({ 
@@ -25,107 +31,96 @@ const AnalysisCard = ({
   score, 
   metrics, 
   feedback,
-  className 
+  analysisType
 }: AnalysisCardProps) => {
-  // Log metrics on render for debugging
-  useEffect(() => {
-    console.log('AnalysisCard rendering with metrics:', metrics.map(m => m.name).join(', '));
-  }, [metrics]);
-  
-  // Determine score color
-  const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-500";
-    if (score >= 70) return "text-yellow-500";
-    return "text-red-500";
-  };
-  
-  // Calculate progress percentage for metric
-  const calculateProgress = (value: number, target: number) => {
-    const percentage = (value / target) * 100;
-    return Math.min(Math.max(percentage, 0), 100);
-  };
+  // Log what analysis type we're displaying
+  React.useEffect(() => {
+    if (analysisType) {
+      console.log(`AnalysisCard rendering with analysisType: ${analysisType}`);
+      console.log(`Metrics received:`, metrics.map(m => m.name).join(', '));
+    }
+  }, [analysisType, metrics]);
 
   return (
-    <div className={cn(
-      "rounded-xl border border-border bg-card shadow-sm overflow-hidden",
-      className
-    )}>
-      <div className="p-6">
-        <h3 className="text-xl font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground mt-1">{description}</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          {/* Score Section */}
-          <div className="md:col-span-1 bg-card rounded-lg p-5 border border-border">
-            <h4 className="text-sm font-medium text-muted-foreground mb-4">Overall Score</h4>
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <span className={cn("text-5xl font-bold", getScoreColor(score))}>
-                  {score}
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-3xl font-bold">{score}</span>
+            <span className="text-xs text-muted-foreground">Score</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Performance Metrics */}
+        <div className="space-y-4 mb-6">
+          <h4 className="text-sm font-medium mb-3">Key Metrics</h4>
+          {metrics.map((metric) => (
+            <div key={metric.name} className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">{metric.name}</span>
+                <span className="text-sm font-medium">
+                  {metric.value}{metric.unit || '%'}
                 </span>
-                <span className="text-xl">/100</span>
               </div>
-            </div>
-          </div>
-          
-          {/* Metrics Section */}
-          <div className="md:col-span-2">
-            <h4 className="text-sm font-medium text-muted-foreground mb-4">Key Metrics</h4>
-            <div className="space-y-4">
-              {metrics.map((metric, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>{metric.name}</span>
-                    <span className="font-medium">
-                      {metric.value}{metric.unit} / {metric.target}{metric.unit}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary rounded-full transition-all duration-500"
-                      style={{ width: `${calculateProgress(metric.value, metric.target)}%` }}
-                    />
-                  </div>
+              <Progress 
+                value={metric.value} 
+                max={100}
+                className="h-2" 
+              />
+              {metric.target && (
+                <div className="flex justify-end">
+                  <span className="text-xs text-muted-foreground">
+                    Target: {metric.target}{metric.unit || '%'}
+                  </span>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          ))}
         </div>
         
         {/* Feedback Section */}
-        <div className="mt-8 space-y-6">
-          {/* Strengths */}
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-              <CheckCircle size={16} className="text-green-500 mr-2" />
-              What You're Doing Well
-            </h4>
-            <ul className="space-y-2 pl-6">
-              {feedback.good.map((item, index) => (
-                <li key={index} className="text-sm list-disc text-foreground">
-                  {item}
-                </li>
-              ))}
-            </ul>
+        {(feedback.good.length > 0 || feedback.improve.length > 0) && (
+          <div className="border-t pt-4">
+            <h4 className="text-sm font-medium mb-3">Feedback</h4>
+            
+            {/* Good Points */}
+            {feedback.good.length > 0 && (
+              <div className="mb-4">
+                <h5 className="text-xs font-medium text-green-600 mb-2">What You Did Well</h5>
+                <ul className="space-y-1">
+                  {feedback.good.map((point, i) => (
+                    <li key={`good-${i}`} className="flex text-sm">
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-500 shrink-0 mt-0.5" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Areas to Improve */}
+            {feedback.improve.length > 0 && (
+              <div>
+                <h5 className="text-xs font-medium text-amber-600 mb-2">Areas to Improve</h5>
+                <ul className="space-y-1">
+                  {feedback.improve.map((point, i) => (
+                    <li key={`improve-${i}`} className="flex text-sm">
+                      <XCircle className="h-4 w-4 mr-2 text-amber-500 shrink-0 mt-0.5" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          
-          {/* Areas for Improvement */}
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-              <AlertCircle size={16} className="text-yellow-500 mr-2" />
-              Areas to Improve
-            </h4>
-            <ul className="space-y-2 pl-6">
-              {feedback.improve.map((item, index) => (
-                <li key={index} className="text-sm list-disc text-foreground">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
