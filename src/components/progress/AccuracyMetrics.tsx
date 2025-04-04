@@ -2,23 +2,77 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { AccuracyMetric } from './types';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  ReferenceLine
+} from 'recharts';
 import { Info } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { format, subDays } from 'date-fns';
 
 interface AccuracyMetricsProps {
   metrics: AccuracyMetric[];
 }
 
-const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f43f5e', '#f59e0b'];
-
 const AccuracyMetrics = ({ metrics }: AccuracyMetricsProps) => {
-  // Prepare data for pie chart
-  const pieData = metrics.map((metric) => ({
-    name: metric.name,
-    value: metric.value,
-    target: metric.target,
-    description: metric.description
+  // Generate sample data for the Standard Celeration Chart
+  // In a real application, this would come from your backend
+  const generateCelerationData = () => {
+    const today = new Date();
+    const data = [];
+    
+    // Generate 14 days of sample data
+    for (let i = 13; i >= 0; i--) {
+      const date = subDays(today, i);
+      
+      // Random score that generally improves over time (with some variation)
+      const baseScore = 50 + (13 - i) * 3;
+      const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
+      const score = Math.max(1, Math.min(100, baseScore + randomVariation));
+      
+      data.push({
+        date: format(date, 'MMM dd'),
+        score: score,
+        // Semi-logarithmic scale value (for celeration chart)
+        logScore: Math.log10(score)
+      });
+    }
+    
+    return data;
+  };
+
+  const celerationData = generateCelerationData();
+  
+  // Calculate slope for trend line
+  const calculateTrendline = () => {
+    const xValues = celerationData.map((_, i) => i);
+    const yValues = celerationData.map(d => d.logScore);
+    
+    // Simple linear regression
+    const n = xValues.length;
+    const sumX = xValues.reduce((a, b) => a + b, 0);
+    const sumY = yValues.reduce((a, b) => a + b, 0);
+    const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+    const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    
+    return { slope, intercept };
+  };
+  
+  const { slope, intercept } = calculateTrendline();
+  
+  // Calculate trend line data points
+  const trendData = celerationData.map((point, i) => ({
+    date: point.date,
+    trend: Math.pow(10, intercept + slope * i)
   }));
 
   // Calculate average accuracy
@@ -27,32 +81,68 @@ const AccuracyMetrics = ({ metrics }: AccuracyMetricsProps) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Pie Chart */}
+        {/* Standard Celeration Chart */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <h4 className="font-medium mb-2">Accuracy Distribution</h4>
+          <h4 className="font-medium mb-2">Standard Celeration Chart</h4>
+          <p className="text-xs text-muted-foreground mb-2">Performance trends over time (logarithmic scale)</p>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, 'Accuracy']}
-                  labelFormatter={(name) => `${name}`}
+              <LineChart
+                data={celerationData}
+                margin={{
+                  top: 10,
+                  right: 10,
+                  left: 0,
+                  bottom: 20,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={50}
+                  tick={{ fontSize: 12 }}
                 />
-              </PieChart>
+                <YAxis 
+                  scale="log" 
+                  domain={[1, 100]}
+                  ticks={[1, 2, 5, 10, 20, 50, 100]} 
+                  tickFormatter={(value) => `${value}`}
+                />
+                <Tooltip 
+                  formatter={(value) => [`${value}`, 'Score']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2} 
+                  dot={{ r: 4 }} 
+                  activeDot={{ r: 6 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="trend" 
+                  data={trendData}
+                  stroke="#10b981" 
+                  strokeWidth={2} 
+                  strokeDasharray="5 5" 
+                  dot={false}
+                />
+                <ReferenceLine 
+                  y={70} 
+                  stroke="#f59e0b" 
+                  strokeDasharray="3 3" 
+                  label={{ 
+                    value: "Target", 
+                    position: "insideBottomRight",
+                    fill: "#f59e0b",
+                    fontSize: 12
+                  }} 
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -97,7 +187,7 @@ const AccuracyMetrics = ({ metrics }: AccuracyMetricsProps) => {
               </div>
               <Progress 
                 value={metric.value} 
-                className={`h-2 [&>div]:${
+                className={`h-2 ${
                   metric.value >= 80 ? "bg-green-500" : 
                   metric.value >= 60 ? "bg-yellow-500" : 
                   "bg-red-500"
