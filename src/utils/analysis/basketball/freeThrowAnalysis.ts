@@ -183,6 +183,8 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
   
   // Add an identifier that this came from free throw analysis
   result.analysisType = "freeThrow";
+  // Also add it to the result object directly to ensure it's passed through the system
+  result.result.analysisType = "freeThrow";
   
   return result;
 };

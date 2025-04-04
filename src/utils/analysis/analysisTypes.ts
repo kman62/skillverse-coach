@@ -15,6 +15,7 @@ export interface AnalysisResult {
     improve: string[];
   };
   coachingTips: string[];
+  analysisType?: string; // Added this optional property to AnalysisResult
 }
 
 // Interface for behavior analysis
@@ -56,5 +57,5 @@ export interface BehaviorAnalysis {
 export interface AnalysisResponse {
   result: AnalysisResult;
   behavior: BehaviorAnalysis;
-  analysisType?: string; // Added this optional property
+  analysisType?: string; // Keep this optional property in AnalysisResponse
 }
