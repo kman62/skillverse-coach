@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { analyzeVideo, saveAnalysisResult, AnalysisResponse } from '@/utils/videoAnalysisService';
-import { supabase } from '@/integrations/supabase/client';
+import { useAnalysisErrors } from './useAnalysisErrors';
+import { performVideoAnalysis, saveAnalysisData } from '@/utils/analysis/analysisService';
 
 // Add type definition for the window object to avoid TypeScript errors
 declare global {
@@ -20,6 +20,7 @@ export function useVideoAnalysis() {
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { handleAnalysisError } = useAnalysisErrors();
 
   const handleAnalyzeVideo = async (
     videoFile: File | null,
@@ -54,6 +55,7 @@ export function useVideoAnalysis() {
       return;
     }
     
+    // Reset states
     setIsAnalyzing(true);
     setApiError(null);
     setIsDemoMode(callbacks.forceDemoMode || false);
@@ -61,32 +63,22 @@ export function useVideoAnalysis() {
     
     callbacks.onAnalysisStart();
     
-    console.log('Starting analysis for', videoFile.name, 'in', sportId, drillId);
     console.log('Current user:', user.id);
     console.log('Demo mode:', callbacks.forceDemoMode ? 'ENABLED (user selected)' : 'DISABLED');
     
     try {
-      console.log('Initiating video analysis');
-      const analysisData: AnalysisResponse = await analyzeVideo(
-        videoFile, 
-        callbacks?.onAnalysisComplete ? drillId || "Technique" : "Technique",
-        sportId || "generic",
+      // Step 1: Analyze the video
+      const analysisResult = await performVideoAnalysis(
+        videoFile,
+        sportId,
+        drillId,
         callbacks.forceDemoMode
       );
       
-      console.log('Analysis completed successfully:', {
-        analysisType: analysisData.analysisType,
-        metrics: analysisData.result.metrics?.map((m: any) => m.name).join(', ')
-      });
+      // Update UI with results
+      callbacks.onAnalysisComplete(analysisResult.result, analysisResult.behavior);
       
-      // Ensure the analysisType is preserved in the callback
-      if (analysisData.analysisType) {
-        analysisData.result.analysisType = analysisData.analysisType;
-      }
-      
-      callbacks.onAnalysisComplete(analysisData.result, analysisData.behavior);
-      
-      if (window.usedFallbackData || callbacks.forceDemoMode) {
+      if (analysisResult.isDemoMode) {
         console.log('Using demo mode for analysis');
         setIsDemoMode(true);
         window.dispatchEvent(new CustomEvent('analysis-status', { 
@@ -94,37 +86,22 @@ export function useVideoAnalysis() {
         }));
       }
       
-      // Now save the analysis result to Supabase
+      // Step 2: Save the results
       setIsSaving(true);
-      console.log('Saving analysis result to database');
       
-      // Verify user is still authenticated before saving
-      if (!user) {
-        console.error('User is not authenticated when trying to save analysis');
-        throw new Error('Authentication required to save analysis results');
-      }
-      
-      // Log authentication status before saving
-      const { data: authData } = await supabase.auth.getSession();
-      console.log("Auth session before saving:", {
-        hasSession: !!authData?.session,
-        userId: authData?.session?.user?.id
-      });
-
-      // Try to save the result
-      const saveResult = await saveAnalysisResult(
+      // Save analysis results
+      const saveResult = await saveAnalysisData(
         videoFile,
-        sportId || "generic",
-        drillId || "technique",
-        analysisData.result,
-        analysisData.behavior
+        sportId,
+        drillId,
+        analysisResult.result,
+        analysisResult.behavior
       );
       
       if (saveResult?.id) {
         console.log('Analysis saved with ID:', saveResult.id);
         setAnalysisId(saveResult.id);
         
-        // Confirm success to user
         toast({
           title: "Analysis Saved",
           description: "Your analysis has been successfully saved to your account",
@@ -139,6 +116,7 @@ export function useVideoAnalysis() {
         });
       }
       
+      // Show success message
       toast({
         title: "Analysis Complete",
         description: isDemoMode || callbacks.forceDemoMode
@@ -146,41 +124,12 @@ export function useVideoAnalysis() {
           : "Your technique has been successfully analyzed and saved"
       });
     } catch (error) {
-      console.error("Analysis error:", error);
-      setApiError(error instanceof Error ? error.message : "Unknown error occurred");
-      
       if (error instanceof Error) {
+        setApiError(handleAnalysisError(error, navigate));
         callbacks.onAnalysisError(error);
-      }
-      
-      // Check for specific errors
-      if (error instanceof Error && 
-         (error.message.includes("exceeded the maximum allowed size") || 
-          error.message.includes("file size exceeds"))) {
-        toast({
-          title: "Video too large",
-          description: "Please upload a smaller video file (max 50MB)",
-          variant: "destructive"
-        });
-      } else if (error instanceof Error && error.message.includes("Authentication")) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in again to analyze videos",
-          variant: "destructive"
-        });
-        navigate('/auth');
-      } else if (error instanceof Error && error.message.includes("GPT-4o analysis failed")) {
-        toast({
-          title: "Analysis Service Error",
-          description: "The AI analysis service is currently unavailable. Please try again later or use demo mode.",
-          variant: "destructive"
-        });
       } else {
-        toast({
-          title: "Analysis Failed",
-          description: "There was an error analyzing your video. Please try again or enable demo mode.",
-          variant: "destructive"
-        });
+        setApiError("Unknown error occurred");
+        callbacks.onAnalysisError(new Error("Unknown error occurred"));
       }
     } finally {
       setIsAnalyzing(false);
