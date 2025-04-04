@@ -23,7 +23,8 @@ export const checkEdgeFunctionAvailability = async (): Promise<boolean> => {
       {
         body: { action: 'ping' },
         headers: {
-          'x-client-info': 'web-client-ping'
+          'x-client-info': 'web-client-ping',
+          'Content-Type': 'application/json'
         }
       }
     );

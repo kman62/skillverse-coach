@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -11,6 +12,19 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Ensure the request is not undefined before processing
+  if (!req) {
+    console.error("Request object is undefined");
+    return new Response(
+      JSON.stringify({ error: "Invalid request object" }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,7 +36,7 @@ serve(async (req) => {
         const contentType = req.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
           const jsonData = await req.json();
-          if (jsonData.action === 'ping') {
+          if (jsonData && jsonData.action === 'ping') {
             console.log("Received ping request");
             return new Response(
               JSON.stringify({ 
@@ -69,7 +83,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4o',
+              model: 'gpt-4o-mini',
               messages: [
                 { role: 'system', content: 'You are a helpful assistant.' },
                 { role: 'user', content: 'Say "API key is valid" if you can read this message.' }
@@ -139,7 +153,9 @@ serve(async (req) => {
 
       let formData;
       try {
-        formData = await req.formData();
+        // Clone the request before attempting to read formData
+        const clonedReq = req.clone();
+        formData = await clonedReq.formData();
         console.log("Request form data parsed successfully");
       } catch (formDataError) {
         console.error("Error parsing form data:", formDataError);
@@ -211,7 +227,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [
               { 
                 role: 'system', 
@@ -255,7 +271,7 @@ serve(async (req) => {
           analysisData.result.analysisType = "freeThrow";
           
           console.log("Free Throw Analysis metrics:", 
-            analysisData.result.metrics.map((m: any) => m.name).join(', '));
+            analysisData.result.metrics.map((m) => m.name).join(', '));
         }
         
         console.log("Analysis completed successfully");
@@ -277,6 +293,15 @@ serve(async (req) => {
           }
         );
       }
+    } else {
+      // Handle non-POST requests
+      return new Response(
+        JSON.stringify({ error: `Method ${req.method} not allowed` }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
   } catch (error) {
     console.error("Unhandled error in video analysis:", error);
@@ -338,7 +363,7 @@ function generatePromptForSport(sportId: string, drillName: string): string {
     `;
   }
 
-  const sportSpecificPrompts: Record<string, string> = {
+  const sportSpecificPrompts = {
     basketball: `Analyze a basketball player performing the ${drillName} drill. Consider dribbling technique, body positioning, balance, and control.`,
     baseball: `Analyze a baseball player's ${drillName} technique. Consider stance, grip, timing, and follow-through.`,
     football: `Analyze a football player's ${drillName} technique. Consider footwork, positioning, movement patterns, and execution.`,
@@ -433,7 +458,7 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     "Incorporate balance exercises into your training routine"
   ];
 
-  const metricsMap: Record<string, any[]> = {
+  const metricsMap = {
     basketball: [
       { name: "Ball Control", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 95, unit: "%" },
       { name: "Footwork", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 90, unit: "%" },

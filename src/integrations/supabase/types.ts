@@ -105,7 +105,11 @@ export type Database = {
           email_notifications: boolean | null
           full_name: string | null
           id: string
+          preferred_sport: string | null
+          privacy_level: string | null
+          skill_level: string | null
           theme_preference: string | null
+          training_frequency: string | null
           updated_at: string
           username: string | null
         }
@@ -116,7 +120,11 @@ export type Database = {
           email_notifications?: boolean | null
           full_name?: string | null
           id: string
+          preferred_sport?: string | null
+          privacy_level?: string | null
+          skill_level?: string | null
           theme_preference?: string | null
+          training_frequency?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -127,7 +135,11 @@ export type Database = {
           email_notifications?: boolean | null
           full_name?: string | null
           id?: string
+          preferred_sport?: string | null
+          privacy_level?: string | null
+          skill_level?: string | null
           theme_preference?: string | null
+          training_frequency?: string | null
           updated_at?: string
           username?: string | null
         }
