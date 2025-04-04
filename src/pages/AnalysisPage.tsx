@@ -12,6 +12,8 @@ const AnalysisPage = () => {
   const { sportId, drillId } = useParams<{ sportId: string; drillId: string }>();
   const { user } = useAuth();
   const [analysisStage, setAnalysisStage] = useState<string | null>(null);
+  const [usesDemoData, setUsesDemoData] = useState(false);
+  
   const {
     sport,
     drill,
@@ -36,6 +38,8 @@ const AnalysisPage = () => {
 
   const {
     handleAnalyzeVideo,
+    useDemoMode,
+    setUseDemoMode
   } = useVideoAnalysis();
 
   useEffect(() => {
@@ -49,6 +53,11 @@ const AnalysisPage = () => {
     const handleAnalysisStage = (event: CustomEvent) => {
       console.log("Analysis stage update:", event.detail.stage);
       setAnalysisStage(event.detail.stage);
+      
+      if (event.detail.stage === 'using-fallback-analysis' || 
+          event.detail.stage === 'using-demo-data') {
+        setUsesDemoData(true);
+      }
       
       if (event.detail.stage === 'analysis-complete' || 
           event.detail.stage === 'api-success-gpt4o' || 
@@ -71,6 +80,7 @@ const AnalysisPage = () => {
 
   const handleAnalyzeClick = async () => {
     setAnalysisStage('started');
+    setUsesDemoData(false);
     
     await handleAnalyzeVideo(
       videoFile,
@@ -82,9 +92,10 @@ const AnalysisPage = () => {
         onAnalysisStart: () => {
           setIsAnalyzing(true);
         },
-        onAnalysisComplete: (result, behavior) => {
+        onAnalysisComplete: (result, behavior, isDemoMode) => {
           setAnalysisResult(result);
           setBehaviorAnalysis(behavior);
+          setUsesDemoData(isDemoMode);
           
           setAnalysisStage('analysis-complete');
           
@@ -99,6 +110,11 @@ const AnalysisPage = () => {
         }
       }
     );
+  };
+
+  const handleDemoModeChange = (enabled: boolean) => {
+    setUseDemoMode(enabled);
+    console.log("Demo mode changed to:", enabled);
   };
 
   return (
@@ -118,6 +134,9 @@ const AnalysisPage = () => {
             onAnalyzeClick={handleAnalyzeClick}
             analysisStage={analysisStage}
             analysisWorking={!!analysisResult}
+            useDemoMode={useDemoMode}
+            onDemoModeChange={handleDemoModeChange}
+            usesDemoData={usesDemoData}
           />
         </div>
         
@@ -139,6 +158,7 @@ const AnalysisPage = () => {
             onRetry={handleAnalyzeClick}
             onPoseAnalysis={handlePoseAnalysis}
             analysisStage={analysisStage}
+            usesDemoData={usesDemoData}
           />
         </div>
       </div>

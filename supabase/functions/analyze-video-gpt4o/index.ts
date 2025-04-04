@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -12,7 +11,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Ensure the request is not undefined before processing
+  // Handle CORS preflight requests
   if (!req) {
     console.error("Request object is undefined");
     return new Response(
@@ -23,8 +22,7 @@ serve(async (req) => {
       }
     );
   }
-
-  // Handle CORS preflight requests
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -151,9 +149,21 @@ serve(async (req) => {
         );
       }
 
+      // Safely get form data
       let formData;
       try {
-        // Clone the request before attempting to read formData
+        // We need to clone the request before attempting to read its body
+        if (req.bodyUsed) {
+          return new Response(
+            JSON.stringify({ error: 'Request body has already been used.' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        // Clone the request before consuming the body
         const clonedReq = req.clone();
         formData = await clonedReq.formData();
         console.log("Request form data parsed successfully");
@@ -162,7 +172,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             error: 'Invalid form data provided. Could not parse request body.',
-            errorDetails: formDataError.message
+            errorDetails: formDataError instanceof Error ? formDataError.message : String(formDataError)
           }),
           { 
             status: 400, 
@@ -171,6 +181,7 @@ serve(async (req) => {
         );
       }
       
+      // Safely extract data from form data
       const sportId = formData.get('sportId')?.toString() || 'generic';
       const drillName = formData.get('drillName')?.toString() || 'technique';
       
@@ -307,8 +318,8 @@ serve(async (req) => {
     console.error("Unhandled error in video analysis:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "An unexpected error occurred during video analysis",
-        stack: error.stack,
+        error: error instanceof Error ? error.message : "An unexpected error occurred during video analysis",
+        stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       }), {
         status: 500,
