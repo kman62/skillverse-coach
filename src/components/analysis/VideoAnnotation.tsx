@@ -36,6 +36,13 @@ const VideoAnnotation = ({
     };
   }, [poseDetected]);
   
+  useEffect(() => {
+    // Log the analysis type when the component mounts or analysisResult changes
+    if (analysisResult && analysisResult.analysisType) {
+      console.log(`VideoAnnotation received analysis with type: ${analysisResult.analysisType}`);
+    }
+  }, [analysisResult]);
+  
   if (!videoFile) return null;
   
   return (
