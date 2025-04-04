@@ -58,7 +58,7 @@ const ResultsPanel = ({
   }
   
   return (
-    <div>
+    <div className="bg-card rounded-lg shadow-sm border border-border p-6">
       <h2 className="text-xl font-semibold mb-4 flex items-center">
         <BarChart className="mr-2 h-5 w-5 text-primary" />
         Analysis Results

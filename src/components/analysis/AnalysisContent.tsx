@@ -43,11 +43,11 @@ const AnalysisContent = ({
   analysisStage
 }: AnalysisContentProps) => {
   return (
-    <>
+    <div className="w-full">
       <BreadcrumbNav sport={sport} drill={drill} />
       <DrillInfo drill={drill} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div className="w-full">
         <ResultsPanel
           isAnalyzing={isAnalyzing || isSaving}
           analysisResult={analysisResult}
@@ -62,7 +62,7 @@ const AnalysisContent = ({
           analysisStage={analysisStage}
         />
       </div>
-    </>
+    </div>
   );
 };
 

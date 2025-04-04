@@ -39,7 +39,7 @@ const AnalysisPageLayout = ({
       <Navbar />
       
       <main className="flex-grow pt-24 pb-16">
-        <div className="container mx-auto px-6 md:px-12 pt-4">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           {heading && <h1 className="text-3xl font-bold mb-2">{heading}</h1>}
           {description && <p className="text-muted-foreground mb-6">{description}</p>}
           {children}

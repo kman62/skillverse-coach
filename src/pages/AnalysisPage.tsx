@@ -109,34 +109,38 @@ const AnalysisPage = () => {
       sport={sport}
       drill={drill}
     >
-      <div className="grid md:grid-cols-2 gap-6">
-        <VideoAnalysisPanel
-          videoFile={videoFile}
-          isAnalyzing={isAnalyzing}
-          onVideoSelected={handleVideoSelected}
-          onAnalyzeClick={handleAnalyzeClick}
-          analysisStage={analysisStage}
-          analysisWorking={!!analysisResult}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-5">
+          <VideoAnalysisPanel
+            videoFile={videoFile}
+            isAnalyzing={isAnalyzing}
+            onVideoSelected={handleVideoSelected}
+            onAnalyzeClick={handleAnalyzeClick}
+            analysisStage={analysisStage}
+            analysisWorking={!!analysisResult}
+          />
+        </div>
         
-        <AnalysisContent
-          sport={sport}
-          drill={drill}
-          videoFile={videoFile}
-          isAnalyzing={isAnalyzing}
-          isSaving={isSaving}
-          analysisResult={analysisResult}
-          behaviorAnalysis={behaviorAnalysis}
-          apiError={apiError}
-          analysisId={analysisId}
-          sportId={sportId}
-          drillId={drillId}
-          onVideoSelected={handleVideoSelected}
-          onAnalyzeClick={handleAnalyzeClick}
-          onRetry={handleAnalyzeClick}
-          onPoseAnalysis={handlePoseAnalysis}
-          analysisStage={analysisStage}
-        />
+        <div className="lg:col-span-7">
+          <AnalysisContent
+            sport={sport}
+            drill={drill}
+            videoFile={videoFile}
+            isAnalyzing={isAnalyzing}
+            isSaving={isSaving}
+            analysisResult={analysisResult}
+            behaviorAnalysis={behaviorAnalysis}
+            apiError={apiError}
+            analysisId={analysisId}
+            sportId={sportId}
+            drillId={drillId}
+            onVideoSelected={handleVideoSelected}
+            onAnalyzeClick={handleAnalyzeClick}
+            onRetry={handleAnalyzeClick}
+            onPoseAnalysis={handlePoseAnalysis}
+            analysisStage={analysisStage}
+          />
+        </div>
       </div>
     </AnalysisPageLayout>
   );
