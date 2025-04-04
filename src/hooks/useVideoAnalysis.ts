@@ -5,18 +5,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAnalysisErrors } from './useAnalysisErrors';
 import { performVideoAnalysis, saveAnalysisData } from '@/utils/analysis/analysisService';
 
-// Add type definition for the window object to avoid TypeScript errors
-declare global {
-  interface Window {
-    usedFallbackData?: boolean;
-  }
-}
-
 export function useVideoAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -31,8 +23,7 @@ export function useVideoAnalysis() {
     callbacks: {
       onAnalysisStart: () => void,
       onAnalysisComplete: (result: any, behavior: any) => void,
-      onAnalysisError: (error: Error) => void,
-      forceDemoMode?: boolean
+      onAnalysisError: (error: Error) => void
     }
   ) => {
     if (!videoFile) {
@@ -58,33 +49,22 @@ export function useVideoAnalysis() {
     // Reset states
     setIsAnalyzing(true);
     setApiError(null);
-    setIsDemoMode(callbacks.forceDemoMode || false);
     setAnalysisId(undefined);
     
     callbacks.onAnalysisStart();
     
     console.log('Current user:', user.id);
-    console.log('Demo mode:', callbacks.forceDemoMode ? 'ENABLED (user selected)' : 'DISABLED');
     
     try {
       // Step 1: Analyze the video
       const analysisResult = await performVideoAnalysis(
         videoFile,
         sportId,
-        drillId,
-        callbacks.forceDemoMode
+        drillId
       );
       
       // Update UI with results
       callbacks.onAnalysisComplete(analysisResult.result, analysisResult.behavior);
-      
-      if (analysisResult.isDemoMode) {
-        console.log('Using demo mode for analysis');
-        setIsDemoMode(true);
-        window.dispatchEvent(new CustomEvent('analysis-status', { 
-          detail: { isDemoMode: true } 
-        }));
-      }
       
       // Step 2: Save the results
       setIsSaving(true);
@@ -119,9 +99,7 @@ export function useVideoAnalysis() {
       // Show success message
       toast({
         title: "Analysis Complete",
-        description: isDemoMode || callbacks.forceDemoMode
-          ? "Your technique has been analyzed using demo mode" 
-          : "Your technique has been successfully analyzed and saved"
+        description: "Your technique has been successfully analyzed and saved"
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -141,11 +119,9 @@ export function useVideoAnalysis() {
     isAnalyzing,
     isSaving,
     apiError,
-    isDemoMode,
     analysisId,
     handleAnalyzeVideo,
     setApiError,
-    setIsDemoMode,
     setAnalysisId
   };
 }

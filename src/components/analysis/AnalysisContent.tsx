@@ -15,8 +15,6 @@ interface AnalysisContentProps {
   analysisResult: any | null;
   behaviorAnalysis: any | null;
   apiError: string | null;
-  isDemoMode: boolean;
-  onDemoModeChange: (enabled: boolean) => void;
   analysisId?: string;
   sportId?: string;
   drillId?: string;
@@ -36,8 +34,6 @@ const AnalysisContent = ({
   analysisResult,
   behaviorAnalysis,
   apiError,
-  isDemoMode,
-  onDemoModeChange,
   analysisId,
   sportId,
   drillId,
@@ -56,8 +52,6 @@ const AnalysisContent = ({
         <VideoAnalysisPanel
           videoFile={videoFile}
           isAnalyzing={isAnalyzing || isSaving}
-          isDemoMode={isDemoMode}
-          onDemoModeChange={onDemoModeChange}
           onVideoSelected={onVideoSelected}
           onAnalyzeClick={onAnalyzeClick}
           analysisStage={analysisStage}
@@ -69,7 +63,6 @@ const AnalysisContent = ({
           behaviorAnalysis={behaviorAnalysis}
           videoFile={videoFile}
           apiError={apiError}
-          isDemoMode={isDemoMode}
           onRetry={onRetry}
           analysisId={analysisId}
           sportId={sportId}

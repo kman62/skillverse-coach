@@ -25,8 +25,6 @@ const AnalysisPage = () => {
     setApiError,
     isSaving,
     setIsSaving,
-    isDemoMode,
-    setIsDemoMode,
     analysisId,
     setAnalysisId,
     poseMetrics,
@@ -105,22 +103,9 @@ const AnalysisPage = () => {
           // Ensure loading state is cleared
           setIsAnalyzing(false);
           setIsSaving(false);
-        },
-        forceDemoMode: isDemoMode
+        }
       }
     );
-  };
-
-  const handleDemoModeToggle = (enabled: boolean) => {
-    console.log(`Demo mode ${enabled ? 'enabled' : 'disabled'} by user`);
-    setIsDemoMode(enabled);
-    
-    // Reset any previous analysis when toggling
-    if (analysisResult) {
-      setAnalysisResult(null);
-      setBehaviorAnalysis(null);
-      setAnalysisStage(null);
-    }
   };
 
   return (
@@ -134,8 +119,6 @@ const AnalysisPage = () => {
         analysisResult={analysisResult}
         behaviorAnalysis={behaviorAnalysis}
         apiError={apiError}
-        isDemoMode={isDemoMode}
-        onDemoModeChange={handleDemoModeToggle}
         analysisId={analysisId}
         sportId={sportId}
         drillId={drillId}

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from "@/components/ui/progress";
 import { AlertTriangle } from 'lucide-react';
-import DemoModeToggle from './panel/DemoModeToggle';
 import ConnectionStatus from './panel/ConnectionStatus';
 import AnalysisStageIndicator from './panel/AnalysisStageIndicator';
 import AnalysisButton from './panel/AnalysisButton';
@@ -16,8 +15,6 @@ import { checkOpenAIApiKey } from '@/utils/api/apiKeyValidator';
 interface VideoAnalysisPanelProps {
   videoFile: File | null;
   isAnalyzing: boolean;
-  isDemoMode: boolean;
-  onDemoModeChange: (enabled: boolean) => void;
   onVideoSelected: (file: File) => void;
   onAnalyzeClick: () => void;
   analysisStage?: string | null;
@@ -26,8 +23,6 @@ interface VideoAnalysisPanelProps {
 const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
   videoFile,
   isAnalyzing,
-  isDemoMode,
-  onDemoModeChange,
   onVideoSelected,
   onAnalyzeClick,
   analysisStage
@@ -60,7 +55,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
       if (event.detail.stage.includes('error') || event.detail.stage.includes('failed')) {
         toast({
           title: "Analysis Error",
-          description: "There was an error analyzing your video. Try using Demo Mode instead.",
+          description: "There was an error analyzing your video.",
           variant: "destructive",
         });
       }
@@ -97,7 +92,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         setConnectionStatus('limited');
         toast({
           title: "Limited Connection",
-          description: "There may be issues with the GPT-4o connection. Consider using Demo Mode.",
+          description: "There may be issues with the GPT-4o connection.",
           variant: "destructive",
         });
       }
@@ -106,7 +101,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
       setConnectionStatus('offline');
       toast({
         title: "Connection Error",
-        description: "Unable to connect to the AI analysis service. Please use Demo Mode.",
+        description: "Unable to connect to the AI analysis service.",
         variant: "destructive",
       });
     } finally {
@@ -114,7 +109,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
     }
   };
 
-  const showDemoModeAlert = connectionStatus === 'offline' && !isDemoMode;
+  const showOfflineAlert = connectionStatus === 'offline';
 
   return (
     <Card className="w-full">
@@ -142,11 +137,11 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
           isAnalyzing={isAnalyzing}
         />
         
-        {showDemoModeAlert && (
+        {showOfflineAlert && (
           <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 flex items-start gap-2">
             <AlertTriangle size={16} className="text-yellow-700 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-yellow-700">
-              Connection to GPT-4o is unavailable. Enable Demo Mode below to analyze videos with pre-generated feedback.
+              Connection to GPT-4o is unavailable. Try again later.
             </p>
           </div>
         )}
@@ -157,17 +152,10 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
             videoFile={videoFile}
             isAnalyzing={isAnalyzing}
             onClick={onAnalyzeClick}
-            isDemoMode={isDemoMode}
           />
         </div>
         
-        <div className="flex w-full justify-between items-center">
-          <DemoModeToggle 
-            isDemoMode={isDemoMode} 
-            onToggle={onDemoModeChange} 
-            disabled={isAnalyzing} 
-          />
-          
+        <div className="flex justify-end w-full">
           <ConnectionCheck 
             isCheckingConnection={isCheckingConnection}
             onCheckConnection={checkConnectionStatus}

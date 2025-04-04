@@ -14,7 +14,6 @@ export function useAnalysisState() {
   const [behaviorAnalysis, setBehaviorAnalysis] = useState<any | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
   const [poseMetrics, setPoseMetrics] = useState<any>(null);
   const [detectionActive, setDetectionActive] = useState(false);
@@ -48,7 +47,6 @@ export function useAnalysisState() {
     setAnalysisResult(null);
     setBehaviorAnalysis(null);
     setApiError(null);
-    setIsDemoMode(false);
     setPoseMetrics(null);
     setDetectionActive(false);
   };
@@ -66,16 +64,6 @@ export function useAnalysisState() {
       console.log('Currently analyzing, skipping UI update');
       return;
     }
-    
-    // If we have metrics but no analysis result yet, create a simple one
-    // based on the MediaPipe detection
-    if (metrics && !analysisResult) {
-      console.log('Creating local analysis from MediaPipe metrics');
-      
-      // Note: We no longer create an immediate analysis here, this is now
-      // handled by the useVideoAnalysis hook when using local analysis mode
-      // This ensures the results are properly saved to the database
-    }
   };
 
   return {
@@ -92,8 +80,6 @@ export function useAnalysisState() {
     setApiError,
     isSaving,
     setIsSaving,
-    isDemoMode,
-    setIsDemoMode,
     analysisId,
     setAnalysisId,
     poseMetrics,

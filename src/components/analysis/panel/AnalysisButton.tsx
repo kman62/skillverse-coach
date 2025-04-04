@@ -1,20 +1,18 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { PlayIcon, Brain } from 'lucide-react';
+import { Brain } from 'lucide-react';
 
 interface AnalysisButtonProps {
   videoFile: File | null;
   isAnalyzing: boolean;
   onClick: () => void;
-  isDemoMode?: boolean;
 }
 
 const AnalysisButton = ({ 
   videoFile, 
   isAnalyzing, 
-  onClick,
-  isDemoMode = false
+  onClick
 }: AnalysisButtonProps) => {
   const buttonDisabled = !videoFile || isAnalyzing;
   
@@ -27,16 +25,14 @@ const AnalysisButton = ({
       {isAnalyzing ? (
         <>
           <span className="animate-pulse">
-            {isDemoMode ? "Running Demo Analysis..." : "Analyzing with GPT-4o..."}
+            Analyzing with GPT-4o...
           </span>
         </>
       ) : (
         <>
           <Brain size={18} className="mr-2" />
           {videoFile 
-            ? isDemoMode 
-              ? "Run Demo Analysis" 
-              : "Analyze with GPT-4o" 
+            ? "Analyze with GPT-4o" 
             : "Select Video to Analyze"}
         </>
       )}

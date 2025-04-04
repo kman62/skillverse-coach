@@ -4,7 +4,6 @@ import AnalysisCard from '@/components/ui/AnalysisCard';
 import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import VideoAnnotation from '@/components/analysis/VideoAnnotation';
 import FeedbackSystem from '@/components/analysis/FeedbackSystem';
-import DemoModeIndicator from '@/components/analysis/DemoModeIndicator';
 import CoachingTips from '@/components/analysis/CoachingTips';
 import ActionButtons from '@/components/analysis/ActionButtons';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +12,6 @@ interface AnalysisResultsProps {
   analysisResult: any;
   behaviorAnalysis: any;
   videoFile: File | null;
-  isDemoMode?: boolean;
   onRetry?: () => void;
   analysisId?: string;
   sportId?: string;
@@ -25,7 +23,6 @@ const AnalysisResults = ({
   analysisResult,
   behaviorAnalysis,
   videoFile,
-  isDemoMode,
   onRetry,
   analysisId,
   sportId,
@@ -54,16 +51,12 @@ const AnalysisResults = ({
         </div>
       )}
       
-      {/* Demo mode indicator */}
-      {isDemoMode && <DemoModeIndicator />}
-      
       {/* Video with annotations */}
       {videoFile && (
         <div className="rounded-lg border border-border overflow-hidden bg-black relative">
           <VideoAnnotation 
             videoFile={videoFile} 
             analysisResult={analysisResult}
-            isDemoMode={isDemoMode}
             onPoseAnalysis={onPoseAnalysis}
           />
         </div>

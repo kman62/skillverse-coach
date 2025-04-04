@@ -12,7 +12,6 @@ interface ResultsPanelProps {
   behaviorAnalysis: any | null;
   videoFile: File | null;
   apiError?: string | null;
-  isDemoMode?: boolean;
   onRetry?: () => void;
   analysisId?: string;
   sportId?: string;
@@ -27,7 +26,6 @@ const ResultsPanel = ({
   behaviorAnalysis, 
   videoFile, 
   apiError,
-  isDemoMode,
   onRetry,
   analysisId,
   sportId,
@@ -83,7 +81,6 @@ const ResultsPanel = ({
           analysisResult={analysisResult}
           behaviorAnalysis={behaviorAnalysis}
           videoFile={videoFile}
-          isDemoMode={isDemoMode}
           onRetry={onRetry}
           analysisId={analysisId}
           sportId={sportId}

@@ -6,14 +6,12 @@ import StatusIndicators from '@/components/analysis/annotations/StatusIndicators
 interface VideoAnnotationProps {
   videoFile: File | null;
   analysisResult: any | null;
-  isDemoMode?: boolean;
   onPoseAnalysis?: (metrics: any) => void;
 }
 
 const VideoAnnotation = ({ 
   videoFile, 
   analysisResult, 
-  isDemoMode,
   onPoseAnalysis 
 }: VideoAnnotationProps) => {
   const [poseDetected, setPoseDetected] = useState(false);
@@ -38,17 +36,6 @@ const VideoAnnotation = ({
     };
   }, [poseDetected]);
   
-  // In demo mode, always show pose as detected after a brief delay
-  useEffect(() => {
-    if (isDemoMode && !stablePoseDetection) {
-      const timer = setTimeout(() => {
-        setStablePoseDetection(true);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isDemoMode, stablePoseDetection]);
-  
   if (!videoFile) return null;
   
   return (
@@ -63,7 +50,6 @@ const VideoAnnotation = ({
       <StatusIndicators 
         detectionActive={detectionActive}
         poseDetected={stablePoseDetection}
-        isDemoMode={isDemoMode}
       />
     </div>
   );
