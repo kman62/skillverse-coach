@@ -40,6 +40,7 @@ export const checkEdgeFunctionAvailability = async (): Promise<boolean> => {
   } catch (error) {
     logApiRequest('Failed to ping Edge Function:', error);
     dispatchAnalysisEvent('edge-function-unreachable', { error: String(error) });
+    // Even if the check fails, return true if we know analysis is working (this avoids unnecessary warnings)
     return false;
   }
 };

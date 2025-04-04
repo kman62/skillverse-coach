@@ -5,10 +5,14 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface ConnectionStatusProps {
   connectionStatus: 'connected' | 'limited' | 'offline';
+  isWorking?: boolean;
 }
 
-const ConnectionStatus = ({ connectionStatus }: ConnectionStatusProps) => {
-  if (connectionStatus === 'connected') return null;
+const ConnectionStatus = ({ connectionStatus, isWorking = false }: ConnectionStatusProps) => {
+  // If the connection is showing as limited but we know it's working, don't display an alert
+  if (connectionStatus === 'connected' || (connectionStatus === 'limited' && isWorking)) {
+    return null;
+  }
   
   return (
     <Alert variant={connectionStatus === 'limited' ? 'default' : 'destructive'} className="mb-4">

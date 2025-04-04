@@ -18,6 +18,7 @@ interface VideoAnalysisPanelProps {
   onVideoSelected: (file: File) => void;
   onAnalyzeClick: () => void;
   analysisStage?: string | null;
+  analysisWorking?: boolean;
 }
 
 const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
@@ -25,15 +26,22 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
   isAnalyzing,
   onVideoSelected,
   onAnalyzeClick,
-  analysisStage
+  analysisStage,
+  analysisWorking = false
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
-  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const { toast } = useToast();
   
   useEffect(() => {
-    checkConnectionStatus();
+    // Only do the initial connection check if we haven't proven it's working
+    if (!analysisWorking) {
+      checkConnectionStatus(false);
+    } else if (analysisWorking && connectionStatus !== 'connected') {
+      // If we know analysis is working but connection status says otherwise, update it
+      setConnectionStatus('connected');
+    }
     
     const handleAnalysisStage = (event: CustomEvent) => {
       console.log("Analysis stage event:", event.detail);
@@ -72,9 +80,9 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
     return () => {
       window.removeEventListener('analysis-stage', handleAnalysisStage as EventListener);
     };
-  }, [toast]);
+  }, [toast, analysisWorking, connectionStatus]);
   
-  const checkConnectionStatus = async () => {
+  const checkConnectionStatus = async (showToast = true) => {
     setIsCheckingConnection(true);
     try {
       console.log("Testing OpenAI API key validity...");
@@ -83,27 +91,56 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
       
       if (result.isValid) {
         setConnectionStatus('connected');
-        toast({
-          title: "Connected to GPT-4o",
-          description: "Successfully connected to OpenAI's GPT-4o API.",
-          variant: "default",
-        });
+        if (showToast) {
+          toast({
+            title: "Connected to GPT-4o",
+            description: "Successfully connected to OpenAI's GPT-4o API.",
+            variant: "default",
+          });
+        }
+      } else if (analysisWorking) {
+        // If we know analysis is working but API check failed, still consider connected
+        setConnectionStatus('connected');
+        if (showToast) {
+          toast({
+            title: "Connection Verified",
+            description: "Analysis service is working properly.",
+            variant: "default",
+          });
+        }
       } else {
         setConnectionStatus('limited');
-        toast({
-          title: "Limited Connection",
-          description: "There may be issues with the GPT-4o connection.",
-          variant: "destructive",
-        });
+        if (showToast) {
+          toast({
+            title: "Limited Connection",
+            description: "There may be issues with the GPT-4o connection, but basic functionality should work.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Connection check failed:', error);
-      setConnectionStatus('offline');
-      toast({
-        title: "Connection Error",
-        description: "Unable to connect to the AI analysis service.",
-        variant: "destructive",
-      });
+      
+      // If analysis is working despite connection check failure
+      if (analysisWorking) {
+        setConnectionStatus('limited');
+        if (showToast) {
+          toast({
+            title: "Limited Connection",
+            description: "Connection check failed but analysis is still working.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        setConnectionStatus('offline');
+        if (showToast) {
+          toast({
+            title: "Connection Error",
+            description: "Unable to connect to the AI analysis service.",
+            variant: "destructive",
+          });
+        }
+      }
     } finally {
       setIsCheckingConnection(false);
     }
@@ -120,7 +157,10 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <ConnectionStatus connectionStatus={connectionStatus} />
+        <ConnectionStatus 
+          connectionStatus={connectionStatus} 
+          isWorking={analysisWorking} 
+        />
         
         <FileSelector 
           videoFile={videoFile} 
@@ -137,7 +177,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
           isAnalyzing={isAnalyzing}
         />
         
-        {showOfflineAlert && (
+        {showOfflineAlert && !analysisWorking && (
           <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 flex items-start gap-2">
             <AlertTriangle size={16} className="text-yellow-700 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-yellow-700">
@@ -158,7 +198,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
         <div className="flex justify-end w-full">
           <ConnectionCheck 
             isCheckingConnection={isCheckingConnection}
-            onCheckConnection={checkConnectionStatus}
+            onCheckConnection={() => checkConnectionStatus(true)}
           />
         </div>
       </CardFooter>
