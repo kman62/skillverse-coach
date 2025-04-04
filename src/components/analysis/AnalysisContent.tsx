@@ -2,7 +2,6 @@
 import React from 'react';
 import BreadcrumbNav from '@/components/analysis/BreadcrumbNav';
 import DrillInfo from '@/components/analysis/DrillInfo';
-import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
 import ResultsPanel from '@/components/analysis/ResultsPanel';
 import { Sport, Drill } from '@/lib/constants';
 
@@ -49,14 +48,6 @@ const AnalysisContent = ({
       <DrillInfo drill={drill} />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <VideoAnalysisPanel
-          videoFile={videoFile}
-          isAnalyzing={isAnalyzing || isSaving}
-          onVideoSelected={onVideoSelected}
-          onAnalyzeClick={onAnalyzeClick}
-          analysisStage={analysisStage}
-        />
-        
         <ResultsPanel
           isAnalyzing={isAnalyzing || isSaving}
           analysisResult={analysisResult}
