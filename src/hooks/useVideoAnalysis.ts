@@ -10,7 +10,6 @@ export function useVideoAnalysis() {
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
-  const [useDemoMode, setUseDemoMode] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { handleAnalysisError } = useAnalysisErrors();
@@ -23,7 +22,7 @@ export function useVideoAnalysis() {
     navigate: (path: string) => void,
     callbacks: {
       onAnalysisStart: () => void,
-      onAnalysisComplete: (result: any, behavior: any, isDemoMode: boolean) => void,
+      onAnalysisComplete: (result: any, behavior: any) => void,
       onAnalysisError: (error: Error) => void
     }
   ) => {
@@ -61,12 +60,11 @@ export function useVideoAnalysis() {
       const analysisResult = await performVideoAnalysis(
         videoFile,
         sportId,
-        drillId,
-        useDemoMode
+        drillId
       );
       
       // Update UI with results
-      callbacks.onAnalysisComplete(analysisResult.result, analysisResult.behavior, analysisResult.isDemoMode);
+      callbacks.onAnalysisComplete(analysisResult.result, analysisResult.behavior);
       
       // Step 2: Save the results
       setIsSaving(true);
@@ -122,8 +120,6 @@ export function useVideoAnalysis() {
     isSaving,
     apiError,
     analysisId,
-    useDemoMode,
-    setUseDemoMode,
     handleAnalyzeVideo,
     setApiError,
     setAnalysisId

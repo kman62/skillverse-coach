@@ -11,18 +11,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (!req) {
-    console.error("Request object is undefined");
-    return new Response(
-      JSON.stringify({ error: "Invalid request object" }),
-      { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -34,7 +22,7 @@ serve(async (req) => {
         const contentType = req.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
           const jsonData = await req.json();
-          if (jsonData && jsonData.action === 'ping') {
+          if (jsonData.action === 'ping') {
             console.log("Received ping request");
             return new Response(
               JSON.stringify({ 
@@ -81,7 +69,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4o-mini',
+              model: 'gpt-4o',
               messages: [
                 { role: 'system', content: 'You are a helpful assistant.' },
                 { role: 'user', content: 'Say "API key is valid" if you can read this message.' }
@@ -149,30 +137,16 @@ serve(async (req) => {
         );
       }
 
-      // Safely get form data
       let formData;
       try {
-        // We need to clone the request before attempting to read its body
-        if (req.bodyUsed) {
-          return new Response(
-            JSON.stringify({ error: 'Request body has already been used.' }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-        
-        // Clone the request before consuming the body
-        const clonedReq = req.clone();
-        formData = await clonedReq.formData();
+        formData = await req.formData();
         console.log("Request form data parsed successfully");
       } catch (formDataError) {
         console.error("Error parsing form data:", formDataError);
         return new Response(
           JSON.stringify({ 
             error: 'Invalid form data provided. Could not parse request body.',
-            errorDetails: formDataError instanceof Error ? formDataError.message : String(formDataError)
+            errorDetails: formDataError.message
           }),
           { 
             status: 400, 
@@ -181,7 +155,6 @@ serve(async (req) => {
         );
       }
       
-      // Safely extract data from form data
       const sportId = formData.get('sportId')?.toString() || 'generic';
       const drillName = formData.get('drillName')?.toString() || 'technique';
       
@@ -238,7 +211,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o',
             messages: [
               { 
                 role: 'system', 
@@ -282,7 +255,7 @@ serve(async (req) => {
           analysisData.result.analysisType = "freeThrow";
           
           console.log("Free Throw Analysis metrics:", 
-            analysisData.result.metrics.map((m) => m.name).join(', '));
+            analysisData.result.metrics.map((m: any) => m.name).join(', '));
         }
         
         console.log("Analysis completed successfully");
@@ -304,22 +277,13 @@ serve(async (req) => {
           }
         );
       }
-    } else {
-      // Handle non-POST requests
-      return new Response(
-        JSON.stringify({ error: `Method ${req.method} not allowed` }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
     }
   } catch (error) {
     console.error("Unhandled error in video analysis:", error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "An unexpected error occurred during video analysis",
-        stack: error instanceof Error ? error.stack : undefined,
+        error: error.message || "An unexpected error occurred during video analysis",
+        stack: error.stack,
         timestamp: new Date().toISOString()
       }), {
         status: 500,
@@ -374,7 +338,7 @@ function generatePromptForSport(sportId: string, drillName: string): string {
     `;
   }
 
-  const sportSpecificPrompts = {
+  const sportSpecificPrompts: Record<string, string> = {
     basketball: `Analyze a basketball player performing the ${drillName} drill. Consider dribbling technique, body positioning, balance, and control.`,
     baseball: `Analyze a baseball player's ${drillName} technique. Consider stance, grip, timing, and follow-through.`,
     football: `Analyze a football player's ${drillName} technique. Consider footwork, positioning, movement patterns, and execution.`,
@@ -469,7 +433,7 @@ function processGPT4oResponse(gptResponse: string, sportId: string, drillName: s
     "Incorporate balance exercises into your training routine"
   ];
 
-  const metricsMap = {
+  const metricsMap: Record<string, any[]> = {
     basketball: [
       { name: "Ball Control", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 95, unit: "%" },
       { name: "Footwork", value: overallScore + Math.floor(Math.random() * 10) - 5, target: 90, unit: "%" },

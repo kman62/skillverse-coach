@@ -100,46 +100,31 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          bio: string | null
           created_at: string
           email_notifications: boolean | null
           full_name: string | null
           id: string
-          preferred_sport: string | null
-          privacy_level: string | null
-          skill_level: string | null
           theme_preference: string | null
-          training_frequency: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
-          bio?: string | null
           created_at?: string
           email_notifications?: boolean | null
           full_name?: string | null
           id: string
-          preferred_sport?: string | null
-          privacy_level?: string | null
-          skill_level?: string | null
           theme_preference?: string | null
-          training_frequency?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
-          bio?: string | null
           created_at?: string
           email_notifications?: boolean | null
           full_name?: string | null
           id?: string
-          preferred_sport?: string | null
-          privacy_level?: string | null
-          skill_level?: string | null
           theme_preference?: string | null
-          training_frequency?: string | null
           updated_at?: string
           username?: string | null
         }

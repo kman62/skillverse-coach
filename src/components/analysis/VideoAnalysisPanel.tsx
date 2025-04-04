@@ -9,8 +9,6 @@ import AnalysisStageIndicator from './panel/AnalysisStageIndicator';
 import AnalysisButton from './panel/AnalysisButton';
 import FileSelector from './panel/FileSelector';
 import ConnectionCheck from './panel/ConnectionCheck';
-import DemoModeToggle from './panel/DemoModeToggle';
-import DemoModeAlert from './panel/DemoModeAlert';
 import { useToast } from '@/hooks/use-toast';
 import { checkOpenAIApiKey } from '@/utils/api/apiKeyValidator';
 
@@ -21,9 +19,6 @@ interface VideoAnalysisPanelProps {
   onAnalyzeClick: () => void;
   analysisStage?: string | null;
   analysisWorking?: boolean;
-  useDemoMode?: boolean;
-  onDemoModeChange?: (enabled: boolean) => void;
-  usesDemoData?: boolean;
 }
 
 const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
@@ -32,10 +27,7 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
   onVideoSelected,
   onAnalyzeClick,
   analysisStage,
-  analysisWorking = false,
-  useDemoMode = false,
-  onDemoModeChange,
-  usesDemoData = false
+  analysisWorking = false
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'limited' | 'offline'>('connected');
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
@@ -189,23 +181,10 @@ const VideoAnalysisPanel: React.FC<VideoAnalysisPanelProps> = ({
           <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 flex items-start gap-2">
             <AlertTriangle size={16} className="text-yellow-700 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-yellow-700">
-              Connection to GPT-4o is unavailable. Try again later or enable Demo Mode below.
+              Connection to GPT-4o is unavailable. Try again later.
             </p>
           </div>
         )}
-        
-        {onDemoModeChange && (
-          <DemoModeToggle 
-            useDemoMode={useDemoMode}
-            onToggle={onDemoModeChange}
-            disabled={isAnalyzing}
-          />
-        )}
-        
-        <DemoModeAlert 
-          usesDemoData={usesDemoData || false}
-          isAnalyzing={isAnalyzing}
-        />
       </CardContent>
       <CardFooter className="flex flex-col gap-4">
         <div className="w-full">
