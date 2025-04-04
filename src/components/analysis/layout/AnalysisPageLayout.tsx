@@ -7,14 +7,20 @@ import { Sport, Drill } from '@/lib/constants';
 
 interface AnalysisPageLayoutProps {
   sport: Sport | null;
-  drill: Drill | null;
+  drill?: Drill | null;
   children: React.ReactNode;
+  heading?: string;
+  description?: string;
+  backLink?: string;
 }
 
 const AnalysisPageLayout = ({ 
   sport, 
   drill,
-  children 
+  children,
+  heading,
+  description,
+  backLink
 }: AnalysisPageLayoutProps) => {
   if (!sport || !drill) {
     return (
@@ -34,6 +40,8 @@ const AnalysisPageLayout = ({
       
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-6 md:px-12 pt-4">
+          {heading && <h1 className="text-3xl font-bold mb-2">{heading}</h1>}
+          {description && <p className="text-muted-foreground mb-6">{description}</p>}
           {children}
         </div>
       </main>

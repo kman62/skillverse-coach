@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -106,6 +107,7 @@ const AnalysisPage = () => {
       description={drill?.description || 'Analyze your technique with AI'}
       backLink={`/sports/${sportId}/drills`}
       sport={sport}
+      drill={drill}
     >
       <div className="grid md:grid-cols-2 gap-6">
         <VideoAnalysisPanel
