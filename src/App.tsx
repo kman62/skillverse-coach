@@ -33,18 +33,14 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Public routes */}
+              {/* All routes are now public for testing */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
-
-              {/* Protected routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/sports/:sportId" element={<DrillsPage />} />
-                <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
-                <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
-                <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-              </Route>
+              <Route path="/sports/:sportId" element={<DrillsPage />} />
+              <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
+              <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
+              <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
