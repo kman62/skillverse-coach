@@ -24,7 +24,7 @@ export function useAnalysisErrors() {
         description: "Please sign in again to analyze videos",
         variant: "destructive"
       });
-      navigate('/auth');
+      // navigate('/auth'); // Disabled for testing
     } else if (error.message.includes("GPT-4o analysis failed")) {
       toast({
         title: "Analysis Service Error",

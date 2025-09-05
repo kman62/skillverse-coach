@@ -11,10 +11,10 @@ const AuthPage = () => {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
-  // Redirect if user is already logged in
-  if (user && !isLoading) {
-    return <Navigate to="/" replace />;
-  }
+  // Remove redirect for testing
+  // if (user && !isLoading) {
+  //   return <Navigate to="/" replace />;
+  // }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-background/70 to-background p-4">
