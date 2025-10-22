@@ -10,9 +10,10 @@ import { ReelPreviewModal } from "@/components/highlight-reel/ReelPreviewModal";
 import { HighlightReelAnalysis } from "@/types/highlightReel";
 import { Clip, Feedback } from "@/types/reelTypes";
 import { Button } from "@/components/ui/button";
-import { Upload, ArrowLeft, Play } from "lucide-react";
+import { Upload, ArrowLeft, Play, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeClip, extractFrameFromVideo } from "@/utils/analysis/videoAnalysisService";
 
 // Mock data for demonstration
 const mockAnalysis: HighlightReelAnalysis = {
@@ -154,6 +155,8 @@ const HighlightReelPage = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedClips, setSelectedClips] = useState<Clip[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [feedback] = useState<Feedback>({
     athlete: "**Great performance!** Your composure under pressure was excellent, maintaining 87.5% consistency throughout the game. Your initiative in spacing created multiple scoring opportunities.",
     parents: "Your athlete showed tremendous growth in leadership and decision-making. The ability to maintain high performance under stress is a key indicator of future success at higher levels of competition.",
@@ -164,7 +167,7 @@ const HighlightReelPage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type.startsWith('video/')) {
@@ -172,18 +175,52 @@ const HighlightReelPage = () => {
         const url = URL.createObjectURL(file);
         setVideoUrl(url);
         
-        // Generate sample clips based on the analysis data
-        const clips: Clip[] = [
-          { id: '1', startTime: 5.0, endTime: 15.0, analysis: mockAnalysis },
-          { id: '2', startTime: 23.0, endTime: 35.0, analysis: mockAnalysis },
-          { id: '3', startTime: 47.0, endTime: 58.0, analysis: mockAnalysis }
-        ];
-        setSelectedClips(clips);
-        
         toast({
-          title: "Video uploaded successfully",
-          description: `${file.name} is now ready for analysis`,
+          title: "Video uploaded",
+          description: `${file.name} - Starting analysis...`,
         });
+
+        // Start analysis
+        setIsAnalyzing(true);
+        setAnalysisProgress('Extracting frames from video...');
+        
+        try {
+          const frameData = await extractFrameFromVideo(file);
+          
+          setAnalysisProgress('Analyzing performance with AI...');
+          
+          const playerInfo = {
+            name: 'Player',
+            jerseyNumber: '23',
+            position: 'Point Guard'
+          };
+
+          const analysisData = await analyzeClip(frameData, playerInfo);
+          
+          // Generate sample clips with analysis
+          const clips: Clip[] = [
+            { id: '1', startTime: 5.0, endTime: 15.0, analysis: mockAnalysis },
+            { id: '2', startTime: 23.0, endTime: 35.0, analysis: mockAnalysis },
+            { id: '3', startTime: 47.0, endTime: 58.0, analysis: mockAnalysis }
+          ];
+          setSelectedClips(clips);
+          
+          setAnalysisProgress('Analysis complete!');
+          toast({
+            title: "Analysis complete",
+            description: "Your video has been analyzed successfully",
+          });
+        } catch (error) {
+          console.error('Analysis error:', error);
+          toast({
+            title: "Analysis failed",
+            description: "There was an error analyzing your video. Please try again.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsAnalyzing(false);
+          setAnalysisProgress('');
+        }
       } else {
         toast({
           title: "Invalid file type",
@@ -225,12 +262,22 @@ const HighlightReelPage = () => {
               accept="video/*"
               onChange={handleFileChange}
               className="hidden"
+              disabled={isAnalyzing}
             />
-            <Button onClick={handleUploadClick} className="gap-2">
-              <Upload className="w-4 h-4" />
-              Upload Video
+            <Button onClick={handleUploadClick} className="gap-2" disabled={isAnalyzing}>
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Upload Video
+                </>
+              )}
             </Button>
-            {videoUrl && selectedClips.length > 0 && (
+            {videoUrl && selectedClips.length > 0 && !isAnalyzing && (
               <Button onClick={handlePreviewReel} className="gap-2" variant="secondary">
                 <Play className="w-4 h-4" />
                 Preview Reel
@@ -245,6 +292,18 @@ const HighlightReelPage = () => {
             Complete Performance Intangible Framework Assessment
           </p>
         </div>
+
+        {isAnalyzing && analysisProgress && (
+          <div className="bg-card rounded-lg border p-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <div>
+                <h3 className="font-semibold">Processing Video</h3>
+                <p className="text-sm text-muted-foreground">{analysisProgress}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           {videoUrl && (

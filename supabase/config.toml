@@ -18,3 +18,6 @@ port = 54324
 [functions]
 [functions.analyze-video-gpt4o]
 verify_jwt = false
+[functions.analyze-clip]
+verify_jwt = false
+
