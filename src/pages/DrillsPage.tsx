@@ -117,22 +117,6 @@ const DrillsPage = () => {
         </div>
       )}
 
-      <div className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4 flex items-center">
-          <BookOpen className="mr-2 h-5 w-5 text-primary" />
-          Technique Drills
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sport.drills.map((drill) => (
-            <DrillCard
-              key={drill.id}
-              sportId={sport.id}
-              drill={drill}
-            />
-          ))}
-        </div>
-      </div>
-
       {sport.teamAnalysis && sport.teamAnalysis.length > 0 && (
         <div className="mb-10">
           <h2 className="text-2xl font-semibold mb-4 flex items-center">
@@ -150,6 +134,22 @@ const DrillsPage = () => {
           </div>
         </div>
       )}
+
+      <div className="mb-10">
+        <h2 className="text-2xl font-semibold mb-4 flex items-center">
+          <BookOpen className="mr-2 h-5 w-5 text-primary" />
+          Technique Drills
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sport.drills.map((drill) => (
+            <DrillCard
+              key={drill.id}
+              sportId={sport.id}
+              drill={drill}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

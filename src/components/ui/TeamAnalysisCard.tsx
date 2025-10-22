@@ -40,7 +40,7 @@ const TeamAnalysisCard = ({ sportId, analysis }: TeamAnalysisCardProps) => {
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full">
-          <Link to={`/analysis/${sportId}/team/${analysis.id}`}>
+          <Link to="/highlight-reel">
             Analyze Game <ChevronRight className="w-4 h-4 ml-1" />
           </Link>
         </Button>
