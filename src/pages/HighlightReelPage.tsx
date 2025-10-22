@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MetadataCard } from "@/components/highlight-reel/MetadataCard";
 import { PlayContextCard } from "@/components/highlight-reel/PlayContextCard";
 import { TangiblePerformanceCard } from "@/components/highlight-reel/TangiblePerformanceCard";
@@ -10,6 +10,7 @@ import { HighlightReelAnalysis } from "@/types/highlightReel";
 import { Button } from "@/components/ui/button";
 import { Upload, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data for demonstration
 const mockAnalysis: HighlightReelAnalysis = {
@@ -144,7 +145,32 @@ const mockAnalysis: HighlightReelAnalysis = {
 
 const HighlightReelPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [analysis] = useState<HighlightReelAnalysis>(mockAnalysis);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('video/')) {
+        toast({
+          title: "Video uploaded",
+          description: `${file.name} ready for analysis`,
+        });
+        // TODO: Add video processing logic here
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a video file",
+          variant: "destructive"
+        });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,10 +184,19 @@ const HighlightReelPage = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Basketball
           </Button>
-          <Button className="gap-2">
-            <Upload className="w-4 h-4" />
-            Upload Video
-          </Button>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button onClick={handleUploadClick} className="gap-2">
+              <Upload className="w-4 h-4" />
+              Upload Video
+            </Button>
+          </div>
         </div>
 
         <div className="mb-8">
