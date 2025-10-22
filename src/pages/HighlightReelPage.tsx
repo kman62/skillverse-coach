@@ -148,6 +148,8 @@ const HighlightReelPage = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [analysis] = useState<HighlightReelAnalysis>(mockAnalysis);
+  const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -157,11 +159,13 @@ const HighlightReelPage = () => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type.startsWith('video/')) {
+        setUploadedVideo(file);
+        const url = URL.createObjectURL(file);
+        setVideoUrl(url);
         toast({
-          title: "Video uploaded",
-          description: `${file.name} ready for analysis`,
+          title: "Video uploaded successfully",
+          description: `${file.name} is now ready for analysis`,
         });
-        // TODO: Add video processing logic here
       } else {
         toast({
           title: "Invalid file type",
@@ -207,6 +211,24 @@ const HighlightReelPage = () => {
         </div>
 
         <div className="space-y-6">
+          {videoUrl && (
+            <div className="bg-card rounded-lg border p-6">
+              <h3 className="text-xl font-bold mb-4">Uploaded Video</h3>
+              <video 
+                src={videoUrl} 
+                controls 
+                className="w-full rounded-lg max-h-[500px]"
+              >
+                Your browser does not support the video tag.
+              </video>
+              {uploadedVideo && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {uploadedVideo.name} ({(uploadedVideo.size / (1024 * 1024)).toFixed(2)} MB)
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <MetadataCard metadata={analysis.metadata} />
             <PlayContextCard context={analysis.play_context} />
