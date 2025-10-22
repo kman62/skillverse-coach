@@ -1,226 +1,120 @@
-import { useState, useRef } from "react";
-import { MetadataCard } from "@/components/highlight-reel/MetadataCard";
-import { PlayContextCard } from "@/components/highlight-reel/PlayContextCard";
-import { TangiblePerformanceCard } from "@/components/highlight-reel/TangiblePerformanceCard";
-import { IntangibleMetricsCard } from "@/components/highlight-reel/IntangibleMetricsCard";
-import { IntangiblesRadarChart } from "@/components/highlight-reel/IntangiblesRadarChart";
-import { IntegratedInsightCard } from "@/components/highlight-reel/IntegratedInsightCard";
-import { CoachingRecommendationsCard } from "@/components/highlight-reel/CoachingRecommendationsCard";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { ReelPreviewModal } from "@/components/highlight-reel/ReelPreviewModal";
-import { HighlightReelAnalysis } from "@/types/highlightReel";
-import { Clip, Feedback } from "@/types/reelTypes";
+import { PlayerDetailsForm } from "@/components/highlight-reel/PlayerDetailsForm";
+import { ClipCard } from "@/components/highlight-reel/ClipCard";
+import { AnalysisDetailModal } from "@/components/highlight-reel/AnalysisDetailModal";
+import { Clip, Feedback, PlayerInfo } from "@/types/reelTypes";
 import { Button } from "@/components/ui/button";
-import { Upload, ArrowLeft, Play, Loader2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Upload, ArrowLeft, Loader2, Film } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeClip, extractFrameFromVideo } from "@/utils/analysis/videoAnalysisService";
+import { generateFeedback } from "@/utils/analysis/feedbackService";
 
-// Mock data for demonstration
-const mockAnalysis: HighlightReelAnalysis = {
-  metadata: {
-    video_id: "game_2025_001",
-    team: "Warriors",
-    opponent: "Lakers",
-    game_date: "2025-01-15",
-    clip_start_time: "10:23:45",
-    clip_end_time: "10:24:15",
-    analyst: "Coach Anderson",
-    source_method: ["computer_vision", "manual_review"]
-  },
-  play_context: {
-    possession_phase: "offense",
-    play_type: "pick_and_roll",
-    formation: "4-out-1-in",
-    situation: "live_play"
-  },
-  tangible_performance: {
-    actions: [
-      {
-        event_type: "screen",
-        timestamp: "10:23:47",
-        player_role: "C",
-        result: "success",
-        metrics: {
-          spacing_efficiency_score: 0.85,
-          defender_proximity_m: 1.2
-        }
-      },
-      {
-        event_type: "drive",
-        timestamp: "10:23:50",
-        player_role: "PG",
-        result: "success",
-        metrics: {
-          reaction_time_sec: 0.4,
-          distance_m: 4.5
-        }
-      },
-      {
-        event_type: "pass",
-        timestamp: "10:23:53",
-        player_role: "PG",
-        result: "success",
-        metrics: {
-          angle_deg: 45,
-          defender_proximity_m: 2.1
-        }
-      }
-    ],
-    overall_summary: {
-      execution_quality: 0.88,
-      decision_accuracy: 0.92,
-      spacing_index: 0.85,
-      transition_speed_sec: 3.2
-    }
-  },
-  intangible_performance: {
-    courage: {
-      definition: "Approaches/attacks stressor situations within 2s",
-      observed_instances: 5,
-      successful_instances: 4,
-      percentage_correct: 80,
-      qualitative_example: "Immediate attack post-turnover with confident drive to basket"
-    },
-    composure: {
-      definition: "Returns to athletic stance within 2s of play stoppage",
-      observed_instances: 8,
-      successful_instances: 7,
-      percentage_correct: 87.5,
-      qualitative_example: "Quick stance reset after whistle, maintaining defensive readiness"
-    },
-    initiative: {
-      definition: "Enters correct spacing/formation within 3s",
-      observed_instances: 6,
-      successful_instances: 5,
-      percentage_correct: 83.3,
-      qualitative_example: "Timely off-ball fill to right corner creating optimal spacing"
-    },
-    leadership: {
-      definition: "Constructive communication within 3s of whistle",
-      observed_instances: 4,
-      successful_instances: 3,
-      percentage_correct: 75,
-      qualitative_example: "Clear verbal callout directing teammate rotation"
-    },
-    effectiveness_under_stress: {
-      definition: "Executes functional action within 10s of play start",
-      observed_instances: 7,
-      successful_instances: 6,
-      percentage_correct: 85.7,
-      qualitative_example: "Successfully executed corner three under defensive pressure"
-    }
-  },
-  integrated_insight: {
-    summary: "High composure and initiative enabled smooth secondary action, compensating for modest leadership communication. The player's quick recovery and positioning directly contributed to optimal spacing that created the open shot opportunity.",
-    correlation_metrics: {
-      intangible_to_outcome_correlation: 0.78,
-      intangibles_overall_score: 0.82,
-      tangible_efficiency_score: 0.88
-    },
-    radar_chart_data: {
-      courage: 0.80,
-      composure: 0.875,
-      initiative: 0.833,
-      leadership: 0.75,
-      effectiveness_under_stress: 0.857
-    }
-  },
-  coaching_recommendations: {
-    key_takeaways: [
-      "Strong composure recovery allowed early defensive rotation preventing open corner three",
-      "Initiative in spacing created optimal offensive positioning throughout possession",
-      "Leadership communication needs consistency to align defensive recovery with offensive spacing"
-    ],
-    action_steps: [
-      {
-        focus_area: "leadership",
-        training_drill: "Communication drill with scripted callouts during transition scenarios",
-        measurement_goal: "Achieve 85% communication rate in next scrimmage"
-      },
-      {
-        focus_area: "courage",
-        training_drill: "2-second response drill after simulated turnovers",
-        measurement_goal: "Maintain 90% immediate attack response in pressure situations"
-      }
-    ]
-  }
-};
+type AppState = 'upload' | 'details' | 'processing' | 'results';
 
 const HighlightReelPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [analysis] = useState<HighlightReelAnalysis>(mockAnalysis);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const [appState, setAppState] = useState<AppState>('upload');
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [selectedClips, setSelectedClips] = useState<Clip[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState<string>('');
-  const [feedback] = useState<Feedback>({
-    athlete: "**Great performance!** Your composure under pressure was excellent, maintaining 87.5% consistency throughout the game. Your initiative in spacing created multiple scoring opportunities.",
-    parents: "Your athlete showed tremendous growth in leadership and decision-making. The ability to maintain high performance under stress is a key indicator of future success at higher levels of competition.",
-    coach: "Focus areas for next practice: Continue working on communication consistency (currently at 75%) and maintaining aggressive play after turnovers."
+  const [playerInfo, setPlayerInfo] = useState<PlayerInfo>({ 
+    name: '', 
+    position: '', 
+    jerseyNumber: '' 
   });
+  
+  const [clips, setClips] = useState<Clip[]>([]);
+  const [selectionThreshold, setSelectionThreshold] = useState<number>(7);
+  const [activeClipId, setActiveClipId] = useState<string | null>(null);
+  const [detailedClip, setDetailedClip] = useState<Clip | null>(null);
+  
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [isReelModalOpen, setIsReelModalOpen] = useState(false);
+
+  // Auto-select clips based on threshold
+  useEffect(() => {
+    if (appState === 'results') {
+      setClips(prevClips =>
+        prevClips.map(c =>
+          c.analysis
+            ? { ...c, selected: ((c.analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold }
+            : c
+        )
+      );
+    }
+  }, [selectionThreshold, appState]);
+
+  const sortedClips = useMemo(() => {
+    return clips.slice().sort((a, b) => 
+      (b.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) - 
+      (a.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0)
+    );
+  }, [clips]);
+
+  const selectedClips = useMemo(() => {
+    return clips
+      .filter(c => c.selected && c.analysis)
+      .sort((a, b) => a.startTime - b.startTime);
+  }, [clips]);
+
+  const generateFrame = (video: HTMLVideoElement, time: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      video.currentTime = time;
+
+      const onSeeked = () => {
+        video.removeEventListener('seeked', onSeeked);
+        video.removeEventListener('error', onError);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } else {
+          reject(new Error('Could not get canvas context.'));
+        }
+      };
+
+      const onError = () => {
+        video.removeEventListener('seeked', onSeeked);
+        video.removeEventListener('error', onError);
+        reject(new Error('Video seeking failed.'));
+      };
+
+      video.addEventListener('seeked', onSeeked);
+      video.addEventListener('error', onError);
+    });
+  };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type.startsWith('video/')) {
         setUploadedVideo(file);
         const url = URL.createObjectURL(file);
-        setVideoUrl(url);
+        setVideoSrc(url);
+        setClips([]);
+        setFeedback(null);
+        setActiveClipId(null);
+        setAppState('details');
         
         toast({
           title: "Video uploaded",
-          description: `${file.name} - Starting analysis...`,
+          description: file.name,
         });
-
-        // Start analysis
-        setIsAnalyzing(true);
-        setAnalysisProgress('Extracting frames from video...');
-        
-        try {
-          const frameData = await extractFrameFromVideo(file);
-          
-          setAnalysisProgress('Analyzing performance with AI...');
-          
-          const playerInfo = {
-            name: 'Player',
-            jerseyNumber: '23',
-            position: 'Point Guard'
-          };
-
-          const analysisData = await analyzeClip(frameData, playerInfo);
-          
-          // Generate sample clips with analysis
-          const clips: Clip[] = [
-            { id: '1', startTime: 5.0, endTime: 15.0, analysis: mockAnalysis },
-            { id: '2', startTime: 23.0, endTime: 35.0, analysis: mockAnalysis },
-            { id: '3', startTime: 47.0, endTime: 58.0, analysis: mockAnalysis }
-          ];
-          setSelectedClips(clips);
-          
-          setAnalysisProgress('Analysis complete!');
-          toast({
-            title: "Analysis complete",
-            description: "Your video has been analyzed successfully",
-          });
-        } catch (error) {
-          console.error('Analysis error:', error);
-          toast({
-            title: "Analysis failed",
-            description: "There was an error analyzing your video. Please try again.",
-            variant: "destructive"
-          });
-        } finally {
-          setIsAnalyzing(false);
-          setAnalysisProgress('');
-        }
       } else {
         toast({
           title: "Invalid file type",
@@ -231,16 +125,130 @@ const HighlightReelPage = () => {
     }
   };
 
-  const handlePreviewReel = () => {
-    if (!videoUrl || selectedClips.length === 0) {
+  const processVideo = async (video: HTMLVideoElement, pInfo: PlayerInfo) => {
+    setAppState('processing');
+    const duration = video.duration;
+    const initialClips: Clip[] = [];
+
+    // Create clips (8 seconds each)
+    for (let startTime = 0; startTime < duration; startTime += 8) {
+      const endTime = Math.min(startTime + 8, duration);
+      if (endTime - startTime < 4) continue; // Skip very short clips
+
+      initialClips.push({
+        id: `clip-${Date.now()}-${startTime}`,
+        startTime,
+        endTime,
+        thumbnail: '',
+        analysis: null,
+        isAnalyzing: true,
+        selected: false,
+        error: null,
+      });
+    }
+    setClips(initialClips);
+
+    // Process all clips in parallel
+    const analysisPromises = initialClips.map(async (clip) => {
+      try {
+        const thumbnail = await generateFrame(video, clip.startTime + 4);
+        const analysis = await analyzeClip(thumbnail, pInfo);
+
+        setClips(prev => prev.map(c => c.id === clip.id ? {
+          ...c,
+          thumbnail,
+          analysis,
+          isAnalyzing: false,
+          selected: analysis ? ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
+        } : c));
+      } catch (error) {
+        console.error(`Failed to analyze clip ${clip.id}:`, error);
+        setClips(prev => prev.map(c => c.id === clip.id ? {
+          ...c,
+          isAnalyzing: false,
+          error: "Analysis failed. Please try again."
+        } : c));
+      }
+    });
+
+    await Promise.all(analysisPromises);
+    setAppState('results');
+    
+    toast({
+      title: "Analysis complete",
+      description: `Analyzed ${initialClips.length} clips for ${pInfo.name}`,
+    });
+  };
+
+  const handleStartAnalysis = () => {
+    if (videoRef.current && videoRef.current.duration > 0) {
+      processVideo(videoRef.current, playerInfo);
+    } else if (videoRef.current) {
+      // Wait for video metadata to load
+      videoRef.current.onloadedmetadata = () => {
+        processVideo(videoRef.current!, playerInfo);
+      };
+    }
+  };
+
+  const playClip = (clip: Clip) => {
+    if (!videoRef.current) return;
+    setActiveClipId(clip.id);
+    videoRef.current.currentTime = clip.startTime;
+    videoRef.current.play();
+
+    const onTimeUpdate = () => {
+      if (videoRef.current && videoRef.current.currentTime >= clip.endTime) {
+        videoRef.current.pause();
+        videoRef.current.removeEventListener('timeupdate', onTimeUpdate);
+        setActiveClipId(null);
+      }
+    };
+    videoRef.current.addEventListener('timeupdate', onTimeUpdate);
+  };
+
+  const toggleClipSelection = (clipId: string) => {
+    setClips(prev => prev.map(c => 
+      c.id === clipId ? { ...c, selected: !c.selected } : c
+    ));
+  };
+
+  const handleCompileReel = async () => {
+    if (selectedClips.length === 0) {
       toast({
         title: "No clips selected",
-        description: "Please upload a video first",
+        description: "Please select at least one clip to compile",
         variant: "destructive"
       });
       return;
     }
-    setIsPreviewOpen(true);
+
+    setIsCompiling(true);
+    
+    try {
+      const analyses = selectedClips.map(c => c.analysis!);
+      const generatedFeedback = await generateFeedback(analyses, playerInfo);
+      
+      if (generatedFeedback) {
+        setFeedback(generatedFeedback);
+        setIsReelModalOpen(true);
+      } else {
+        toast({
+          title: "Feedback generation failed",
+          description: "Unable to generate feedback. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error compiling reel:', error);
+      toast({
+        title: "Error",
+        description: "Failed to compile reel. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCompiling(false);
+    }
   };
 
   return (
@@ -255,96 +263,175 @@ const HighlightReelPage = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Basketball
           </Button>
-          <div className="flex gap-2">
+          
+          {appState !== 'upload' && (
             <input
               ref={fileInputRef}
               type="file"
               accept="video/*"
               onChange={handleFileChange}
               className="hidden"
-              disabled={isAnalyzing}
+              disabled={appState === 'processing'}
             />
-            <Button onClick={handleUploadClick} className="gap-2" disabled={isAnalyzing}>
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  Upload Video
-                </>
+          )}
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Recruiting Reel Analyzer</h1>
+          <p className="text-muted-foreground">
+            Upload game film, generate clips, and get D1-level AI analysis
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left side - Video player */}
+          <div className="lg:col-span-2 bg-card rounded-xl border shadow-lg p-6 flex flex-col">
+            {appState === 'upload' && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                  <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <Upload className="w-12 h-12 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold">Upload Game Film</h2>
+                  <p className="text-muted-foreground max-w-md">
+                    Upload your game footage to get started. The AI will analyze your performance and create a recruiting reel.
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button onClick={handleUploadClick} size="lg" className="gap-2">
+                    <Upload className="w-5 h-5" />
+                    Choose Video File
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {appState !== 'upload' && videoSrc && (
+              <div className="flex-1 flex flex-col space-y-4">
+                <video 
+                  ref={videoRef} 
+                  src={videoSrc} 
+                  controls 
+                  className="w-full rounded-lg aspect-video bg-black"
+                >
+                  Your browser does not support the video tag.
+                </video>
+
+                {uploadedVideo && (
+                  <p className="text-sm text-muted-foreground">
+                    {uploadedVideo.name} ({(uploadedVideo.size / (1024 * 1024)).toFixed(2)} MB)
+                  </p>
+                )}
+
+                {appState === 'details' && (
+                  <PlayerDetailsForm
+                    playerInfo={playerInfo}
+                    onPlayerInfoChange={setPlayerInfo}
+                    onStartAnalysis={handleStartAnalysis}
+                  />
+                )}
+
+                {appState === 'processing' && (
+                  <div className="flex flex-col items-center justify-center gap-3 p-6 bg-card/50 rounded-lg border">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                    <p className="text-lg font-semibold">AI is analyzing your video for {playerInfo.name}...</p>
+                    <p className="text-sm text-muted-foreground">
+                      This may take a few moments. Clips will appear as they are processed.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right side - Analysis workbench */}
+          <div className="bg-card rounded-xl border shadow-lg p-6 flex flex-col max-h-[85vh]">
+            <h2 className="text-2xl font-bold border-b pb-3 mb-4">Analysis Workbench</h2>
+            
+            {playerInfo.name && appState !== 'upload' && (
+              <p className="text-sm text-muted-foreground mb-4">
+                Scouting Report for: <span className="font-bold text-foreground">{playerInfo.name} (#{playerInfo.jerseyNumber}) - {playerInfo.position}</span>
+              </p>
+            )}
+
+            {appState === 'results' && (
+              <div className="bg-muted/50 p-4 rounded-lg mb-4">
+                <Label className="text-sm font-medium mb-2 block">
+                  Auto-select clips with score ≥ <span className="font-bold text-primary">{selectionThreshold}/10</span>
+                </Label>
+                <Slider
+                  value={[selectionThreshold]}
+                  onValueChange={(vals) => setSelectionThreshold(vals[0])}
+                  min={1}
+                  max={10}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-4">
+              {sortedClips.map(clip => (
+                <ClipCard
+                  key={clip.id}
+                  clip={clip}
+                  isActive={activeClipId === clip.id}
+                  onPlay={() => playClip(clip)}
+                  onToggleSelect={() => toggleClipSelection(clip.id)}
+                  onShowDetails={() => setDetailedClip(clip)}
+                />
+              ))}
+              {clips.length === 0 && appState === 'results' && (
+                <div className="text-center py-10 text-muted-foreground">
+                  <p>There was an issue processing the video. Please try a different file.</p>
+                </div>
               )}
-            </Button>
-            {videoUrl && selectedClips.length > 0 && !isAnalyzing && (
-              <Button onClick={handlePreviewReel} className="gap-2" variant="secondary">
-                <Play className="w-4 h-4" />
-                Preview Reel
-              </Button>
+            </div>
+
+            {appState === 'results' && (
+              <div className="pt-4 border-t">
+                <h3 className="text-xl font-bold mb-2">Recruiting Reel</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {selectedClips.length} clip{selectedClips.length !== 1 ? 's' : ''} selected
+                </p>
+                <Button 
+                  onClick={handleCompileReel} 
+                  disabled={isCompiling || selectedClips.length === 0}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  {isCompiling ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Compiling...
+                    </>
+                  ) : (
+                    <>
+                      <Film className="w-5 h-5" />
+                      Compile Reel & Get Feedback
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Highlight Reel Analysis</h1>
-          <p className="text-muted-foreground">
-            Complete Performance Intangible Framework Assessment
-          </p>
-        </div>
-
-        {isAnalyzing && analysisProgress && (
-          <div className="bg-card rounded-lg border p-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <div>
-                <h3 className="font-semibold">Processing Video</h3>
-                <p className="text-sm text-muted-foreground">{analysisProgress}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          {videoUrl && (
-            <div className="bg-card rounded-lg border p-6">
-              <h3 className="text-xl font-bold mb-4">Uploaded Video</h3>
-              <video 
-                src={videoUrl} 
-                controls 
-                className="w-full rounded-lg max-h-[500px]"
-              >
-                Your browser does not support the video tag.
-              </video>
-              {uploadedVideo && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  {uploadedVideo.name} ({(uploadedVideo.size / (1024 * 1024)).toFixed(2)} MB)
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MetadataCard metadata={analysis.metadata} />
-            <PlayContextCard context={analysis.play_context} />
-          </div>
-
-          <TangiblePerformanceCard performance={analysis.tangible_performance} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <IntangibleMetricsCard intangibles={analysis.intangible_performance} />
-            <IntangiblesRadarChart data={analysis.integrated_insight.radar_chart_data} />
-          </div>
-
-          <IntegratedInsightCard insight={analysis.integrated_insight} />
-
-          <CoachingRecommendationsCard recommendations={analysis.coaching_recommendations} />
-        </div>
+        <AnalysisDetailModal
+          isOpen={!!detailedClip}
+          onClose={() => setDetailedClip(null)}
+          clip={detailedClip}
+        />
 
         <ReelPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          videoSrc={videoUrl}
+          isOpen={isReelModalOpen}
+          onClose={() => setIsReelModalOpen(false)}
+          videoSrc={videoSrc}
           selectedClips={selectedClips}
           feedback={feedback}
         />
