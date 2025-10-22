@@ -1,0 +1,49 @@
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { IntangiblePerformance } from "@/types/highlightReel";
+import { Target, Heart, Zap, Users, Award } from "lucide-react";
+
+interface IntangibleMetricsCardProps {
+  intangibles: IntangiblePerformance;
+}
+
+const getIcon = (key: string) => {
+  switch (key) {
+    case 'courage': return <Heart className="w-5 h-5 text-red-500" />;
+    case 'composure': return <Target className="w-5 h-5 text-blue-500" />;
+    case 'initiative': return <Zap className="w-5 h-5 text-yellow-500" />;
+    case 'leadership': return <Users className="w-5 h-5 text-green-500" />;
+    case 'effectiveness_under_stress': return <Award className="w-5 h-5 text-purple-500" />;
+    default: return null;
+  }
+};
+
+const formatKey = (key: string) => {
+  return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+export const IntangibleMetricsCard = ({ intangibles }: IntangibleMetricsCardProps) => {
+  return (
+    <Card className="p-6">
+      <h3 className="text-xl font-bold mb-4">Intangible Performance Metrics</h3>
+      <div className="space-y-6">
+        {Object.entries(intangibles).map(([key, metric]) => (
+          <div key={key} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {getIcon(key)}
+                <span className="font-semibold">{formatKey(key)}</span>
+              </div>
+              <span className="text-sm font-bold">{metric.percentage_correct.toFixed(0)}%</span>
+            </div>
+            <Progress value={metric.percentage_correct} className="h-2" />
+            <div className="text-xs text-muted-foreground">
+              {metric.successful_instances} / {metric.observed_instances} instances
+            </div>
+            <p className="text-sm italic text-muted-foreground">{metric.qualitative_example}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};

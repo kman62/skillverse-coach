@@ -12,6 +12,7 @@ import DrillsPage from "./pages/DrillsPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
+import HighlightReelPage from "./pages/HighlightReelPage";
 import NotFound from "./pages/NotFound";
 
 // Create a client
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
               <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
               <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
+              <Route path="/highlight-reel" element={<HighlightReelPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               
               {/* Catch-all route */}

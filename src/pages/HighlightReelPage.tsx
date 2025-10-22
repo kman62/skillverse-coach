@@ -1,0 +1,196 @@
+import { useState } from "react";
+import { MetadataCard } from "@/components/highlight-reel/MetadataCard";
+import { PlayContextCard } from "@/components/highlight-reel/PlayContextCard";
+import { TangiblePerformanceCard } from "@/components/highlight-reel/TangiblePerformanceCard";
+import { IntangibleMetricsCard } from "@/components/highlight-reel/IntangibleMetricsCard";
+import { IntangiblesRadarChart } from "@/components/highlight-reel/IntangiblesRadarChart";
+import { IntegratedInsightCard } from "@/components/highlight-reel/IntegratedInsightCard";
+import { CoachingRecommendationsCard } from "@/components/highlight-reel/CoachingRecommendationsCard";
+import { HighlightReelAnalysis } from "@/types/highlightReel";
+import { Button } from "@/components/ui/button";
+import { Upload, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+// Mock data for demonstration
+const mockAnalysis: HighlightReelAnalysis = {
+  metadata: {
+    video_id: "game_2025_001",
+    team: "Warriors",
+    opponent: "Lakers",
+    game_date: "2025-01-15",
+    clip_start_time: "10:23:45",
+    clip_end_time: "10:24:15",
+    analyst: "Coach Anderson",
+    source_method: ["computer_vision", "manual_review"]
+  },
+  play_context: {
+    possession_phase: "offense",
+    play_type: "pick_and_roll",
+    formation: "4-out-1-in",
+    situation: "live_play"
+  },
+  tangible_performance: {
+    actions: [
+      {
+        event_type: "screen",
+        timestamp: "10:23:47",
+        player_role: "C",
+        result: "success",
+        metrics: {
+          spacing_efficiency_score: 0.85,
+          defender_proximity_m: 1.2
+        }
+      },
+      {
+        event_type: "drive",
+        timestamp: "10:23:50",
+        player_role: "PG",
+        result: "success",
+        metrics: {
+          reaction_time_sec: 0.4,
+          distance_m: 4.5
+        }
+      },
+      {
+        event_type: "pass",
+        timestamp: "10:23:53",
+        player_role: "PG",
+        result: "success",
+        metrics: {
+          angle_deg: 45,
+          defender_proximity_m: 2.1
+        }
+      }
+    ],
+    overall_summary: {
+      execution_quality: 0.88,
+      decision_accuracy: 0.92,
+      spacing_index: 0.85,
+      transition_speed_sec: 3.2
+    }
+  },
+  intangible_performance: {
+    courage: {
+      definition: "Approaches/attacks stressor situations within 2s",
+      observed_instances: 5,
+      successful_instances: 4,
+      percentage_correct: 80,
+      qualitative_example: "Immediate attack post-turnover with confident drive to basket"
+    },
+    composure: {
+      definition: "Returns to athletic stance within 2s of play stoppage",
+      observed_instances: 8,
+      successful_instances: 7,
+      percentage_correct: 87.5,
+      qualitative_example: "Quick stance reset after whistle, maintaining defensive readiness"
+    },
+    initiative: {
+      definition: "Enters correct spacing/formation within 3s",
+      observed_instances: 6,
+      successful_instances: 5,
+      percentage_correct: 83.3,
+      qualitative_example: "Timely off-ball fill to right corner creating optimal spacing"
+    },
+    leadership: {
+      definition: "Constructive communication within 3s of whistle",
+      observed_instances: 4,
+      successful_instances: 3,
+      percentage_correct: 75,
+      qualitative_example: "Clear verbal callout directing teammate rotation"
+    },
+    effectiveness_under_stress: {
+      definition: "Executes functional action within 10s of play start",
+      observed_instances: 7,
+      successful_instances: 6,
+      percentage_correct: 85.7,
+      qualitative_example: "Successfully executed corner three under defensive pressure"
+    }
+  },
+  integrated_insight: {
+    summary: "High composure and initiative enabled smooth secondary action, compensating for modest leadership communication. The player's quick recovery and positioning directly contributed to optimal spacing that created the open shot opportunity.",
+    correlation_metrics: {
+      intangible_to_outcome_correlation: 0.78,
+      intangibles_overall_score: 0.82,
+      tangible_efficiency_score: 0.88
+    },
+    radar_chart_data: {
+      courage: 0.80,
+      composure: 0.875,
+      initiative: 0.833,
+      leadership: 0.75,
+      effectiveness_under_stress: 0.857
+    }
+  },
+  coaching_recommendations: {
+    key_takeaways: [
+      "Strong composure recovery allowed early defensive rotation preventing open corner three",
+      "Initiative in spacing created optimal offensive positioning throughout possession",
+      "Leadership communication needs consistency to align defensive recovery with offensive spacing"
+    ],
+    action_steps: [
+      {
+        focus_area: "leadership",
+        training_drill: "Communication drill with scripted callouts during transition scenarios",
+        measurement_goal: "Achieve 85% communication rate in next scrimmage"
+      },
+      {
+        focus_area: "courage",
+        training_drill: "2-second response drill after simulated turnovers",
+        measurement_goal: "Maintain 90% immediate attack response in pressure situations"
+      }
+    ]
+  }
+};
+
+const HighlightReelPage = () => {
+  const navigate = useNavigate();
+  const [analysis] = useState<HighlightReelAnalysis>(mockAnalysis);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/sports/basketball')}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Basketball
+          </Button>
+          <Button className="gap-2">
+            <Upload className="w-4 h-4" />
+            Upload Video
+          </Button>
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Highlight Reel Analysis</h1>
+          <p className="text-muted-foreground">
+            Complete Performance Intangible Framework Assessment
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MetadataCard metadata={analysis.metadata} />
+            <PlayContextCard context={analysis.play_context} />
+          </div>
+
+          <TangiblePerformanceCard performance={analysis.tangible_performance} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <IntangibleMetricsCard intangibles={analysis.intangible_performance} />
+            <IntangiblesRadarChart data={analysis.integrated_insight.radar_chart_data} />
+          </div>
+
+          <IntegratedInsightCard insight={analysis.integrated_insight} />
+
+          <CoachingRecommendationsCard recommendations={analysis.coaching_recommendations} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default HighlightReelPage;
