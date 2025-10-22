@@ -39,11 +39,21 @@ const DrillsPage = () => {
 
       {sport.id === "basketball" && (
         <div className="mb-6">
-          <p className="text-muted-foreground">
-            Develop your basketball skills with these specialized drills designed for players of all levels.
-            Master shooting, dribbling, and passing techniques to elevate your game and become a
-            more complete player on the court.
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-muted-foreground">
+              Develop your basketball skills with these specialized drills designed for players of all levels.
+              Master shooting, dribbling, and passing techniques to elevate your game and become a
+              more complete player on the court.
+            </p>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" asChild className="gap-2">
+              <Link to="/highlight-reel">
+                <BookOpen className="h-4 w-4" />
+                Create Highlight Reel
+              </Link>
+            </Button>
+          </div>
         </div>
       )}
 

@@ -6,9 +6,11 @@ import { IntangibleMetricsCard } from "@/components/highlight-reel/IntangibleMet
 import { IntangiblesRadarChart } from "@/components/highlight-reel/IntangiblesRadarChart";
 import { IntegratedInsightCard } from "@/components/highlight-reel/IntegratedInsightCard";
 import { CoachingRecommendationsCard } from "@/components/highlight-reel/CoachingRecommendationsCard";
+import { ReelPreviewModal } from "@/components/highlight-reel/ReelPreviewModal";
 import { HighlightReelAnalysis } from "@/types/highlightReel";
+import { Clip, Feedback } from "@/types/reelTypes";
 import { Button } from "@/components/ui/button";
-import { Upload, ArrowLeft } from "lucide-react";
+import { Upload, ArrowLeft, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -150,6 +152,13 @@ const HighlightReelPage = () => {
   const [analysis] = useState<HighlightReelAnalysis>(mockAnalysis);
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedClips, setSelectedClips] = useState<Clip[]>([]);
+  const [feedback] = useState<Feedback>({
+    athlete: "**Great performance!** Your composure under pressure was excellent, maintaining 87.5% consistency throughout the game. Your initiative in spacing created multiple scoring opportunities.",
+    parents: "Your athlete showed tremendous growth in leadership and decision-making. The ability to maintain high performance under stress is a key indicator of future success at higher levels of competition.",
+    coach: "Focus areas for next practice: Continue working on communication consistency (currently at 75%) and maintaining aggressive play after turnovers."
+  });
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -162,6 +171,15 @@ const HighlightReelPage = () => {
         setUploadedVideo(file);
         const url = URL.createObjectURL(file);
         setVideoUrl(url);
+        
+        // Generate sample clips based on the analysis data
+        const clips: Clip[] = [
+          { id: '1', startTime: 5.0, endTime: 15.0, analysis: mockAnalysis },
+          { id: '2', startTime: 23.0, endTime: 35.0, analysis: mockAnalysis },
+          { id: '3', startTime: 47.0, endTime: 58.0, analysis: mockAnalysis }
+        ];
+        setSelectedClips(clips);
+        
         toast({
           title: "Video uploaded successfully",
           description: `${file.name} is now ready for analysis`,
@@ -176,6 +194,18 @@ const HighlightReelPage = () => {
     }
   };
 
+  const handlePreviewReel = () => {
+    if (!videoUrl || selectedClips.length === 0) {
+      toast({
+        title: "No clips selected",
+        description: "Please upload a video first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsPreviewOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -188,7 +218,7 @@ const HighlightReelPage = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Basketball
           </Button>
-          <div>
+          <div className="flex gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -200,6 +230,12 @@ const HighlightReelPage = () => {
               <Upload className="w-4 h-4" />
               Upload Video
             </Button>
+            {videoUrl && selectedClips.length > 0 && (
+              <Button onClick={handlePreviewReel} className="gap-2" variant="secondary">
+                <Play className="w-4 h-4" />
+                Preview Reel
+              </Button>
+            )}
           </div>
         </div>
 
@@ -245,6 +281,14 @@ const HighlightReelPage = () => {
 
           <CoachingRecommendationsCard recommendations={analysis.coaching_recommendations} />
         </div>
+
+        <ReelPreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          videoSrc={videoUrl}
+          selectedClips={selectedClips}
+          feedback={feedback}
+        />
       </div>
     </div>
   );
