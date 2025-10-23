@@ -21,7 +21,7 @@ export const ClipCard = ({ clip, isActive, onPlay, onToggleSelect, onShowDetails
   const outcome = (clip.analysis as any)?.outcome || null;
 
   return (
-    <Card className={`p-4 transition-all ${isActive ? 'ring-2 ring-primary' : ''} ${clip.selected ? 'bg-primary/10 border-primary' : ''}`}>
+    <Card className={`p-4 transition-all ${isActive ? 'ring-2 ring-primary' : ''} ${clip.selected ? 'bg-primary/10 border-primary text-foreground/90' : ''}`}>
       <div className="flex gap-3">
         {clip.thumbnail && (
           <img 
