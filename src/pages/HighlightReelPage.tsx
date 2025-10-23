@@ -43,9 +43,9 @@ const HighlightReelPage = () => {
   useEffect(() => {
     if (appState === 'results') {
       setClips(prevClips =>
-        prevClips.map(c =>
+         prevClips.map(c =>
           c.analysis
-            ? { ...c, selected: ((c.analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold }
+            ? { ...c, selected: ((c.analysis.integrated_insight?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold }
             : c
         )
       );
@@ -53,9 +53,9 @@ const HighlightReelPage = () => {
   }, [selectionThreshold, appState]);
 
   const sortedClips = useMemo(() => {
-    return clips.slice().sort((a, b) => 
-      (b.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) - 
-      (a.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0)
+     return clips.slice().sort((a, b) => 
+      (b.analysis?.integrated_insight?.intangibles_overall_score ?? 0) - 
+      (a.analysis?.integrated_insight?.intangibles_overall_score ?? 0)
     );
   }, [clips]);
 
@@ -65,19 +65,32 @@ const HighlightReelPage = () => {
       .sort((a, b) => a.startTime - b.startTime);
   }, [clips]);
 
-  const generateFrame = (video: HTMLVideoElement, time: number): Promise<string> => {
+  const generateFrameFromSrc = (src: string, time: number): Promise<string> => {
     return new Promise((resolve, reject) => {
+      const videoEl = document.createElement('video');
       const canvas = document.createElement('canvas');
-      video.currentTime = time;
+      videoEl.preload = 'auto';
+      videoEl.muted = true; // allow programmatic play/seek in some browsers
+      videoEl.src = src;
+
+      const cleanup = () => {
+        videoEl.removeEventListener('loadedmetadata', onLoaded);
+        videoEl.removeEventListener('seeked', onSeeked);
+        videoEl.removeEventListener('error', onError);
+      };
+
+      const onLoaded = () => {
+        const target = Math.min(Math.max(time, 0), videoEl.duration || time);
+        videoEl.currentTime = isFinite(target) ? target : 0;
+      };
 
       const onSeeked = () => {
-        video.removeEventListener('seeked', onSeeked);
-        video.removeEventListener('error', onError);
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        cleanup();
+        canvas.width = videoEl.videoWidth || 1280;
+        canvas.height = videoEl.videoHeight || 720;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/jpeg', 0.8));
         } else {
           reject(new Error('Could not get canvas context.'));
@@ -85,13 +98,13 @@ const HighlightReelPage = () => {
       };
 
       const onError = () => {
-        video.removeEventListener('seeked', onSeeked);
-        video.removeEventListener('error', onError);
+        cleanup();
         reject(new Error('Video seeking failed.'));
       };
 
-      video.addEventListener('seeked', onSeeked);
-      video.addEventListener('error', onError);
+      videoEl.addEventListener('loadedmetadata', onLoaded);
+      videoEl.addEventListener('seeked', onSeeked);
+      videoEl.addEventListener('error', onError);
     });
   };
 
@@ -150,8 +163,20 @@ const HighlightReelPage = () => {
 
     // Process all clips in parallel
     const analysisPromises = initialClips.map(async (clip) => {
+      // 1) Generate thumbnail from a separate, off-DOM video element
+      let thumbnail = '';
       try {
-        const thumbnail = await generateFrame(video, clip.startTime + 4);
+        if (videoSrc) {
+          thumbnail = await generateFrameFromSrc(videoSrc, clip.startTime + 4);
+          // store thumbnail immediately so UI shows even if analysis fails
+          setClips(prev => prev.map(c => c.id === clip.id ? { ...c, thumbnail } : c));
+        }
+      } catch {
+        // keep empty thumbnail on failure; proceed with analysis anyway
+      }
+
+      // 2) Run AI analysis
+      try {
         const analysis = await analyzeClip(thumbnail, pInfo);
 
         setClips(prev => prev.map(c => c.id === clip.id ? {
@@ -159,14 +184,15 @@ const HighlightReelPage = () => {
           thumbnail,
           analysis,
           isAnalyzing: false,
-          selected: analysis ? ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
+          selected: analysis ? ((analysis.integrated_insight?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
         } : c));
       } catch (error) {
         console.error(`Failed to analyze clip ${clip.id}:`, error);
         setClips(prev => prev.map(c => c.id === clip.id ? {
           ...c,
+          thumbnail,
           isAnalyzing: false,
-          error: "Analysis failed. Please try again."
+          error: 'Analysis failed. Please try again.'
         } : c));
       }
     });

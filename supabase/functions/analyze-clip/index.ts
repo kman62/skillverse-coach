@@ -20,58 +20,67 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get('GOOGLE_GEMINI_API_KEY');
-    if (!apiKey) {
-      console.error('GOOGLE_GEMINI_API_KEY not configured');
+    // Using Lovable AI Gateway; no direct provider key required here
+
+    // Call Lovable AI Gateway (OpenAI-compatible)
+    const lovableKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableKey) {
+      console.error('LOVABLE_API_KEY is not configured');
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ error: 'AI key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Call Google Gemini API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: `Analyze this basketball frame for player ${playerInfo.name} (#${playerInfo.jerseyNumber}), position: ${playerInfo.position}. Provide performance analysis with tangible and intangible metrics.`
-              },
-              {
-                inline_data: {
-                  mime_type: 'image/jpeg',
-                  data: frameData.split(',')[1]
-                }
-              }
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a concise basketball video analysis assistant. Focus on play context, tangible skills, intangibles, and coaching tips. Keep it actionable.'
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: `Analyze this basketball frame for player ${playerInfo.name} (#${playerInfo.jerseyNumber}), position: ${playerInfo.position}. Provide a short narrative and key insights.` },
+              { type: 'image_url', image_url: { url: frameData } }
             ]
-          }],
-          generationConfig: {
-            temperature: 0.4,
-            topK: 32,
-            topP: 1,
-            maxOutputTokens: 2048,
           }
-        })
-      }
-    );
+        ]
+      })
+    });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Payment required. Please add credits to your Lovable AI workspace.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       const errorText = await response.text();
-      console.error('Gemini API error:', errorText);
+      console.error('AI gateway error:', errorText);
       return new Response(
-        JSON.stringify({ error: 'Analysis failed', details: errorText }),
+        JSON.stringify({ error: 'AI gateway error', details: errorText }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const result = await response.json();
-    
-    // Extract the generated content
-    const analysisText = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No analysis generated';
+
+    // Extract model text
+    const analysisText = result.choices?.[0]?.message?.content || 'No analysis generated';
     
     // Create a structured response
     const analysis = {
