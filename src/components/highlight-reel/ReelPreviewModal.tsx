@@ -141,26 +141,64 @@ export const ReelPreviewModal: React.FC<ReelPreviewModalProps> = ({
             </div>
           </div>
           
-          <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+          <div className="space-y-6">
             {feedback ? (
               <>
-                <div>
-                  <h4 className="font-bold text-lg text-primary mb-2">Athlete Feedback</h4>
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown>{feedback.athlete}</ReactMarkdown>
+                <div className="bg-card rounded-lg border shadow-sm p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-1 w-12 bg-primary rounded-full" />
+                    <h4 className="font-bold text-xl text-primary">For the Athlete</h4>
+                  </div>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-4 text-base leading-relaxed">{children}</p>,
+                        strong: ({ children }) => <strong className="font-bold text-primary">{children}</strong>,
+                        ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-2">{children}</ul>,
+                        li: ({ children }) => <li className="text-base">{children}</li>,
+                      }}
+                    >
+                      {feedback.athlete}
+                    </ReactMarkdown>
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-lg text-primary mb-2 mt-4">Parent Feedback</h4>
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown>{feedback.parents}</ReactMarkdown>
+
+                <div className="bg-card rounded-lg border shadow-sm p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-1 w-12 bg-blue-500 rounded-full" />
+                    <h4 className="font-bold text-xl text-blue-500">For Parents</h4>
+                  </div>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-4 text-base leading-relaxed">{children}</p>,
+                        strong: ({ children }) => <strong className="font-bold text-blue-500">{children}</strong>,
+                        ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-2">{children}</ul>,
+                        li: ({ children }) => <li className="text-base">{children}</li>,
+                      }}
+                    >
+                      {feedback.parents}
+                    </ReactMarkdown>
                   </div>
                 </div>
+
                 {feedback.coach && (
-                  <div>
-                    <h4 className="font-bold text-lg text-primary mb-2 mt-4">Coach Notes</h4>
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{feedback.coach}</ReactMarkdown>
+                  <div className="bg-card rounded-lg border shadow-sm p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-1 w-12 bg-green-500 rounded-full" />
+                      <h4 className="font-bold text-xl text-green-500">Coach Notes</h4>
+                    </div>
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className="mb-4 text-base leading-relaxed">{children}</p>,
+                          strong: ({ children }) => <strong className="font-bold text-green-500">{children}</strong>,
+                          ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-2">{children}</ul>,
+                          li: ({ children }) => <li className="text-base">{children}</li>,
+                        }}
+                      >
+                        {feedback.coach}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 )}
