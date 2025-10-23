@@ -135,39 +135,10 @@ export const generateFreeThrowAnalysis = (drillName: string, score: number): Ana
     "Practice free throws when physically tired to simulate game conditions"
   ];
   
-  // Create a localStorage record of the analysis execution
-  try {
-    const analysisLog = JSON.parse(localStorage.getItem('freeThrowAnalysisLog') || '[]');
-    analysisLog.push({
-      timestamp,
-      drillName,
-      score,
-      components: {
-        preparation: Math.round(preparationScore),
-        handPlacement: Math.round(handPlacementScore),
-        aiming: Math.round(aimingScore),
-        motion: Math.round(motionScore),
-        evaluation: Math.round(evaluationScore)
-      }
-    });
-    // Keep only the last 50 entries
-    if (analysisLog.length > 50) {
-      analysisLog.shift();
-    }
-    localStorage.setItem('freeThrowAnalysisLog', JSON.stringify(analysisLog));
-  } catch (error) {
-    console.error('Error logging free throw analysis:', error);
+  // Log completion of analysis (development only)
+  if (import.meta.env.DEV) {
+    console.log(`🏀 [${timestamp}] Free Throw Analysis completed for "${drillName}"`);
   }
-  
-  // Set a flag to help debug if the free throw analysis was executed
-  try {
-    window.localStorage.setItem('lastFreeThrowAnalysisTime', timestamp);
-  } catch (error) {
-    console.error('Error setting lastFreeThrowAnalysisTime:', error);
-  }
-  
-  // Log completion of analysis
-  console.log(`🏀 [${timestamp}] Free Throw Analysis completed for "${drillName}" with metrics:`, metrics);
   
   // Return the complete free throw analysis
   const result = buildAnalysisResponse(

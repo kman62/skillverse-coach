@@ -88,6 +88,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setIsLoading(true);
+      
+      // Clear any sensitive localStorage data on logout
+      try {
+        localStorage.removeItem('freeThrowAnalysisLog');
+        localStorage.removeItem('lastFreeThrowAnalysisTime');
+      } catch (storageError) {
+        console.error('Error clearing localStorage:', storageError);
+      }
+      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       navigate('/auth');

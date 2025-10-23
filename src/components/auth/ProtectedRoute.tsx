@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 const ProtectedRoute = () => {
   const { user, isLoading } = useAuth();
 
-  // Bypass auth for testing - remove in production
+  // Bypass auth only in development mode
+  const isDev = import.meta.env.DEV;
   const searchParams = new URLSearchParams(window.location.search);
-  const bypassAuth = searchParams.get('bypass') === 'true';
+  const bypassAuth = isDev && searchParams.get('bypass') === 'true';
 
   // Show loading or redirect
   if (isLoading) {
