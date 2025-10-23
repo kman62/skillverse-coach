@@ -10,7 +10,12 @@ interface AnalysisDetailModalProps {
 }
 
 export const AnalysisDetailModal = ({ isOpen, onClose, clip }: AnalysisDetailModalProps) => {
-  if (!clip?.analysis) return null;
+  console.log('🔍 [AnalysisDetailModal] Render - isOpen:', isOpen, 'clip:', clip?.id, 'hasAnalysis:', !!clip?.analysis);
+  
+  if (!clip?.analysis) {
+    console.log('🔍 [AnalysisDetailModal] Early return - no clip or no analysis');
+    return null;
+  }
 
   const { analysis } = clip;
   const score = (analysis.integrated_insight.correlation_metrics.intangibles_overall_score * 10).toFixed(1);

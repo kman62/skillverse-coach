@@ -433,7 +433,11 @@ const HighlightReelPage = () => {
                   isActive={activeClipId === clip.id}
                   onPlay={() => playClip(clip)}
                   onToggleSelect={() => toggleClipSelection(clip.id)}
-                  onShowDetails={() => setDetailedClip(clip)}
+                  onShowDetails={() => {
+                    console.log('🔍 [HighlightReelPage] Setting detailed clip:', clip.id);
+                    console.log('🔍 [HighlightReelPage] Clip data:', clip);
+                    setDetailedClip(clip);
+                  }}
                 />
               ))}
               {clips.length === 0 && appState === 'results' && (

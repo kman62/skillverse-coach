@@ -87,7 +87,11 @@ export const ClipCard = ({ clip, isActive, onPlay, onToggleSelect, onShowDetails
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  onClick={onShowDetails}
+                  onClick={() => {
+                    console.log('🔍 [ClipCard] Details button clicked for clip:', clip.id);
+                    console.log('🔍 [ClipCard] Clip has analysis:', !!clip.analysis);
+                    onShowDetails();
+                  }}
                 >
                   <Info className="w-3 h-3 mr-1" />
                   Details
