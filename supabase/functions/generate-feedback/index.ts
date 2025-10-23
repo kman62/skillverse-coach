@@ -62,8 +62,25 @@ ${JSON.stringify(analyses, null, 2)}`;
     }
 
     const data = await response.json();
+    console.log('Gemini API response received');
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      console.error('Invalid Gemini response structure:', JSON.stringify(data));
+      throw new Error('Invalid response from AI model');
+    }
+
     const feedbackText = data.candidates[0].content.parts[0].text;
-    const feedback = JSON.parse(feedbackText);
+    console.log('Raw feedback text length:', feedbackText.length);
+    console.log('First 200 chars:', feedbackText.substring(0, 200));
+    
+    let feedback;
+    try {
+      feedback = JSON.parse(feedbackText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Failed to parse text:', feedbackText);
+      throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+    }
 
     console.log('Feedback generated successfully');
 
