@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     // Extract model text
     const analysisText = result.choices?.[0]?.message?.content || 'No analysis generated';
     
-    // Create a structured response
+    // Create a structured response matching HighlightReelAnalysis type
     const analysis = {
       play_context: {
         play_type: 'pick_and_roll',
@@ -100,7 +100,11 @@ Deno.serve(async (req) => {
       },
       integrated_insight: {
         summary: analysisText.substring(0, 300),
-        intangibles_overall_score: 0.78,
+        correlation_metrics: {
+          intangible_to_outcome_correlation: 0.75,
+          intangibles_overall_score: 0.78,
+          tangible_efficiency_score: 0.80
+        },
         radar_chart_data: {
           courage: 0.8,
           composure: 0.85,

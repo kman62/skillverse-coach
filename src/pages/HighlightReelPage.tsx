@@ -45,7 +45,7 @@ const HighlightReelPage = () => {
       setClips(prevClips =>
          prevClips.map(c =>
           c.analysis
-            ? { ...c, selected: ((c.analysis.integrated_insight?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold }
+            ? { ...c, selected: ((c.analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold }
             : c
         )
       );
@@ -54,8 +54,8 @@ const HighlightReelPage = () => {
 
   const sortedClips = useMemo(() => {
      return clips.slice().sort((a, b) => 
-      (b.analysis?.integrated_insight?.intangibles_overall_score ?? 0) - 
-      (a.analysis?.integrated_insight?.intangibles_overall_score ?? 0)
+      (b.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) - 
+      (a.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0)
     );
   }, [clips]);
 
@@ -184,7 +184,7 @@ const HighlightReelPage = () => {
           thumbnail,
           analysis,
           isAnalyzing: false,
-          selected: analysis ? ((analysis.integrated_insight?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
+          selected: analysis ? ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
         } : c));
       } catch (error) {
         console.error(`Failed to analyze clip ${clip.id}:`, error);
