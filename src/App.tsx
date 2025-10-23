@@ -25,33 +25,39 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              {/* All routes are now public for testing */}
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/sports/:sportId" element={<DrillsPage />} />
-              <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
-              <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
-              <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
-              <Route path="/highlight-reel" element={<HighlightReelPage />} />
-              {/* <Route path="/profile" element={<ProfilePage />} /> */}
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </StrictMode>
-);
+const App = () => {
+  console.log('App component rendering');
+  console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+  console.log('Has Supabase Key:', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+  
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                {/* All routes are now public for testing */}
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/sports/:sportId" element={<DrillsPage />} />
+                <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
+                <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
+                <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
+                <Route path="/highlight-reel" element={<HighlightReelPage />} />
+                {/* <Route path="/profile" element={<ProfilePage />} /> */}
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </StrictMode>
+  );
+};
 
 export default App;
