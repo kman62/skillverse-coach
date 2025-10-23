@@ -53,14 +53,19 @@ export const uploadVideoToStorage = async (
     
     console.log("Video uploaded successfully:", uploadData?.path);
     
-    // Get public URL for the uploaded video
-    const { data: { publicUrl } } = supabase.storage
+    // Generate signed URL for secure access (24 hour expiry)
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from('videos')
-      .getPublicUrl(videoFileName);
+      .createSignedUrl(videoFileName, 86400); // 24 hours in seconds
     
-    console.log("Video public URL:", publicUrl);
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      console.error("Error creating signed URL:", signedUrlError);
+      throw new Error('Failed to generate secure video URL');
+    }
     
-    return { success: true, videoUrl: publicUrl };
+    console.log("Signed URL created successfully");
+    
+    return { success: true, videoUrl: signedUrlData.signedUrl };
   } catch (error) {
     console.error('Error in uploadVideoToStorage:', error);
     return {

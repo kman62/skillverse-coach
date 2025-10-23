@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -9,6 +10,15 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Validation constants
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
+
+const formDataSchema = z.object({
+  sportId: z.string().trim().min(1).max(50),
+  drillName: z.string().trim().min(1).max(100)
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -155,8 +165,24 @@ serve(async (req) => {
         );
       }
       
-      const sportId = formData.get('sportId')?.toString() || 'generic';
-      const drillName = formData.get('drillName')?.toString() || 'technique';
+      // Validate input fields
+      const sportIdRaw = formData.get('sportId')?.toString() || 'generic';
+      const drillNameRaw = formData.get('drillName')?.toString() || 'technique';
+      
+      const validationResult = formDataSchema.safeParse({
+        sportId: sportIdRaw,
+        drillName: drillNameRaw
+      });
+      
+      if (!validationResult.success) {
+        console.error('Validation error:', validationResult.error.format());
+        return new Response(
+          JSON.stringify({ error: 'Invalid sport or drill name provided' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const { sportId, drillName } = validationResult.data;
       
       const isFreeThrowDrill = 
         sportId === 'basketball' && 
@@ -172,22 +198,27 @@ serve(async (req) => {
       const videoFile = formData.get('video');
       if (!videoFile || !(videoFile instanceof File)) {
         console.error("No video file provided or invalid video file");
-        
-        console.log("FormData keys:", [...formData.keys()]);
-        console.log("Video file type:", typeof videoFile);
-        console.log("Is File instance:", videoFile instanceof File);
-        
         return new Response(
-          JSON.stringify({ 
-            error: 'No video file provided in the request.',
-            receivedKeys: [...formData.keys()],
-            videoFileType: typeof videoFile,
-            isFileInstance: videoFile instanceof File
-          }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+          JSON.stringify({ error: 'No video file provided in the request' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Validate file size
+      if (videoFile.size > MAX_FILE_SIZE) {
+        console.error(`Video file too large: ${videoFile.size} bytes`);
+        return new Response(
+          JSON.stringify({ error: 'Video file exceeds maximum size of 50MB' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Validate file type
+      if (!ALLOWED_VIDEO_TYPES.includes(videoFile.type)) {
+        console.error(`Invalid video type: ${videoFile.type}`);
+        return new Response(
+          JSON.stringify({ error: 'Invalid video file type. Please upload MP4, MOV, AVI, or WebM' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -229,15 +260,13 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorData = await response.text();
-          console.error("OpenAI API error:", errorData);
+          console.error("OpenAI API error:", response.status, errorData);
           return new Response(
             JSON.stringify({ 
-              error: `OpenAI API error: ${response.status} ${response.statusText}`,
-              details: errorData,
-              timestamp: new Date().toISOString()
+              error: 'Analysis service temporarily unavailable. Please try again later.'
             }),
             { 
-              status: 502, 
+              status: 503, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
@@ -267,12 +296,10 @@ serve(async (req) => {
         console.error("OpenAI API call failed:", openAIError);
         return new Response(
           JSON.stringify({ 
-            error: `Error calling OpenAI API: ${openAIError.message || 'Unknown error'}`,
-            timestamp: new Date().toISOString(),
-            stack: openAIError.stack
+            error: 'Error processing video analysis. Please try again.'
           }),
           { 
-            status: 502, 
+            status: 503, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
@@ -282,9 +309,7 @@ serve(async (req) => {
     console.error("Unhandled error in video analysis:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "An unexpected error occurred during video analysis",
-        stack: error.stack,
-        timestamp: new Date().toISOString()
+        error: 'An unexpected error occurred. Please try again.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
