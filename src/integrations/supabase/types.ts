@@ -14,13 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analysis_history: {
+        Row: {
+          analysis_type: string | null
+          coaching_tips: Json | null
+          created_at: string
+          drill_name: string
+          feedback: Json | null
+          id: string
+          metrics: Json | null
+          score: number | null
+          sport_id: string
+          user_id: string
+          video_path: string | null
+        }
+        Insert: {
+          analysis_type?: string | null
+          coaching_tips?: Json | null
+          created_at?: string
+          drill_name: string
+          feedback?: Json | null
+          id?: string
+          metrics?: Json | null
+          score?: number | null
+          sport_id: string
+          user_id: string
+          video_path?: string | null
+        }
+        Update: {
+          analysis_type?: string | null
+          coaching_tips?: Json | null
+          created_at?: string
+          drill_name?: string
+          feedback?: Json | null
+          id?: string
+          metrics?: Json | null
+          score?: number | null
+          sport_id?: string
+          user_id?: string
+          video_path?: string | null
+        }
+        Relationships: []
+      }
+      api_rate_limits: {
+        Row: {
+          endpoint: string
+          id: string
+          request_count: number | null
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          endpoint: string
+          id?: string
+          request_count?: number | null
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          endpoint?: string
+          id?: string
+          request_count?: number | null
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_rate_limit: {
+        Args: {
+          _endpoint: string
+          _max_requests: number
+          _user_id: string
+          _window_minutes: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -96,9 +96,19 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border">
-          <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} AIthlete. All rights reserved.
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} AIthlete. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

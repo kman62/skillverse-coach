@@ -10,9 +10,10 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import DrillsPage from "./pages/DrillsPage";
 import AnalysisPage from "./pages/AnalysisPage";
-// import ProfilePage from "./pages/ProfilePage"; // Removed - legacy code
 import AuthPage from "./pages/AuthPage";
 import HighlightReelPage from "./pages/HighlightReelPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "next-themes";
 
@@ -41,15 +42,18 @@ const App = () => {
           <BrowserRouter>
             <AuthProvider>
               <Routes>
-                {/* All routes are now public for testing */}
+                {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                
+                {/* Protected routes */}
                 <Route path="/sports/:sportId" element={<DrillsPage />} />
                 <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
                 <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
                 <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
                 <Route path="/highlight-reel" element={<HighlightReelPage />} />
-                {/* <Route path="/profile" element={<ProfilePage />} /> */}
                 
                 {/* Catch-all route */}
                 <Route path="*" element={<NotFound />} />

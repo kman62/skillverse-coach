@@ -147,6 +147,53 @@ serve(async (req) => {
         );
       }
 
+      // JWT Authentication
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { createClient } = await import('jsr:@supabase/supabase-js@2');
+      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid authentication' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`User authenticated: ${user.id}`);
+
+      // Rate limiting: 10 video analyses per 60 minutes
+      const { data: rateLimitOk, error: rateLimitError } = await supabase
+        .rpc('check_rate_limit', {
+          _user_id: user.id,
+          _endpoint: 'analyze-video-gpt4o',
+          _max_requests: 10,
+          _window_minutes: 60
+        });
+
+      if (rateLimitError) {
+        console.error('Rate limit check error:', rateLimitError);
+      }
+
+      if (!rateLimitOk) {
+        console.log(`Rate limit exceeded for user ${user.id}`);
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. You can analyze 10 videos per hour. Please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+
       let formData;
       try {
         formData = await req.formData();
