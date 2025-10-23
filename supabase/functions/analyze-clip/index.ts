@@ -43,12 +43,19 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a concise basketball video analysis assistant. Focus on play context, tangible skills, intangibles, and coaching tips. Keep it actionable.'
+            content: 'You are a basketball video analysis assistant. Analyze frames and detect player positions (PG/SG/SF/PF/C) based on their location on court, movement patterns, and role in plays. Be concise and actionable.'
           },
           {
             role: 'user',
             content: [
-              { type: 'text', text: `Analyze this basketball frame for player ${playerInfo.name} (#${playerInfo.jerseyNumber}), position: ${playerInfo.position}. Provide a short narrative and key insights.` },
+              { 
+                type: 'text', 
+                text: `Analyze this basketball frame. Player: ${playerInfo.name} (#${playerInfo.jerseyNumber}), stated position: ${playerInfo.position || 'unknown'}. 
+                
+First, detect the most likely position (PG/SG/SF/PF/C) based on court location and movement. Then provide brief performance insights.
+
+Format your response starting with: "DETECTED_POSITION: [position]" on the first line.`
+              },
               { type: 'image_url', image_url: { url: frameData } }
             ]
           }
@@ -82,8 +89,16 @@ Deno.serve(async (req) => {
     // Extract model text
     const analysisText = result.choices?.[0]?.message?.content || 'No analysis generated';
     
+    // Extract detected position from response
+    let detectedPosition = playerInfo.position || 'SG';
+    const positionMatch = analysisText.match(/DETECTED_POSITION:\s*(PG|SG|SF|PF|C)/i);
+    if (positionMatch) {
+      detectedPosition = positionMatch[1].toUpperCase();
+    }
+    
     // Create a structured response matching HighlightReelAnalysis type
     const analysis = {
+      detectedPosition,
       play_context: {
         play_type: 'pick_and_roll',
         summary: analysisText.substring(0, 200)
@@ -127,7 +142,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log('Analysis completed successfully');
+    console.log('Analysis completed successfully. Detected position:', detectedPosition);
     
     return new Response(
       JSON.stringify({ analysis }),

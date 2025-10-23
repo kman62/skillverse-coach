@@ -19,7 +19,7 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
     onPlayerInfoChange({ ...playerInfo, [field]: e.target.value });
   };
 
-  const isValid = playerInfo.name && playerInfo.position && playerInfo.jerseyNumber;
+  const isValid = playerInfo.name && playerInfo.jerseyNumber;
 
   return (
     <div className="bg-card/50 rounded-lg border p-6 space-y-4">
@@ -39,10 +39,12 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
         
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="position">Position</Label>
+            <Label htmlFor="position">
+              Position {!playerInfo.position && <span className="text-xs text-muted-foreground">(auto-detects during analysis)</span>}
+            </Label>
             <Input 
               id="position"
-              placeholder="e.g., Point Guard" 
+              placeholder="e.g., PG, SG, SF" 
               value={playerInfo.position}
               onChange={handleChange('position')}
             />

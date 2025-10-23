@@ -179,6 +179,11 @@ const HighlightReelPage = () => {
       try {
         const analysis = await analyzeClip(thumbnail, pInfo);
 
+        // Auto-detect position from first clip analysis
+        if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
+          setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
+        }
+
         setClips(prev => prev.map(c => c.id === clip.id ? {
           ...c,
           thumbnail,
