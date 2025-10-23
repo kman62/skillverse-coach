@@ -139,6 +139,10 @@ const HighlightReelPage = () => {
   };
 
   const processVideo = async (video: HTMLVideoElement, pInfo: PlayerInfo) => {
+    console.log('🚀 [processVideo] Starting video processing');
+    console.log('🚀 [processVideo] Player:', pInfo.name, '#' + pInfo.jerseyNumber, 'Position:', pInfo.position || 'auto-detect');
+    console.log('🚀 [processVideo] Video duration:', video.duration.toFixed(2), 's');
+    
     setAppState('processing');
     const duration = video.duration;
     const initialClips: Clip[] = [];
@@ -159,30 +163,43 @@ const HighlightReelPage = () => {
         error: null,
       });
     }
+    console.log('🚀 [processVideo] Created', initialClips.length, 'clips');
     setClips(initialClips);
 
     // Process all clips in parallel
-    const analysisPromises = initialClips.map(async (clip) => {
+    console.log('🚀 [processVideo] Starting parallel analysis...');
+    const analysisPromises = initialClips.map(async (clip, index) => {
+      console.log(`📊 [Clip ${index + 1}/${initialClips.length}] Processing ${clip.startTime.toFixed(1)}s - ${clip.endTime.toFixed(1)}s`);
+      
       // 1) Generate thumbnail from a separate, off-DOM video element
       let thumbnail = '';
       try {
         if (videoSrc) {
+          console.log(`📊 [Clip ${index + 1}] Generating thumbnail...`);
           thumbnail = await generateFrameFromSrc(videoSrc, clip.startTime + 4);
+          console.log(`✅ [Clip ${index + 1}] Thumbnail generated: ${(thumbnail.length / 1024).toFixed(2)} KB`);
           // store thumbnail immediately so UI shows even if analysis fails
           setClips(prev => prev.map(c => c.id === clip.id ? { ...c, thumbnail } : c));
         }
-      } catch {
+      } catch (err) {
+        console.error(`❌ [Clip ${index + 1}] Thumbnail failed:`, err);
         // keep empty thumbnail on failure; proceed with analysis anyway
       }
 
       // 2) Run AI analysis
       try {
+        console.log(`📊 [Clip ${index + 1}] Starting AI analysis...`);
         const analysis = await analyzeClip(thumbnail, pInfo);
+        console.log(`✅ [Clip ${index + 1}] AI analysis complete`);
 
         // Auto-detect position from first clip analysis
         if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
+          console.log(`🎯 [Clip ${index + 1}] Auto-detected position:`, analysis.detectedPosition);
           setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
         }
+
+        const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
+        console.log(`📊 [Clip ${index + 1}] Score: ${score.toFixed(1)}, Selected: ${score >= selectionThreshold}`);
 
         setClips(prev => prev.map(c => c.id === clip.id ? {
           ...c,
@@ -192,7 +209,8 @@ const HighlightReelPage = () => {
           selected: analysis ? ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
         } : c));
       } catch (error) {
-        console.error(`Failed to analyze clip ${clip.id}:`, error);
+        console.error(`❌ [Clip ${index + 1}] AI analysis failed:`, error);
+        console.error(`❌ [Clip ${index + 1}] Details:`, error instanceof Error ? error.message : 'Unknown');
         setClips(prev => prev.map(c => c.id === clip.id ? {
           ...c,
           thumbnail,
@@ -203,6 +221,7 @@ const HighlightReelPage = () => {
     });
 
     await Promise.all(analysisPromises);
+    console.log('✅ [processVideo] All clips processed successfully');
     setAppState('results');
     
     toast({

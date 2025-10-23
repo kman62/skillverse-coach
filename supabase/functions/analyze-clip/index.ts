@@ -6,14 +6,24 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  console.log(`🔵 [${requestId}] ========== NEW REQUEST ==========`);
+  console.log(`🔵 [${requestId}] Method: ${req.method}, URL: ${req.url}`);
+  
   if (req.method === 'OPTIONS') {
+    console.log(`🔵 [${requestId}] CORS preflight - returning 200`);
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log(`🔵 [${requestId}] Parsing request body...`);
     const { frameData, playerInfo } = await req.json();
     
+    console.log(`🔵 [${requestId}] Player: ${playerInfo?.name} #${playerInfo?.jerseyNumber}, Position: ${playerInfo?.position || 'auto-detect'}`);
+    console.log(`🔵 [${requestId}] Frame data size: ${frameData ? (frameData.length / 1024).toFixed(2) + ' KB' : 'missing'}`);
+    
     if (!frameData || !playerInfo) {
+      console.error(`❌ [${requestId}] Missing required fields`);
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -142,7 +152,9 @@ Format your response starting with: "DETECTED_POSITION: [position]" on the first
       }
     };
 
-    console.log('Analysis completed successfully. Detected position:', detectedPosition);
+    console.log(`✅ [${requestId}] Analysis completed. Detected position: ${detectedPosition}`);
+    console.log(`✅ [${requestId}] Response size: ${JSON.stringify(analysis).length} bytes`);
+    console.log(`🔵 [${requestId}] ========== REQUEST COMPLETE ==========`);
     
     return new Response(
       JSON.stringify({ analysis }),
@@ -150,9 +162,11 @@ Format your response starting with: "DETECTED_POSITION: [position]" on the first
     );
 
   } catch (error) {
-    console.error('Error in analyze-clip function:', error);
+    console.error(`❌ [${requestId}] ========== REQUEST FAILED ==========`);
+    console.error(`❌ [${requestId}] Error:`, error.message);
+    console.error(`❌ [${requestId}] Stack:`, error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, requestId }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
