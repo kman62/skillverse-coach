@@ -12,6 +12,7 @@ import DrillsPage from "./pages/DrillsPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import AuthPage from "./pages/AuthPage";
 import HighlightReelPage from "./pages/HighlightReelPage";
+import ProfilePage from "./pages/ProfilePage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
@@ -49,11 +50,14 @@ const App = () => {
                 <Route path="/terms" element={<TermsPage />} />
                 
                 {/* Protected routes */}
-                <Route path="/sports/:sportId" element={<DrillsPage />} />
-                <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
-                <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
-                <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
-                <Route path="/highlight-reel" element={<HighlightReelPage />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/sports/:sportId" element={<DrillsPage />} />
+                  <Route path="/sports/:sportId/drills/:drillId" element={<AnalysisPage />} />
+                  <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
+                  <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
+                  <Route path="/highlight-reel" element={<HighlightReelPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                </Route>
                 
                 {/* Catch-all route */}
                 <Route path="*" element={<NotFound />} />
