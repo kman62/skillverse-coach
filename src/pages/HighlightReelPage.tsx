@@ -5,6 +5,7 @@ import { ClipCard } from "@/components/highlight-reel/ClipCard";
 import { AnalysisDetailModal } from "@/components/highlight-reel/AnalysisDetailModal";
 import { Clip, Feedback, PlayerInfo } from "@/types/reelTypes";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Upload, ArrowLeft, Loader2, Film } from "lucide-react";
@@ -443,6 +444,32 @@ const HighlightReelPage = () => {
               {clips.length === 0 && appState === 'results' && (
                 <div className="text-center py-10 text-muted-foreground">
                   <p>There was an issue processing the video. Please try a different file.</p>
+                </div>
+              )}
+              
+              {selectedClips.length > 0 && (
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
+                  <h4 className="font-semibold mb-3 text-sm">Selected Clips Timeline</h4>
+                  <div className="space-y-2">
+                    {selectedClips.map((clip, index) => (
+                      <div key={clip.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">#{index + 1}</span>
+                          <span className="font-medium">
+                            {clip.startTime.toFixed(1)}s - {clip.endTime.toFixed(1)}s
+                          </span>
+                          {(clip.analysis as any)?.shotType && (
+                            <Badge variant="outline" className="text-xs">
+                              {(clip.analysis as any).shotType}
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {((clip.analysis?.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10).toFixed(1)}/10
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
