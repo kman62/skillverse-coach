@@ -333,9 +333,9 @@ const HighlightReelPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Left side - Video player */}
-          <div className="lg:col-span-2 bg-card rounded-xl border shadow-lg p-6 flex flex-col">
+          <div className="lg:col-span-3 bg-card rounded-xl border shadow-lg p-6 flex flex-col">
             {appState === 'upload' && (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -399,8 +399,8 @@ const HighlightReelPage = () => {
             )}
           </div>
 
-          {/* Right side - Analysis workbench */}
-          <div className="bg-card rounded-xl border shadow-lg p-6 flex flex-col max-h-[85vh]">
+          {/* Right side - Analysis workbench - EXPANDED */}
+          <div className="lg:col-span-2 bg-card rounded-xl border shadow-lg p-6 flex flex-col max-h-[85vh]">
             <h2 className="text-2xl font-bold border-b pb-3 mb-4">Analysis Workbench</h2>
             
             {playerInfo.name && appState !== 'upload' && (
@@ -425,7 +425,7 @@ const HighlightReelPage = () => {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-4">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4 mb-4">
               {sortedClips.map(clip => (
                 <ClipCard
                   key={clip.id}
