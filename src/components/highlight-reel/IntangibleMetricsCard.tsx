@@ -23,6 +23,15 @@ const formatKey = (key: string) => {
 };
 
 export const IntangibleMetricsCard = ({ intangibles }: IntangibleMetricsCardProps) => {
+  if (!intangibles) {
+    return (
+      <Card className="p-6">
+        <h3 className="text-xl font-bold mb-4">Intangible Performance Metrics</h3>
+        <p className="text-muted-foreground">No intangible performance data available</p>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-6">
       <h3 className="text-xl font-bold mb-4">Intangible Performance Metrics</h3>
@@ -34,13 +43,13 @@ export const IntangibleMetricsCard = ({ intangibles }: IntangibleMetricsCardProp
                 {getIcon(key)}
                 <span className="font-semibold">{formatKey(key)}</span>
               </div>
-              <span className="text-sm font-bold">{metric.percentage_correct.toFixed(0)}%</span>
+              <span className="text-sm font-bold">{(metric.percentage_correct ?? 0).toFixed(0)}%</span>
             </div>
-            <Progress value={metric.percentage_correct} className="h-2" />
+            <Progress value={metric.percentage_correct ?? 0} className="h-2" />
             <div className="text-xs text-muted-foreground">
-              {metric.successful_instances} / {metric.observed_instances} instances
+              {metric.successful_instances ?? 0} / {metric.observed_instances ?? 0} instances
             </div>
-            <p className="text-sm italic text-muted-foreground">{metric.qualitative_example}</p>
+            <p className="text-sm italic text-muted-foreground">{metric.qualitative_example ?? 'No example available'}</p>
           </div>
         ))}
       </div>
