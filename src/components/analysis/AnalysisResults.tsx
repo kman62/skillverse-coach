@@ -3,7 +3,7 @@ import React from 'react';
 import AnalysisCard from '@/components/ui/AnalysisCard';
 import BehaviorAnalysis from '@/components/ui/BehaviorAnalysis';
 import VideoAnnotation from '@/components/analysis/VideoAnnotation';
-import FeedbackSystem from '@/components/analysis/FeedbackSystem';
+// import FeedbackSystem from '@/components/analysis/FeedbackSystem'; // Removed - legacy code
 import CoachingTips from '@/components/analysis/CoachingTips';
 import ActionButtons from '@/components/analysis/ActionButtons';
 import { Badge } from '@/components/ui/badge';
@@ -86,13 +86,14 @@ const AnalysisResults = ({
         <CoachingTips tips={analysisResult.coachingTips} />
       )}
       
-      {/* Feedback System */}
+      {/* Feedback System - Disabled (legacy code)
       <FeedbackSystem 
         analysisId={analysisId}
         sportId={sportId || "generic"}
         drillId={drillId || "technique"}
         score={analysisResult.score || 0}
       />
+      */}
       
       {/* Action Buttons */}
       <ActionButtons onRetry={onRetry} />

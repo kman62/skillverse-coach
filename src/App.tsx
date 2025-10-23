@@ -10,7 +10,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import DrillsPage from "./pages/DrillsPage";
 import AnalysisPage from "./pages/AnalysisPage";
-import ProfilePage from "./pages/ProfilePage";
+// import ProfilePage from "./pages/ProfilePage"; // Removed - legacy code
 import AuthPage from "./pages/AuthPage";
 import HighlightReelPage from "./pages/HighlightReelPage";
 import NotFound from "./pages/NotFound";
@@ -42,7 +42,7 @@ const App = () => (
               <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
               <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
               <Route path="/highlight-reel" element={<HighlightReelPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              {/* <Route path="/profile" element={<ProfilePage />} /> */}
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

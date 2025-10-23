@@ -30,18 +30,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Using Lovable AI Gateway; no direct provider key required here
-
-    // Call Lovable AI Gateway (OpenAI-compatible)
+    // Using Lovable AI Gateway
     const lovableKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableKey) {
-      console.error('LOVABLE_API_KEY is not configured');
+      console.error('❌ [analyze-clip] LOVABLE_API_KEY is not configured');
       return new Response(
         JSON.stringify({ error: 'AI key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log(`🔵 [${requestId}] Calling Lovable AI Gateway...`);
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnalysisState } from '@/hooks/useAnalysisState';
-import { useVideoAnalysis } from '@/hooks/useVideoAnalysis';
+// import { useVideoAnalysis } from '@/hooks/useVideoAnalysis'; // Removed - legacy code
 import AnalysisPageLayout from '@/components/analysis/layout/AnalysisPageLayout';
 import AnalysisContent from '@/components/analysis/AnalysisContent';
 import VideoAnalysisPanel from '@/components/analysis/VideoAnalysisPanel';
@@ -34,9 +34,10 @@ const AnalysisPage = () => {
     navigate
   } = useAnalysisState();
 
-  const {
-    handleAnalyzeVideo,
-  } = useVideoAnalysis();
+  // Legacy video analysis hook removed
+  const handleAnalyzeVideo = async () => {
+    console.log('Video analysis disabled - use HighlightReelPage');
+  };
 
   useEffect(() => {
     console.log("Auth state on AnalysisPage load:", { 
@@ -70,35 +71,7 @@ const AnalysisPage = () => {
   }, [sportId, drillId, user, setIsAnalyzing, setIsSaving]);
 
   const handleAnalyzeClick = async () => {
-    setAnalysisStage('started');
-    
-    await handleAnalyzeVideo(
-      videoFile,
-      sportId,
-      drillId,
-      poseMetrics,
-      navigate,
-      {
-        onAnalysisStart: () => {
-          setIsAnalyzing(true);
-        },
-        onAnalysisComplete: (result, behavior) => {
-          setAnalysisResult(result);
-          setBehaviorAnalysis(behavior);
-          
-          setAnalysisStage('analysis-complete');
-          
-          setIsAnalyzing(false);
-          setIsSaving(false);
-        },
-        onAnalysisError: (error) => {
-          setApiError(error.message);
-          
-          setIsAnalyzing(false);
-          setIsSaving(false);
-        }
-      }
-    );
+    console.log('Analysis disabled - this page is legacy. Use /highlight-reel instead');
   };
 
   return (
