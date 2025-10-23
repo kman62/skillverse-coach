@@ -22,6 +22,7 @@ export const ReelPreviewModal: React.FC<ReelPreviewModalProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentClipIndex, setCurrentClipIndex] = useState(0);
   const [copyButtonText, setCopyButtonText] = useState('Copy Timestamps');
+  const [selectedClipForInfo, setSelectedClipForInfo] = useState<Clip | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -123,7 +124,14 @@ export const ReelPreviewModal: React.FC<ReelPreviewModalProps> = ({
               {selectedClips.map((clip, index) => (
                 <div 
                   key={clip.id} 
-                  className={`p-3 rounded-lg border ${currentClipIndex === index ? 'bg-primary/10 border-primary' : 'bg-muted/50'}`}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                    currentClipIndex === index 
+                      ? 'bg-primary/10 border-primary' 
+                      : selectedClipForInfo?.id === clip.id
+                      ? 'bg-muted border-primary/50'
+                      : 'bg-muted/50 hover:bg-muted'
+                  }`}
+                  onClick={() => setSelectedClipForInfo(clip)}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Clip {index + 1}</span>
@@ -139,6 +147,56 @@ export const ReelPreviewModal: React.FC<ReelPreviewModalProps> = ({
                 </div>
               ))}
             </div>
+            
+            {selectedClipForInfo && (
+              <div className="mt-4 p-4 bg-card border rounded-lg">
+                <h4 className="font-semibold text-sm mb-3 flex items-center justify-between">
+                  <span>Clip Details</span>
+                  <button 
+                    onClick={() => setSelectedClipForInfo(null)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Start Time:</span>
+                    <span className="font-medium">{selectedClipForInfo.startTime.toFixed(2)}s</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">End Time:</span>
+                    <span className="font-medium">{selectedClipForInfo.endTime.toFixed(2)}s</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Duration:</span>
+                    <span className="font-medium">{(selectedClipForInfo.endTime - selectedClipForInfo.startTime).toFixed(2)}s</span>
+                  </div>
+                  {(selectedClipForInfo.analysis as any)?.shotType && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Shot Type:</span>
+                      <span className="font-medium">{(selectedClipForInfo.analysis as any).shotType}</span>
+                    </div>
+                  )}
+                  {(selectedClipForInfo.analysis as any)?.outcome && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Result:</span>
+                      <span className={`font-medium ${(selectedClipForInfo.analysis as any).outcome === 'success' ? 'text-green-500' : 'text-orange-500'}`}>
+                        {(selectedClipForInfo.analysis as any).outcome === 'success' ? 'Made' : 'Missed'}
+                      </span>
+                    </div>
+                  )}
+                  {selectedClipForInfo.analysis && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Overall Score:</span>
+                      <span className="font-bold text-primary">
+                        {((selectedClipForInfo.analysis.integrated_insight.correlation_metrics.intangibles_overall_score) * 10).toFixed(1)}/10
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="space-y-6">
