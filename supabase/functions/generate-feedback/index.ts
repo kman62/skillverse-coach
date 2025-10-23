@@ -78,17 +78,29 @@ Format your response as JSON with two keys: "athlete" and "parents". The values 
 Analysis data:
 ${JSON.stringify(analyses, null, 2)}`;
 
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('Missing LOVABLE_API_KEY secret');
+      return new Response(
+        JSON.stringify({ error: 'AI not configured. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const response = await fetch(
-      `${supabaseUrl}/functions/v1/ai-proxy`,
+      'https://ai.gateway.lovable.dev/v1/chat/completions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authHeader,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
-          messages: [{ role: 'user', content: prompt }],
+          messages: [
+            { role: 'system', content: 'You are a helpful recruiting assistant. Return concise, positive, development-focused feedback. Output MUST be valid JSON with keys "athlete" and "parents" containing markdown strings.' },
+            { role: 'user', content: prompt }
+          ],
           temperature: 0.7,
           response_format: { type: 'json_object' }
         }),
