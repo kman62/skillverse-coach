@@ -494,7 +494,7 @@ const HighlightReelPage = () => {
                 </p>
                 <Button 
                   onClick={handleCompileReel} 
-                  disabled={isCompiling || selectedClips.length === 0 || !user}
+                  disabled={isCompiling || selectedClips.length === 0}
                   className="w-full gap-2"
                   size="lg"
                 >
@@ -506,7 +506,7 @@ const HighlightReelPage = () => {
                   ) : !user ? (
                     <>
                       <Film className="w-5 h-5" />
-                      Sign in to Generate Feedback
+                      Sign In to Generate Feedback
                     </>
                   ) : (
                     <>
