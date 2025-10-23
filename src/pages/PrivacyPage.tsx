@@ -20,13 +20,23 @@ const PrivacyPage = () => {
             <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
           </CardHeader>
           <CardContent className="prose prose-sm max-w-none space-y-6">
+            <section className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h2 className="text-xl font-semibold mb-3">Parent & Guardian Account Model</h2>
+              <p className="text-muted-foreground">
+                AIthlete is designed for parents, guardians, and coaches to create accounts and manage 
+                athlete profiles. We do not collect age information and do not allow direct account 
+                creation by minors. All athlete data is managed by responsible adults.
+              </p>
+            </section>
+
             <section>
               <h2 className="text-xl font-semibold mb-3">1. Information We Collect</h2>
               <p className="text-muted-foreground">
                 We collect information that you provide directly to us, including:
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-                <li>Account information (email address, name)</li>
+                <li>Parent/Guardian account information (email address, name)</li>
+                <li>Athlete profile information (name, position, jersey number, sport)</li>
                 <li>Video uploads for sports performance analysis</li>
                 <li>Analysis results and performance metrics</li>
                 <li>Usage data and interaction with our services</li>

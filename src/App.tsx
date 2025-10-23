@@ -13,6 +13,7 @@ import AnalysisPage from "./pages/AnalysisPage";
 import AuthPage from "./pages/AuthPage";
 import HighlightReelPage from "./pages/HighlightReelPage";
 import ProfilePage from "./pages/ProfilePage";
+import AthletesPage from "./pages/AthletesPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
@@ -56,6 +57,7 @@ const App = () => {
                   <Route path="/analysis/:sportId/:drillId" element={<AnalysisPage />} />
                   <Route path="/analysis/:sportId/team/:analysisId" element={<AnalysisPage />} />
                   <Route path="/highlight-reel" element={<HighlightReelPage />} />
+                  <Route path="/athletes" element={<AthletesPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                 </Route>
                 

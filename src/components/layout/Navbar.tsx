@@ -66,17 +66,30 @@ const Navbar = () => {
               </Link>
             </li>
             {user && (
-              <li>
-                <Link 
-                  to="/profile" 
-                  className={cn(
-                    "text-sm font-medium link-underline",
-                    location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
-                  )}
-                >
-                  My Progress
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link 
+                    to="/athletes" 
+                    className={cn(
+                      "text-sm font-medium link-underline",
+                      location.pathname === "/athletes" ? "text-primary" : "text-foreground/80"
+                    )}
+                  >
+                    My Athletes
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/profile" 
+                    className={cn(
+                      "text-sm font-medium link-underline",
+                      location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
+                    )}
+                  >
+                    My Progress
+                  </Link>
+                </li>
+              </>
             )}
             <li>
               {user ? (
@@ -136,17 +149,30 @@ const Navbar = () => {
                 </Link>
               </li>
               {user && (
-                <li>
-                  <Link 
-                    to="/profile" 
-                    className={cn(
-                      "block py-2 text-base font-medium",
-                      location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
-                    )}
-                  >
-                    My Progress
-                  </Link>
-                </li>
+                <>
+                  <li>
+                    <Link 
+                      to="/athletes" 
+                      className={cn(
+                        "block py-2 text-base font-medium",
+                        location.pathname === "/athletes" ? "text-primary" : "text-foreground/80"
+                      )}
+                    >
+                      My Athletes
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/profile" 
+                      className={cn(
+                        "block py-2 text-base font-medium",
+                        location.pathname === "/profile" ? "text-primary" : "text-foreground/80"
+                      )}
+                    >
+                      My Progress
+                    </Link>
+                  </li>
+                </>
               )}
               <li>
                 {user ? (

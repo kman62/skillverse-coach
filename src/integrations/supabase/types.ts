@@ -17,6 +17,7 @@ export type Database = {
       analysis_history: {
         Row: {
           analysis_type: string | null
+          athlete_id: string | null
           coaching_tips: Json | null
           created_at: string
           drill_name: string
@@ -30,6 +31,7 @@ export type Database = {
         }
         Insert: {
           analysis_type?: string | null
+          athlete_id?: string | null
           coaching_tips?: Json | null
           created_at?: string
           drill_name: string
@@ -43,6 +45,7 @@ export type Database = {
         }
         Update: {
           analysis_type?: string | null
+          athlete_id?: string | null
           coaching_tips?: Json | null
           created_at?: string
           drill_name?: string
@@ -54,7 +57,15 @@ export type Database = {
           user_id?: string
           video_path?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "analysis_history_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       api_rate_limits: {
         Row: {
@@ -77,6 +88,45 @@ export type Database = {
           request_count?: number | null
           user_id?: string
           window_start?: string
+        }
+        Relationships: []
+      }
+      athletes: {
+        Row: {
+          created_at: string
+          date_of_birth: string | null
+          guardian_id: string
+          id: string
+          jersey_number: string | null
+          name: string
+          notes: string | null
+          position: string | null
+          sport: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth?: string | null
+          guardian_id: string
+          id?: string
+          jersey_number?: string | null
+          name: string
+          notes?: string | null
+          position?: string | null
+          sport?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string | null
+          guardian_id?: string
+          id?: string
+          jersey_number?: string | null
+          name?: string
+          notes?: string | null
+          position?: string | null
+          sport?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

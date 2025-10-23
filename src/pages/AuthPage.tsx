@@ -34,8 +34,11 @@ const AuthPage = () => {
               <span className="gradient-text mr-1">AI</span>thlete
             </CardTitle>
             <CardDescription className="text-center">
-              Your personal AI sports coach
+              Parent & Guardian Portal
             </CardDescription>
+            <p className="text-sm text-muted-foreground text-center pt-1">
+              Manage athlete profiles and track performance
+            </p>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'register')}>
