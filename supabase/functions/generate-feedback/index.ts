@@ -62,11 +62,6 @@ serve(async (req) => {
     
     try {
     const { analyses, playerInfo } = await req.json();
-    const GOOGLE_GEMINI_API_KEY = Deno.env.get('GOOGLE_GEMINI_API_KEY');
-    
-    if (!GOOGLE_GEMINI_API_KEY) {
-      throw new Error('GOOGLE_GEMINI_API_KEY is not configured');
-    }
 
     console.log(`Generating feedback for ${playerInfo.name} based on ${analyses.length} clips`);
 
@@ -84,41 +79,37 @@ Analysis data:
 ${JSON.stringify(analyses, null, 2)}`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_GEMINI_API_KEY}`,
+      `${supabaseUrl}/functions/v1/ai-proxy`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': authHeader,
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            responseMimeType: "application/json"
-          }
+          model: 'google/gemini-2.5-flash',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          response_format: { type: 'json_object' }
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      console.error('AI API error:', response.status, errorText);
+      throw new Error(`AI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Gemini API response received');
+    console.log('AI API response received');
     
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      console.error('Invalid Gemini response structure:', JSON.stringify(data));
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid AI response structure:', JSON.stringify(data));
       throw new Error('Invalid response from AI model');
     }
 
-    const feedbackText = data.candidates[0].content.parts[0].text;
+    const feedbackText = data.choices[0].message.content;
     console.log('Raw feedback text length:', feedbackText.length);
     console.log('First 200 chars:', feedbackText.substring(0, 200));
     
