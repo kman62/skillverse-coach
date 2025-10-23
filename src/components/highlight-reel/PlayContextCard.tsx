@@ -7,6 +7,8 @@ interface PlayContextCardProps {
 }
 
 export const PlayContextCard = ({ context }: PlayContextCardProps) => {
+  if (!context) return null;
+  
   return (
     <Card className="p-6">
       <h3 className="text-xl font-bold mb-4">Play Context</h3>
@@ -17,15 +19,15 @@ export const PlayContextCard = ({ context }: PlayContextCardProps) => {
         </div>
         <div>
           <p className="text-sm text-muted-foreground mb-2">Play Type</p>
-          <Badge variant="outline" className="capitalize">{context.play_type.replace('_', ' ')}</Badge>
+          <Badge variant="outline" className="capitalize">{context.play_type?.replace(/_/g, ' ') || 'N/A'}</Badge>
         </div>
         <div>
           <p className="text-sm text-muted-foreground mb-2">Formation</p>
-          <Badge variant="outline">{context.formation}</Badge>
+          <Badge variant="outline">{context.formation || 'N/A'}</Badge>
         </div>
         <div>
           <p className="text-sm text-muted-foreground mb-2">Situation</p>
-          <Badge variant="outline" className="capitalize">{context.situation.replace('_', ' ')}</Badge>
+          <Badge variant="outline" className="capitalize">{context.situation?.replace(/_/g, ' ') || 'N/A'}</Badge>
         </div>
       </div>
     </Card>

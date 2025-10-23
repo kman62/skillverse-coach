@@ -6,7 +6,6 @@ import { IntangiblesRadarChart } from "./IntangiblesRadarChart";
 import { TangiblePerformanceCard } from "./TangiblePerformanceCard";
 import { IntangibleMetricsCard } from "./IntangibleMetricsCard";
 import { IntegratedInsightCard } from "./IntegratedInsightCard";
-import { MetadataCard } from "./MetadataCard";
 import { PlayContextCard } from "./PlayContextCard";
 import { CoachingRecommendationsCard } from "./CoachingRecommendationsCard";
 
@@ -61,7 +60,6 @@ export const AnalysisDetailModal = ({ isOpen, onClose, clip }: AnalysisDetailMod
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
-            <MetadataCard metadata={analysis.metadata} />
             <PlayContextCard context={analysis.play_context} />
             <IntegratedInsightCard insight={analysis.integrated_insight} />
           </TabsContent>
