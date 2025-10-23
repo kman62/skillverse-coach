@@ -14,6 +14,7 @@ import AnalysisPage from "./pages/AnalysisPage";
 import AuthPage from "./pages/AuthPage";
 import HighlightReelPage from "./pages/HighlightReelPage";
 import NotFound from "./pages/NotFound";
+import { ThemeProvider } from "next-themes";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -33,7 +34,8 @@ const App = () => {
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -54,7 +56,8 @@ const App = () => {
               </Routes>
             </AuthProvider>
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </StrictMode>
   );
