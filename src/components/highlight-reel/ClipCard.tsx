@@ -16,6 +16,9 @@ export const ClipCard = ({ clip, isActive, onPlay, onToggleSelect, onShowDetails
   const score = clip.analysis 
     ? (clip.analysis.integrated_insight.correlation_metrics.intangibles_overall_score * 10).toFixed(1)
     : null;
+    
+  const shotType = (clip.analysis as any)?.shotType || null;
+  const outcome = (clip.analysis as any)?.outcome || null;
 
   return (
     <Card className={`p-4 transition-all ${isActive ? 'ring-2 ring-primary' : ''}`}>
@@ -31,13 +34,28 @@ export const ClipCard = ({ clip, isActive, onPlay, onToggleSelect, onShowDetails
         <div className="flex-1 space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-semibold">
-                {clip.startTime.toFixed(1)}s - {clip.endTime.toFixed(1)}s
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold">
+                  {clip.startTime.toFixed(1)}s - {clip.endTime.toFixed(1)}s
+                </p>
+                {shotType && (
+                  <Badge 
+                    variant={outcome === 'success' ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {shotType}
+                  </Badge>
+                )}
+              </div>
+              {outcome && (
+                <p className={`text-xs font-medium ${outcome === 'success' ? 'text-green-500' : 'text-orange-500'}`}>
+                  {outcome === 'success' ? '✓ Made' : '○ Missed'}
+                </p>
+              )}
               {clip.isAnalyzing && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Analyzing...
+                  Analyzing shot...
                 </p>
               )}
               {clip.error && (
