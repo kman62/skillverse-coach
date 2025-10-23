@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, ArrowLeft, Loader2, Film } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { analyzeClip, extractFrameFromVideo } from "@/utils/analysis/videoAnalysisService";
 import { generateFeedback } from "@/utils/analysis/feedbackService";
 
@@ -19,6 +20,7 @@ type AppState = 'upload' | 'details' | 'processing' | 'results';
 const HighlightReelPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, session } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -265,6 +267,16 @@ const HighlightReelPage = () => {
   };
 
   const handleCompileReel = async () => {
+    if (!user || !session) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to generate feedback",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
     if (selectedClips.length === 0) {
       toast({
         title: "No clips selected",
@@ -482,7 +494,7 @@ const HighlightReelPage = () => {
                 </p>
                 <Button 
                   onClick={handleCompileReel} 
-                  disabled={isCompiling || selectedClips.length === 0}
+                  disabled={isCompiling || selectedClips.length === 0 || !user}
                   className="w-full gap-2"
                   size="lg"
                 >
@@ -490,6 +502,11 @@ const HighlightReelPage = () => {
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Compiling...
+                    </>
+                  ) : !user ? (
+                    <>
+                      <Film className="w-5 h-5" />
+                      Sign in to Generate Feedback
                     </>
                   ) : (
                     <>
