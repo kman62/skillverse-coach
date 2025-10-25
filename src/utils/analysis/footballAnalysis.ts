@@ -1,52 +1,29 @@
 
 import { AnalysisResponse } from './analysisTypes';
-import { buildAnalysisResponse, generateGenericAnalysis } from './analysisHelpers';
+import { generateQuarterbackAnalysis } from './football/quarterbackAnalysis';
+import { generateReceiverAnalysis } from './football/receiverAnalysis';
+import { generateRunningBackAnalysis } from './football/runningBackAnalysis';
+import { generateLinemanAnalysis } from './football/linemanAnalysis';
+import { generateDefensiveBackAnalysis } from './football/defensiveBackAnalysis';
+import { generateLinebackerAnalysis } from './football/linebackerAnalysis';
+import { generateGenericFootballAnalysis } from './football/genericFootballAnalysis';
 
 export const generateFootballAnalysis = (drillName: string, score: number): AnalysisResponse => {
-  if (drillName.includes("Passing")) {
-    return buildAnalysisResponse(drillName, score, [
-      {
-        name: "Throwing Mechanics",
-        value: Math.floor(score * 0.9 + Math.random() * 10),
-        target: 95,
-        unit: "%"
-      },
-      {
-        name: "Footwork",
-        value: Math.floor(score * 0.85 + Math.random() * 15),
-        target: 90,
-        unit: "%"
-      },
-      {
-        name: "Release Point",
-        value: Math.floor(score * 0.95 + Math.random() * 5),
-        target: 100,
-        unit: "%"
-      },
-      {
-        name: "Accuracy",
-        value: Math.floor(score * 0.8 + Math.random() * 20),
-        target: 95,
-        unit: "%"
-      }
-    ], {
-      good: [
-        "Good throwing motion and follow-through",
-        "Proper weight transfer during throw",
-        "Consistent release point"
-      ],
-      improve: [
-        "Work on keeping your elbow at proper height",
-        "Focus on stepping toward your target",
-        "Try to get more rotation in your hips"
-      ]
-    }, [
-      "Practice with different sized targets",
-      "Work on throwing on the run",
-      "Focus on consistent mechanics under pressure",
-      "Use resistance bands to strengthen your throwing motion"
-    ]);
+  const lowerDrill = drillName.toLowerCase();
+  
+  if (lowerDrill.includes("quarterback") || lowerDrill.includes("passing") || lowerDrill.includes("throwing")) {
+    return generateQuarterbackAnalysis(drillName, score);
+  } else if (lowerDrill.includes("receiver") || lowerDrill.includes("catching") || lowerDrill.includes("route")) {
+    return generateReceiverAnalysis(drillName, score);
+  } else if (lowerDrill.includes("running back") || lowerDrill.includes("rushing") || lowerDrill.includes("rb")) {
+    return generateRunningBackAnalysis(drillName, score);
+  } else if (lowerDrill.includes("lineman") || lowerDrill.includes("blocking") || lowerDrill.includes("o-line") || lowerDrill.includes("d-line")) {
+    return generateLinemanAnalysis(drillName, score);
+  } else if (lowerDrill.includes("defensive back") || lowerDrill.includes("coverage") || lowerDrill.includes("cornerback") || lowerDrill.includes("safety")) {
+    return generateDefensiveBackAnalysis(drillName, score);
+  } else if (lowerDrill.includes("linebacker") || lowerDrill.includes("lb")) {
+    return generateLinebackerAnalysis(drillName, score);
   } else {
-    return generateGenericAnalysis(drillName, score);
+    return generateGenericFootballAnalysis(drillName, score);
   }
 };

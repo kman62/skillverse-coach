@@ -8,6 +8,7 @@ import { generateTennisAnalysis } from './tennisAnalysis';
 import { generateGolfAnalysis } from './golfAnalysis';
 import { generateSoccerAnalysis } from './soccerAnalysis';
 import { generateRugbyAnalysis } from './rugbyAnalysis';
+import { generateVolleyballAnalysis } from './volleyballAnalysis';
 
 /**
  * Generates sport-specific analysis for a drill based on the sport ID.
@@ -40,6 +41,8 @@ export const generateSportSpecificAnalysis = (sportId: string, drillName: string
       return generateSoccerAnalysis(drillName, score);
     case "rugby":
       return generateRugbyAnalysis(drillName, score);
+    case "volleyball":
+      return generateVolleyballAnalysis(drillName, score);
     default:
       return generateGenericAnalysis(drillName, score);
   }

@@ -6,6 +6,7 @@ import { TENNIS } from './tennis';
 import { GOLF } from './golf';
 import { SOCCER } from './soccer';
 import { RUGBY } from './rugby';
+import { VOLLEYBALL } from './volleyball';
 import { Sport, Drill, TeamAnalysis } from '../types/sports';
 
 export const SPORTS: Sport[] = [
@@ -15,7 +16,8 @@ export const SPORTS: Sport[] = [
   TENNIS,
   GOLF,
   SOCCER,
-  RUGBY
+  RUGBY,
+  VOLLEYBALL
 ];
 
 export const getDrillById = (sportId: string, drillId: string): Drill | undefined => {
