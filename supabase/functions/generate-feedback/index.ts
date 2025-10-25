@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getSportFeedbackContext } from "./sport-contexts.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,16 +63,21 @@ serve(async (req) => {
     
     try {
     const { analyses, playerInfo } = await req.json();
+    const sport = playerInfo.sport || 'basketball';
 
-    console.log(`Generating feedback for ${playerInfo.name} based on ${analyses.length} clips`);
+    console.log(`Generating ${sport} feedback for ${playerInfo.name} based on ${analyses.length} clips`);
 
-    const prompt = `You are a supportive and constructive coach reviewing a series of advanced video clip analyses for a young athlete named ${playerInfo.name}, who plays ${playerInfo.position} and wears jersey #${playerInfo.jerseyNumber}.
+    const sportContext = getSportFeedbackContext(sport);
+
+    const prompt = `You are a supportive and constructive ${sport} coach reviewing a series of advanced video clip analyses for a young athlete named ${playerInfo.name}, who plays ${playerInfo.position} and wears jersey #${playerInfo.jerseyNumber}.
+
+${sportContext}
 
 Synthesize the coaching recommendations from the analyses below into two sections of feedback: one for the athlete and one for their parents.
 
-For the athlete, ${playerInfo.name}: Address them directly. Identify 1-2 key strengths and 1-2 primary areas for growth based on recurring themes in the analyses. Combine related action steps into a clear, concise training focus. Use encouraging language.
+For the athlete, ${playerInfo.name}: Address them directly. Identify 1-2 key strengths and 1-2 primary areas for growth based on recurring themes in the analyses. Combine related action steps into a clear, concise training focus. Use encouraging language specific to ${sport}.
 
-For the parents: Explain ${playerInfo.name}'s potential, focusing on the intangible strengths shown. Explain how they can support the recommended training focus and foster a positive development environment.
+For the parents: Explain ${playerInfo.name}'s potential, focusing on the intangible strengths shown. Explain how they can support the recommended training focus and foster a positive development environment for ${sport} development.
 
 Format your response as JSON with two keys: "athlete" and "parents". The values should be markdown-formatted strings.
 

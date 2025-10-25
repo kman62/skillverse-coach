@@ -30,7 +30,8 @@ const HighlightReelPage = () => {
   const [playerInfo, setPlayerInfo] = useState<PlayerInfo>({ 
     name: '', 
     position: '', 
-    jerseyNumber: '' 
+    jerseyNumber: '',
+    sport: 'basketball'
   });
   
   const [clips, setClips] = useState<Clip[]>([]);
@@ -318,14 +319,14 @@ const HighlightReelPage = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/sports/basketball')}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Basketball
-          </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(`/sports/${playerInfo.sport || 'basketball'}`)}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to {playerInfo.sport ? playerInfo.sport.charAt(0).toUpperCase() + playerInfo.sport.slice(1) : 'Basketball'}
+            </Button>
           
           {appState !== 'upload' && (
             <input

@@ -1,12 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface PlayerInfo {
-  name: string;
-  position: string;
-  jerseyNumber: string;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlayerInfo } from "@/types/reelTypes";
 
 interface PlayerDetailsFormProps {
   playerInfo: PlayerInfo;
@@ -19,7 +15,22 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
     onPlayerInfoChange({ ...playerInfo, [field]: e.target.value });
   };
 
-  const isValid = playerInfo.name && playerInfo.jerseyNumber;
+  const handleSportChange = (sport: PlayerInfo['sport']) => {
+    onPlayerInfoChange({ ...playerInfo, sport });
+  };
+
+  const isValid = playerInfo.name && playerInfo.jerseyNumber && playerInfo.sport;
+
+  const sportOptions = [
+    { value: 'basketball', label: 'Basketball' },
+    { value: 'baseball', label: 'Baseball' },
+    { value: 'football', label: 'Football' },
+    { value: 'soccer', label: 'Soccer' },
+    { value: 'volleyball', label: 'Volleyball' },
+    { value: 'tennis', label: 'Tennis' },
+    { value: 'golf', label: 'Golf' },
+    { value: 'rugby', label: 'Rugby' },
+  ];
 
   return (
     <div className="bg-card/50 rounded-lg border p-6 space-y-4">
@@ -27,6 +38,22 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
       <p className="text-sm text-muted-foreground">Enter player details before starting analysis</p>
       
       <div className="space-y-3">
+        <div>
+          <Label htmlFor="sport">Sport</Label>
+          <Select value={playerInfo.sport} onValueChange={handleSportChange}>
+            <SelectTrigger id="sport">
+              <SelectValue placeholder="Select sport" />
+            </SelectTrigger>
+            <SelectContent>
+              {sportOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div>
           <Label htmlFor="player-name">Player Name</Label>
           <Input 

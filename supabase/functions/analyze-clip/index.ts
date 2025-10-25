@@ -10,7 +10,8 @@ const corsHeaders = {
 const playerInfoSchema = z.object({
   name: z.string().trim().min(1).max(100),
   jerseyNumber: z.string().trim().max(10),
-  position: z.string().trim().max(50)
+  position: z.string().trim().max(50),
+  sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby']).default('basketball')
 });
 
 const requestSchema = z.object({
@@ -112,21 +113,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`🔵 [${requestId}] Calling Lovable AI gateway...`);
+    console.log(`🔵 [${requestId}] Calling Lovable AI gateway for ${playerInfo.sport}...`);
 
-    const systemPrompt = `You are a professional basketball coach AI analyzing a player's shot. Provide detailed analysis based on the image provided. 
-
-Return structured JSON with:
-- shotType: string (type of shot detected)
-- outcome: string ("success" or "miss")
-- detectedPosition: string (inferred position based on shot mechanics)
-- play_context: { situation, defender_pressure, shot_clock }
-- tangible_performance: { shot_result, distance, release_time, arc }
-- intangible_performance: { confidence, focus, body_language, decision_making }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: number 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`;
-
-    const userPrompt = `Analyze this basketball shot for player ${playerInfo.name}, #${playerInfo.jerseyNumber}, position: ${playerInfo.position || 'unknown'}.`;
+    const systemPrompt = getSportSpecificPrompt(playerInfo.sport);
+    const userPrompt = `Analyze this ${playerInfo.sport} play for player ${playerInfo.name}, #${playerInfo.jerseyNumber}, position: ${playerInfo.position || 'unknown'}.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -199,14 +189,15 @@ Return structured JSON with:
       parsedAnalysis = buildFallbackAnalysis(playerInfo);
     }
 
-    const shotType = parsedAnalysis.shotType || 'Jump Shot';
+    const playType = parsedAnalysis.playType || parsedAnalysis.shotType || 'Standard Play';
     const outcome = parsedAnalysis.outcome || 'success';
-    const detectedPosition = parsedAnalysis.detectedPosition || playerInfo.position || 'Guard';
+    const detectedPosition = parsedAnalysis.detectedPosition || playerInfo.position || 'Athlete';
 
     const analysis = {
-      shotType,
+      playType,
       outcome,
       detectedPosition,
+      sport: playerInfo.sport,
       play_context: parsedAnalysis.play_context || {
         situation: 'Open look from the wing',
         defender_pressure: 'Light pressure',
@@ -259,27 +250,112 @@ Return structured JSON with:
   }
 });
 
+function getSportSpecificPrompt(sport: string): string {
+  const prompts: Record<string, string> = {
+    basketball: `You are a professional basketball coach AI analyzing a player's play. D1 recruiters look for: shooting %, assist/turnover ratio, defensive rating, basketball IQ, athleticism.
+
+Return structured JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { situation, defender_pressure, shot_clock }
+- tangible_performance: { shot_result, distance, release_time, arc }
+- intangible_performance: { confidence: 0-1, focus: 0-1, body_language: 0-1, decision_making: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    baseball: `You are a professional baseball coach AI. D1 recruiters look for: exit velocity (90+ mph), pitch velocity (85+ mph), 60-yard dash (<7.0s), fielding %, baseball IQ.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { situation, count, outs, game_situation }
+- tangible_performance: { bat_speed_mph, pitch_velocity_mph, exit_velocity_mph, launch_angle }
+- intangible_performance: { mental_toughness: 0-1, game_awareness: 0-1, competitive_fire: 0-1, clutch_performance: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    football: `You are a professional football coach AI. D1 recruiters look for: 40-yard dash time, vertical jump, strength metrics, football IQ, position-specific skills.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { down_distance, formation, situation }
+- tangible_performance: { speed_mph, separation, technique_rating, execution_quality }
+- intangible_performance: { toughness: 0-1, football_iq: 0-1, competitiveness: 0-1, instincts: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    soccer: `You are a professional soccer coach AI. D1 recruiters look for: technical ability, tactical awareness, fitness levels, vision, decision-making speed.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { phase, formation, situation }
+- tangible_performance: { speed_kmh, touch_quality, accuracy_pct, work_rate }
+- intangible_performance: { vision: 0-1, composure: 0-1, work_ethic: 0-1, decision_making: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    volleyball: `You are a professional volleyball coach AI. D1 recruiters look for: vertical jump (25"+ for females, 30"+ for males), blocks/digs per set, hitting %, court awareness.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { rotation, phase, situation }
+- tangible_performance: { speed_mph, vertical_jump, accuracy_rating, placement_score }
+- intangible_performance: { court_awareness: 0-1, confidence: 0-1, communication: 0-1, resilience: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    tennis: `You are a professional tennis coach AI. D1 recruiters look for: UTR rating (10+), serve speed (100+ mph), consistency, mental toughness, match win %.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { court_position, shot_type, situation }
+- tangible_performance: { ball_speed_mph, spin_rpm, placement_accuracy, court_coverage }
+- intangible_performance: { mental_fortitude: 0-1, strategic_thinking: 0-1, focus: 0-1, adaptability: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    golf: `You are a professional golf coach AI. D1 recruiters look for: handicap (scratch or better), driving distance (270+ yards), scoring average, mental game, consistency.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { hole_info, club_used, situation }
+- tangible_performance: { club_speed_mph, distance_yards, accuracy_feet, consistency_rating }
+- intangible_performance: { course_management: 0-1, mental_composure: 0-1, focus_discipline: 0-1, pressure_performance: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+
+    rugby: `You are a professional rugby coach AI. D1 recruiters look for: physicality, tackle effectiveness, running lines, game intelligence, work rate.
+
+Return JSON with:
+- playType: string, outcome: string, detectedPosition: string
+- play_context: { phase, formation, situation }
+- tangible_performance: { speed_kmh, power_rating, tackle_effectiveness, work_rate }
+- intangible_performance: { physicality: 0-1, game_intelligence: 0-1, courage: 0-1, teamwork: 0-1 }
+- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
+- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`
+  };
+
+  return prompts[sport] || prompts.basketball;
+}
+
 function buildFallbackAnalysis(playerInfo: any) {
   return {
-    shotType: 'Jump Shot',
+    playType: 'Standard Play',
     outcome: 'success',
-    detectedPosition: playerInfo.position || 'Guard',
+    detectedPosition: playerInfo.position || 'Athlete',
     play_context: {
-      situation: 'Open look from the wing',
-      defender_pressure: 'Light pressure',
-      shot_clock: 'Mid-possession'
+      situation: 'In-game play',
+      phase: 'Active',
+      game_situation: 'Competitive'
     },
     tangible_performance: {
-      shot_result: 'Made',
-      distance: '18 feet',
-      release_time: '0.6 seconds',
-      arc: '45 degrees'
+      execution_quality: 0.85,
+      technique_rating: 0.88,
+      consistency: 0.82
     },
     intangible_performance: {
-      confidence: 0.85,
+      mental_toughness: 0.85,
       focus: 0.90,
-      body_language: 0.88,
-      decision_making: 0.82
+      decision_making: 0.82,
+      leadership: 0.86
     },
     integrated_insight: {
       correlation_metrics: {
@@ -287,10 +363,10 @@ function buildFallbackAnalysis(playerInfo: any) {
       }
     },
     coaching_recommendations: {
-      primary_focus: 'Maintain shooting form under pressure',
-      technique_adjustments: ['Keep elbow alignment', 'Follow through'],
-      mental_approach: 'Stay confident in your shot',
-      practice_drills: ['Spot shooting', 'Game-speed reps']
+      primary_focus: 'Continue developing fundamentals',
+      technique_adjustments: ['Maintain form', 'Stay consistent'],
+      mental_approach: 'Stay confident and focused',
+      practice_drills: ['Game-speed reps', 'Skill work']
     }
   };
 }
