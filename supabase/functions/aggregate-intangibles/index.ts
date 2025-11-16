@@ -123,7 +123,9 @@ serve(async (req) => {
 
     if (!analyses || analyses.length === 0) {
       return new Response(
-        JSON.stringify({ message: 'No analyses found for this athlete' }),
+        JSON.stringify({ 
+          error: 'No analysis data found for this athlete in the specified date range. Upload and analyze some clips first.' 
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -218,8 +220,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in aggregate-intangibles function:', error);
+    
+    const userMessage = error instanceof Error 
+      ? error.message 
+      : 'Failed to aggregate intangible metrics. Please try again.';
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: userMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

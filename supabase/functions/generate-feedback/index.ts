@@ -7,6 +7,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = MAX_RETRIES,
+  delay = INITIAL_RETRY_DELAY
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries === 0) throw error;
+    
+    const isRetryable = error instanceof Error && (
+      error.message.includes('rate limit') ||
+      error.message.includes('timeout') ||
+      error.message.includes('network') ||
+      error.message.includes('500') ||
+      error.message.includes('503')
+    );
+    
+    if (!isRetryable) throw error;
+    
+    console.log(`Retrying after ${delay}ms. Retries left: ${retries}`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retryWithBackoff(fn, retries - 1, delay * 2);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -153,56 +183,82 @@ ${JSON.stringify(analyses, null, 2)}`;
     if (!LOVABLE_API_KEY) {
       console.error('Missing LOVABLE_API_KEY secret');
       return new Response(
-        JSON.stringify({ error: 'AI not configured. Please contact support.' }),
+        JSON.stringify({ error: 'AI feedback service not configured. Please contact support.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const response = await fetch(
-      'https://ai.gateway.lovable.dev/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: 'You are a helpful recruiting assistant. Return concise, positive, development-focused feedback. Output MUST be valid JSON with keys "athlete" and "parents" containing markdown strings.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.7,
-          response_format: { type: 'json_object' }
-        }),
-      }
-    );
+    console.log('Calling Lovable AI Gateway for feedback generation...');
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
-    }
+    const response = await retryWithBackoff(async () => {
+      const res = await fetch(
+        'https://ai.gateway.lovable.dev/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              { role: 'system', content: 'You are a helpful recruiting assistant. Return concise, positive, development-focused feedback. Output MUST be valid JSON with keys "athlete" and "parents" containing markdown strings.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            response_format: { type: 'json_object' }
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('AI API error:', res.status, errorText);
+        
+        if (res.status === 429) {
+          throw new Error('AI service is currently busy. Please try again in a few moments.');
+        } else if (res.status === 402) {
+          throw new Error('AI credits depleted. Please contact support.');
+        } else if (res.status === 503) {
+          throw new Error('AI service temporarily unavailable. Retrying...');
+        }
+        
+        throw new Error('Failed to generate feedback. Please try again.');
+      }
+
+      return res;
+    });
 
     const data = await response.json();
     console.log('AI API response received');
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid AI response structure:', JSON.stringify(data));
-      throw new Error('Invalid response from AI model');
+      throw new Error('AI returned incomplete feedback. Please try again.');
     }
 
     const feedbackText = data.choices[0].message.content;
+    
+    if (!feedbackText || feedbackText.trim().length === 0) {
+      console.error('Empty feedback text received');
+      throw new Error('AI returned empty feedback. Please try again.');
+    }
+    
     console.log('Raw feedback text length:', feedbackText.length);
     console.log('First 200 chars:', feedbackText.substring(0, 200));
     
     let feedback;
     try {
       feedback = JSON.parse(feedbackText);
+      
+      if (!feedback.athlete || !feedback.parents) {
+        console.error('Missing required feedback fields:', Object.keys(feedback));
+        throw new Error('AI returned incomplete feedback structure. Please try again.');
+      }
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      console.error('Failed to parse text:', feedbackText);
-      throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+      console.error('Failed to parse text:', feedbackText.substring(0, 500));
+      throw new Error('Failed to process feedback results. Please try again.');
     }
 
     console.log('Feedback generated successfully');
@@ -211,23 +267,31 @@ ${JSON.stringify(analyses, null, 2)}`;
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     } catch (error) {
-      console.error('Error in generate-feedback function:', error);
+      console.error('Error generating feedback:', error);
+      
+      const userMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to generate feedback report. Please try again.';
+      
+      const statusCode = error instanceof Error && error.message.includes('Rate limit') 
+        ? 429 
+        : 500;
+      
       return new Response(
-        JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: userMessage }),
+        { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
-    console.error('Error in generate-feedback function:', error);
+    console.error('Unexpected error in generate-feedback function:', error);
+    
+    const userMessage = error instanceof Error 
+      ? error.message 
+      : 'An unexpected error occurred. Please try again.';
+    
     return new Response(
-      JSON.stringify({ error: 'An error occurred while processing your request. Please try again.' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: userMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
