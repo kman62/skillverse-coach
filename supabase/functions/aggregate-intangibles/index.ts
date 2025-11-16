@@ -6,11 +6,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const VALID_SPORTS = ['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby'];
+
 interface AggregateInput {
   athlete_id: string;
   sport: string;
   date_range_start?: string;
   date_range_end?: string;
+}
+
+function validateInput(input: AggregateInput): string | null {
+  if (!input.athlete_id || typeof input.athlete_id !== 'string') {
+    return 'athlete_id is required and must be a string';
+  }
+  if (!UUID_REGEX.test(input.athlete_id)) {
+    return 'athlete_id must be a valid UUID';
+  }
+  if (!input.sport || typeof input.sport !== 'string') {
+    return 'sport is required and must be a string';
+  }
+  if (!VALID_SPORTS.includes(input.sport.toLowerCase())) {
+    return `sport must be one of: ${VALID_SPORTS.join(', ')}`;
+  }
+  if (input.date_range_start && isNaN(Date.parse(input.date_range_start))) {
+    return 'date_range_start must be a valid date string';
+  }
+  if (input.date_range_end && isNaN(Date.parse(input.date_range_end))) {
+    return 'date_range_end must be a valid date string';
+  }
+  if (input.date_range_start && input.date_range_end) {
+    const start = new Date(input.date_range_start);
+    const end = new Date(input.date_range_end);
+    if (start > end) {
+      return 'date_range_start must be before date_range_end';
+    }
+  }
+  return null;
 }
 
 serve(async (req) => {
@@ -29,14 +61,43 @@ serve(async (req) => {
       }
     );
 
-    const { athlete_id, sport, date_range_start, date_range_end }: AggregateInput = await req.json();
-
-    if (!athlete_id || !sport) {
+    // Get user from JWT
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Missing athlete_id or sport' }),
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check rate limit
+    const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
+      _user_id: user.id,
+      _endpoint: 'aggregate-intangibles',
+      _max_requests: 20,
+      _window_minutes: 60
+    });
+
+    if (rateLimitError || !rateLimitOk) {
+      console.log('Rate limit exceeded for user:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const input: AggregateInput = await req.json();
+
+    // Validate input
+    const validationError = validateInput(input);
+    if (validationError) {
+      return new Response(
+        JSON.stringify({ error: validationError }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { athlete_id, sport, date_range_start, date_range_end } = input;
 
     console.log(`Aggregating intangibles for athlete ${athlete_id}`);
 
