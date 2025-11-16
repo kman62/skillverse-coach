@@ -7,6 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_CLIPS = 50;
+const MAX_PLAYER_NAME_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 5000;
+
 interface ClipDescription {
   clip_id: string;
   analysis_id: string;
@@ -17,6 +22,45 @@ interface ClipDescription {
 interface BatchAnalysisInput {
   player_name: string;
   clips: ClipDescription[];
+}
+
+function validateInput(player_name: string, clips: ClipDescription[]): string | null {
+  if (!player_name || typeof player_name !== 'string') {
+    return 'player_name is required and must be a string';
+  }
+  if (player_name.length > MAX_PLAYER_NAME_LENGTH) {
+    return `player_name must be less than ${MAX_PLAYER_NAME_LENGTH} characters`;
+  }
+  if (!clips || !Array.isArray(clips)) {
+    return 'clips must be an array';
+  }
+  if (clips.length === 0) {
+    return 'clips array cannot be empty';
+  }
+  if (clips.length > MAX_CLIPS) {
+    return `clips array cannot exceed ${MAX_CLIPS} items`;
+  }
+  
+  for (let i = 0; i < clips.length; i++) {
+    const clip = clips[i];
+    if (!UUID_REGEX.test(clip.clip_id)) {
+      return `clip ${i}: clip_id must be a valid UUID`;
+    }
+    if (!UUID_REGEX.test(clip.analysis_id)) {
+      return `clip ${i}: analysis_id must be a valid UUID`;
+    }
+    if (!clip.description || typeof clip.description !== 'string') {
+      return `clip ${i}: description is required and must be a string`;
+    }
+    if (clip.description.length > MAX_DESCRIPTION_LENGTH) {
+      return `clip ${i}: description must be less than ${MAX_DESCRIPTION_LENGTH} characters`;
+    }
+    if (!['offense', 'defense', 'transition'].includes(clip.possession_type)) {
+      return `clip ${i}: possession_type must be one of: offense, defense, transition`;
+    }
+  }
+  
+  return null;
 }
 
 serve(async (req) => {
@@ -35,11 +79,38 @@ serve(async (req) => {
       }
     );
 
+    // Get user from JWT
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check rate limit
+    const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
+      _user_id: user.id,
+      _endpoint: 'analyze-batch',
+      _max_requests: 10,
+      _window_minutes: 60
+    });
+
+    if (rateLimitError || !rateLimitOk) {
+      console.log('Rate limit exceeded for user:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { player_name, clips }: BatchAnalysisInput = await req.json();
 
-    if (!player_name || !clips || clips.length === 0) {
+    // Validate input
+    const validationError = validateInput(player_name, clips);
+    if (validationError) {
       return new Response(
-        JSON.stringify({ error: 'Missing player_name or clips' }),
+        JSON.stringify({ error: validationError }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -89,10 +160,13 @@ CLIPS:
 ${clipDescriptions}`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': geminiApiKey
+        },
         body: JSON.stringify({
           contents: [{
             parts: [{ text: prompt }]

@@ -8,3 +8,9 @@ verify_jwt = true
 
 [functions.generate-feedback]
 verify_jwt = true
+
+[functions.analyze-batch]
+verify_jwt = true
+
+[functions.aggregate-intangibles]
+verify_jwt = true
