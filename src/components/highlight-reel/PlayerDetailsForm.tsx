@@ -1,8 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlayerInfo } from "@/types/reelTypes";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const playerInfoSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  position: z.string().trim().max(50, "Position must be less than 50 characters").optional(),
+  jerseyNumber: z.string().trim().min(1, "Jersey number is required").max(10, "Jersey number must be less than 10 characters"),
+  sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby'], {
+    required_error: "Please select a sport"
+  })
+});
+
+type PlayerInfoForm = z.infer<typeof playerInfoSchema>;
 
 interface PlayerDetailsFormProps {
   playerInfo: PlayerInfo;
@@ -11,15 +25,21 @@ interface PlayerDetailsFormProps {
 }
 
 export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnalysis }: PlayerDetailsFormProps) => {
-  const handleChange = (field: keyof PlayerInfo) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    onPlayerInfoChange({ ...playerInfo, [field]: e.target.value });
-  };
+  const form = useForm<PlayerInfoForm>({
+    resolver: zodResolver(playerInfoSchema),
+    defaultValues: {
+      name: playerInfo.name || "",
+      position: playerInfo.position || "",
+      jerseyNumber: playerInfo.jerseyNumber || "",
+      sport: playerInfo.sport
+    },
+    mode: "onChange"
+  });
 
-  const handleSportChange = (sport: PlayerInfo['sport']) => {
-    onPlayerInfoChange({ ...playerInfo, sport });
+  const onSubmit = (data: PlayerInfoForm) => {
+    onPlayerInfoChange(data as PlayerInfo);
+    onStartAnalysis();
   };
-
-  const isValid = playerInfo.name && playerInfo.jerseyNumber && playerInfo.sport;
 
   const sportOptions = [
     { value: 'basketball', label: 'Basketball' },
@@ -33,69 +53,92 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
   ];
 
   return (
-    <div className="bg-card/50 rounded-lg border p-6 space-y-4">
-      <h3 className="text-xl font-bold">Player Information</h3>
-      <p className="text-sm text-muted-foreground">Enter player details before starting analysis</p>
-      
-      <div className="space-y-3">
-        <div>
-          <Label htmlFor="sport">Sport</Label>
-          <Select value={playerInfo.sport} onValueChange={handleSportChange}>
-            <SelectTrigger id="sport">
-              <SelectValue placeholder="Select sport" />
-            </SelectTrigger>
-            <SelectContent>
-              {sportOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="player-name">Player Name</Label>
-          <Input 
-            id="player-name"
-            placeholder="e.g., John Smith" 
-            value={playerInfo.name}
-            onChange={handleChange('name')}
-          />
-        </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="bg-card/50 rounded-lg border p-6 space-y-4">
+        <h3 className="text-xl font-bold">Player Information</h3>
+        <p className="text-sm text-muted-foreground">Enter player details before starting analysis</p>
         
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="position">
-              Position {!playerInfo.position && <span className="text-xs text-muted-foreground">(auto-detects during analysis)</span>}
-            </Label>
-            <Input 
-              id="position"
-              placeholder="e.g., PG, SG, SF" 
-              value={playerInfo.position}
-              onChange={handleChange('position')}
+        <div className="space-y-3">
+          <FormField
+            control={form.control}
+            name="sport"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sport</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sport" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {sportOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Player Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., John Smith" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="position"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Position <span className="text-xs text-muted-foreground">(auto-detects during analysis)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., PG, SG, SF" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div>
-            <Label htmlFor="jersey">Jersey #</Label>
-            <Input 
-              id="jersey"
-              placeholder="e.g., 23" 
-              value={playerInfo.jerseyNumber}
-              onChange={handleChange('jerseyNumber')}
+            <FormField
+              control={form.control}
+              name="jerseyNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Jersey #</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 23" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
         </div>
-      </div>
 
-      <Button 
-        onClick={onStartAnalysis}
-        disabled={!isValid}
-        className="w-full"
-        size="lg"
-      >
-        Start AI Analysis
-      </Button>
-    </div>
+        <Button 
+          type="submit"
+          disabled={!form.formState.isValid}
+          className="w-full"
+          size="lg"
+        >
+          Start AI Analysis
+        </Button>
+      </form>
+    </Form>
   );
 };
