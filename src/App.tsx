@@ -17,6 +17,8 @@ import AthletesPage from "./pages/AthletesPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
+import BatchAnalysisPage from "./pages/BatchAnalysisPage";
+import IntangiblesDashboard from "./pages/IntangiblesDashboard";
 import { ThemeProvider } from "next-themes";
 
 // Create a client
@@ -59,6 +61,8 @@ const App = () => {
                   <Route path="/highlight-reel" element={<HighlightReelPage />} />
                   <Route path="/athletes" element={<AthletesPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/batch-analysis" element={<BatchAnalysisPage />} />
+                  <Route path="/intangibles" element={<IntangiblesDashboard />} />
                 </Route>
                 
                 {/* Catch-all route */}

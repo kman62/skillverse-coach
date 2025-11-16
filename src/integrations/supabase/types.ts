@@ -130,6 +130,138 @@ export type Database = {
         }
         Relationships: []
       }
+      extracted_highlights: {
+        Row: {
+          analysis_id: string | null
+          coaching_note: string | null
+          created_at: string | null
+          description: string | null
+          highlight_type: string
+          id: string
+          time_range: string | null
+        }
+        Insert: {
+          analysis_id?: string | null
+          coaching_note?: string | null
+          created_at?: string | null
+          description?: string | null
+          highlight_type: string
+          id?: string
+          time_range?: string | null
+        }
+        Update: {
+          analysis_id?: string | null
+          coaching_note?: string | null
+          created_at?: string | null
+          description?: string | null
+          highlight_type?: string
+          id?: string
+          time_range?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_highlights_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intangible_ratings: {
+        Row: {
+          analysis_id: string | null
+          created_at: string | null
+          evidence: string | null
+          id: string
+          metric_name: string
+          rating: number
+        }
+        Insert: {
+          analysis_id?: string | null
+          created_at?: string | null
+          evidence?: string | null
+          id?: string
+          metric_name: string
+          rating: number
+        }
+        Update: {
+          analysis_id?: string | null
+          created_at?: string | null
+          evidence?: string | null
+          id?: string
+          metric_name?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intangible_ratings_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_intangible_profiles: {
+        Row: {
+          athlete_id: string | null
+          composure_avg: number | null
+          courage_avg: number | null
+          date_range_end: string | null
+          date_range_start: string | null
+          id: string
+          initiative_avg: number | null
+          leadership_avg: number | null
+          primary_focus: string | null
+          resilience_avg: number | null
+          secondary_focus: string | null
+          sport: string
+          stress_effectiveness_avg: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          athlete_id?: string | null
+          composure_avg?: number | null
+          courage_avg?: number | null
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          initiative_avg?: number | null
+          leadership_avg?: number | null
+          primary_focus?: string | null
+          resilience_avg?: number | null
+          secondary_focus?: string | null
+          sport: string
+          stress_effectiveness_avg?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          athlete_id?: string | null
+          composure_avg?: number | null
+          courage_avg?: number | null
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          initiative_avg?: number | null
+          leadership_avg?: number | null
+          primary_focus?: string | null
+          resilience_avg?: number | null
+          secondary_focus?: string | null
+          sport?: string
+          stress_effectiveness_avg?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_intangible_profiles_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

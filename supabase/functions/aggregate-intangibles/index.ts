@@ -1,0 +1,165 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface AggregateInput {
+  athlete_id: string;
+  sport: string;
+  date_range_start?: string;
+  date_range_end?: string;
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
+
+    const { athlete_id, sport, date_range_start, date_range_end }: AggregateInput = await req.json();
+
+    if (!athlete_id || !sport) {
+      return new Response(
+        JSON.stringify({ error: 'Missing athlete_id or sport' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Aggregating intangibles for athlete ${athlete_id}`);
+
+    // Get all analyses for this athlete within date range
+    let query = supabaseClient
+      .from('analysis_history')
+      .select('id, created_at')
+      .eq('athlete_id', athlete_id)
+      .eq('sport_id', sport);
+
+    if (date_range_start) {
+      query = query.gte('created_at', date_range_start);
+    }
+    if (date_range_end) {
+      query = query.lte('created_at', date_range_end);
+    }
+
+    const { data: analyses, error: analysesError } = await query;
+
+    if (analysesError) {
+      throw analysesError;
+    }
+
+    if (!analyses || analyses.length === 0) {
+      return new Response(
+        JSON.stringify({ message: 'No analyses found for this athlete' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const analysisIds = analyses.map(a => a.id);
+
+    // Get all intangible ratings for these analyses
+    const { data: ratings, error: ratingsError } = await supabaseClient
+      .from('intangible_ratings')
+      .select('metric_name, rating, evidence')
+      .in('analysis_id', analysisIds);
+
+    if (ratingsError) {
+      throw ratingsError;
+    }
+
+    // Aggregate ratings by metric
+    const metrics = ['courage', 'composure', 'initiative', 'leadership', 'effectiveness_under_stress', 'resilience'];
+    const aggregated: Record<string, number[]> = {};
+    
+    metrics.forEach(metric => {
+      aggregated[metric] = [];
+    });
+
+    ratings?.forEach(rating => {
+      if (aggregated[rating.metric_name]) {
+        aggregated[rating.metric_name].push(rating.rating);
+      }
+    });
+
+    // Calculate averages
+    const averages: Record<string, number> = {};
+    metrics.forEach(metric => {
+      const values = aggregated[metric];
+      if (values.length > 0) {
+        averages[`${metric}_avg`] = values.reduce((a, b) => a + b, 0) / values.length;
+      } else {
+        averages[`${metric}_avg`] = 0;
+      }
+    });
+
+    // Find strongest and weakest
+    const metricAverages = metrics.map(m => ({
+      name: m,
+      avg: averages[`${m}_avg`]
+    })).filter(m => m.avg > 0);
+
+    metricAverages.sort((a, b) => b.avg - a.avg);
+
+    const strongest = metricAverages.slice(0, 2).map(m => m.name);
+    const weakest = metricAverages.slice(-2).map(m => m.name);
+
+    const primary_focus = weakest[0] || '';
+    const secondary_focus = weakest[1] || '';
+
+    // Upsert profile
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('player_intangible_profiles')
+      .upsert({
+        athlete_id,
+        sport,
+        date_range_start: date_range_start || analyses[analyses.length - 1].created_at.split('T')[0],
+        date_range_end: date_range_end || analyses[0].created_at.split('T')[0],
+        courage_avg: averages.courage_avg || null,
+        composure_avg: averages.composure_avg || null,
+        initiative_avg: averages.initiative_avg || null,
+        leadership_avg: averages.leadership_avg || null,
+        stress_effectiveness_avg: averages.effectiveness_under_stress_avg || null,
+        resilience_avg: averages.resilience_avg || null,
+        primary_focus,
+        secondary_focus,
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      throw profileError;
+    }
+
+    console.log('Intangible profile aggregated successfully');
+
+    return new Response(
+      JSON.stringify({
+        profile,
+        strongest,
+        weakest,
+        total_analyses: analyses.length,
+        total_ratings: ratings?.length || 0
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in aggregate-intangibles function:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
