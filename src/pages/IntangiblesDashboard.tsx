@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,10 +34,19 @@ interface IntangibleProfile {
 
 export default function IntangiblesDashboard() {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('');
   const [profile, setProfile] = useState<IntangibleProfile | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.error('Please sign in to access intangibles dashboard');
+      navigate('/auth');
+    }
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     fetchAthletes();
@@ -103,13 +113,24 @@ export default function IntangiblesDashboard() {
   };
 
   const generateProfile = async () => {
-    if (!selectedAthleteId) return;
+    if (!selectedAthleteId || !user) {
+      toast.error('Please sign in to generate profile');
+      return;
+    }
 
     const athlete = athletes.find(a => a.id === selectedAthleteId);
     if (!athlete) return;
 
     setLoading(true);
     try {
+      // Get fresh session to ensure token is valid
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Session expired. Please sign in again.');
+        navigate('/auth');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('aggregate-intangibles', {
         body: {
           athlete_id: selectedAthleteId,
