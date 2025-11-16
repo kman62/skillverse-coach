@@ -7,6 +7,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = MAX_RETRIES,
+  delay = INITIAL_RETRY_DELAY
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries === 0) throw error;
+    
+    const isRetryable = error instanceof Error && (
+      error.message.includes('rate limit') ||
+      error.message.includes('timeout') ||
+      error.message.includes('network') ||
+      error.message.includes('500') ||
+      error.message.includes('503')
+    );
+    
+    if (!isRetryable) throw error;
+    
+    console.log(`Retrying after ${delay}ms. Retries left: ${retries}`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retryWithBackoff(fn, retries - 1, delay * 2);
+  }
+}
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_CLIPS = 50;
 const MAX_PLAYER_NAME_LENGTH = 100;
@@ -159,42 +189,78 @@ Only output valid JSON, no additional text.
 CLIPS:
 ${clipDescriptions}`;
 
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-goog-api-key': geminiApiKey
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 4096,
-          }
-        })
-      }
-    );
+    const response = await retryWithBackoff(async () => {
+      const res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+        {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-goog-api-key': geminiApiKey
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 4096,
+            }
+          })
+        }
+      );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
-    }
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Gemini API error:', res.status, errorText);
+        
+        if (res.status === 429) {
+          throw new Error('AI service is currently busy. Please try again in a few moments.');
+        } else if (res.status === 503) {
+          throw new Error('AI service temporarily unavailable. Retrying...');
+        } else if (res.status === 401 || res.status === 403) {
+          throw new Error('AI service authentication failed. Please contact support.');
+        }
+        
+        throw new Error(`AI analysis failed with status ${res.status}`);
+      }
+
+      return res;
+    });
 
     const data = await response.json();
-    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    // Extract JSON from response
-    const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('Failed to extract JSON from AI response');
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error('Empty AI response received');
+      throw new Error('AI service returned no analysis. Please try again.');
     }
 
-    const batchResults = JSON.parse(jsonMatch[0]);
+    const generatedText = data.candidates[0]?.content?.parts?.[0]?.text;
+    
+    if (!generatedText) {
+      console.error('No text content in AI response:', JSON.stringify(data));
+      throw new Error('AI service returned incomplete analysis. Please try again.');
+    }
+    
+    // Extract JSON from response with better error handling
+    const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error('Failed to extract JSON from response:', generatedText.substring(0, 200));
+      throw new Error('AI service returned malformed analysis. Please try again.');
+    }
+
+    let batchResults;
+    try {
+      batchResults = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'JSON string:', jsonMatch[0].substring(0, 200));
+      throw new Error('Failed to parse AI analysis results. Please try again.');
+    }
+
+    if (!Array.isArray(batchResults) || batchResults.length === 0) {
+      console.error('Invalid batch results format:', batchResults);
+      throw new Error('AI service returned unexpected analysis format. Please try again.');
+    }
 
     // Store intangible ratings for each clip
     for (let i = 0; i < batchResults.length; i++) {
@@ -223,9 +289,18 @@ ${clipDescriptions}`;
 
   } catch (error) {
     console.error('Error in analyze-batch function:', error);
+    
+    const userMessage = error instanceof Error 
+      ? error.message 
+      : 'An unexpected error occurred while analyzing your clips. Please try again.';
+    
+    const statusCode = error instanceof Error && error.message.includes('Rate limit') 
+      ? 429 
+      : 500;
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: userMessage }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
