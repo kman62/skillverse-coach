@@ -251,86 +251,105 @@ Deno.serve(async (req) => {
 });
 
 function getSportSpecificPrompt(sport: string): string {
+  // Enhanced prompts using Complete Performance framework
+  const baseTemplate = (sportName: string, d1Context: string) => `You are a professional ${sportName} coach AI analyzing a player's performance using the Complete Performance framework.
+
+${d1Context}
+
+Analyze the play phase-by-phase and return structured JSON with the following schema:
+
+{
+  "playType": "string - type of play/action",
+  "outcome": "string - result of the play",
+  "detectedPosition": "string - player position",
+  "sport": "${sportName}",
+  "play_context": {
+    "situation": "string - game context",
+    "pressure_level": "string - low/medium/high",
+    "critical_moment": "boolean"
+  },
+  "tangible_performance": {
+    "technical_execution": {
+      "footwork_quality": "0-10 rating",
+      "body_control": "0-10 rating",
+      "technique_rating": "0-10 rating",
+      "spatial_awareness": "0-10 rating"
+    },
+    "phases": [
+      {
+        "phase_name": "string",
+        "quality": "0-10 rating",
+        "notes": "string"
+      }
+    ],
+    "efficiency_notes": "string"
+  },
+  "intangible_performance": {
+    "courage": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of willingness to compete/attack despite pressure or previous mistakes"
+    },
+    "composure": {
+      "rating": "1-5 scale", 
+      "evidence": "specific observation of poise under pressure, mechanics stability, avoiding stress reactions"
+    },
+    "initiative": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of independent adjustments without external prompting"
+    },
+    "leadership": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of verbal/non-verbal cues organizing teammates or improving flow"
+    },
+    "effectiveness_under_stress": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of execution quality when defended, fatigued, or time-pressured"
+    },
+    "resilience": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of recovery behavior after adversity"
+    }
+  },
+  "integrated_insight": {
+    "correlation_metrics": {
+      "intangibles_overall_score": "0-1 decimal"
+    },
+    "synthesis": "one paragraph explaining how intangibles influenced technical performance and decision-making"
+  },
+  "coaching_recommendations": {
+    "technical_focus": "one specific mechanical/skill adjustment",
+    "tactical_focus": "one specific decision-making or positioning improvement",
+    "intangible_focus": "one specific behavioral or mindset development area",
+    "practice_drills": ["array of 2-3 specific drills"]
+  }
+}
+
+Be specific with evidence for each intangible metric. Rate honestly using the full 1-5 scale.`;
+
   const prompts: Record<string, string> = {
-    basketball: `You are a professional basketball coach AI analyzing a player's play. D1 recruiters look for: shooting %, assist/turnover ratio, defensive rating, basketball IQ, athleticism.
+    basketball: baseTemplate('basketball', 
+      'D1 recruiters evaluate: shooting efficiency, assist/turnover ratio, defensive versatility, basketball IQ, and leadership. Key metrics include points per game, shooting percentage, and athletic testing (vertical jump, shuttle times).'),
 
-Return structured JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { situation, defender_pressure, shot_clock }
-- tangible_performance: { shot_result, distance, release_time, arc }
-- intangible_performance: { confidence: 0-1, focus: 0-1, body_language: 0-1, decision_making: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+    baseball: baseTemplate('baseball',
+      'D1 recruiters evaluate: exit velocity (90+ mph), pitch velocity (85+ mph for pitchers), 60-yard dash time (<7.0s), fielding percentage, and baseball IQ. Position-specific skills and competitive stats are crucial.'),
 
-    baseball: `You are a professional baseball coach AI. D1 recruiters look for: exit velocity (90+ mph), pitch velocity (85+ mph), 60-yard dash (<7.0s), fielding %, baseball IQ.
+    football: baseTemplate('football',
+      'D1 recruiters evaluate: 40-yard dash times, vertical jump, strength metrics (bench press, squat), football IQ, position-specific technique, and competitive film. Size, speed, and physicality are position-dependent.'),
 
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { situation, count, outs, game_situation }
-- tangible_performance: { bat_speed_mph, pitch_velocity_mph, exit_velocity_mph, launch_angle }
-- intangible_performance: { mental_toughness: 0-1, game_awareness: 0-1, competitive_fire: 0-1, clutch_performance: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+    soccer: baseTemplate('soccer',
+      'D1 recruiters evaluate: technical ability with both feet, tactical awareness, fitness levels, vision, 1v1 ability, and decision-making under pressure. Club team performance and tournament exposure are important.'),
 
-    football: `You are a professional football coach AI. D1 recruiters look for: 40-yard dash time, vertical jump, strength metrics, football IQ, position-specific skills.
+    volleyball: baseTemplate('volleyball',
+      'D1 recruiters evaluate: vertical jump (25"+ females, 30"+ males), blocks/digs per set, hitting efficiency, serve accuracy, court awareness, and leadership. Height and athleticism are position-dependent.'),
 
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { down_distance, formation, situation }
-- tangible_performance: { speed_mph, separation, technique_rating, execution_quality }
-- intangible_performance: { toughness: 0-1, football_iq: 0-1, competitiveness: 0-1, instincts: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
+    tennis: baseTemplate('tennis',
+      'D1 recruiters evaluate: UTR rating (10+ for competitive D1), serve speed (100+ mph), consistency, mental toughness, match win percentage, and tournament results against ranked opponents.'),
 
-    soccer: `You are a professional soccer coach AI. D1 recruiters look for: technical ability, tactical awareness, fitness levels, vision, decision-making speed.
+    golf: baseTemplate('golf',
+      'D1 recruiters evaluate: handicap (scratch or better), scoring average, driving distance (270+ yards), tournament performance, course management, and mental composure under pressure.'),
 
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { phase, formation, situation }
-- tangible_performance: { speed_kmh, touch_quality, accuracy_pct, work_rate }
-- intangible_performance: { vision: 0-1, composure: 0-1, work_ethic: 0-1, decision_making: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
-
-    volleyball: `You are a professional volleyball coach AI. D1 recruiters look for: vertical jump (25"+ for females, 30"+ for males), blocks/digs per set, hitting %, court awareness.
-
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { rotation, phase, situation }
-- tangible_performance: { speed_mph, vertical_jump, accuracy_rating, placement_score }
-- intangible_performance: { court_awareness: 0-1, confidence: 0-1, communication: 0-1, resilience: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
-
-    tennis: `You are a professional tennis coach AI. D1 recruiters look for: UTR rating (10+), serve speed (100+ mph), consistency, mental toughness, match win %.
-
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { court_position, shot_type, situation }
-- tangible_performance: { ball_speed_mph, spin_rpm, placement_accuracy, court_coverage }
-- intangible_performance: { mental_fortitude: 0-1, strategic_thinking: 0-1, focus: 0-1, adaptability: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
-
-    golf: `You are a professional golf coach AI. D1 recruiters look for: handicap (scratch or better), driving distance (270+ yards), scoring average, mental game, consistency.
-
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { hole_info, club_used, situation }
-- tangible_performance: { club_speed_mph, distance_yards, accuracy_feet, consistency_rating }
-- intangible_performance: { course_management: 0-1, mental_composure: 0-1, focus_discipline: 0-1, pressure_performance: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`,
-
-    rugby: `You are a professional rugby coach AI. D1 recruiters look for: physicality, tackle effectiveness, running lines, game intelligence, work rate.
-
-Return JSON with:
-- playType: string, outcome: string, detectedPosition: string
-- play_context: { phase, formation, situation }
-- tangible_performance: { speed_kmh, power_rating, tackle_effectiveness, work_rate }
-- intangible_performance: { physicality: 0-1, game_intelligence: 0-1, courage: 0-1, teamwork: 0-1 }
-- integrated_insight: { correlation_metrics: { intangibles_overall_score: 0-1 }}
-- coaching_recommendations: { primary_focus, technique_adjustments, mental_approach, practice_drills }`
+    rugby: baseTemplate('rugby',
+      'D1 recruiters evaluate: physicality, tackle effectiveness, running lines, game intelligence, work rate, position-specific skills, and ability to perform in high-pressure situations.')
   };
 
   return prompts[sport] || prompts.basketball;

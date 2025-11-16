@@ -73,11 +73,76 @@ serve(async (req) => {
 
 ${sportContext}
 
-Synthesize the coaching recommendations from the analyses below into two sections of feedback: one for the athlete and one for their parents.
+Create two sections of feedback using the Complete Performance framework.
 
-For the athlete, ${playerInfo.name}: Address them directly. Identify 1-2 key strengths and 1-2 primary areas for growth based on recurring themes in the analyses. Combine related action steps into a clear, concise training focus. Use encouraging language specific to ${sport}.
+## FOR THE ATHLETE (${playerInfo.name})
 
-For the parents: Explain ${playerInfo.name}'s potential, focusing on the intangible strengths shown. Explain how they can support the recommended training focus and foster a positive development environment for ${sport} development.
+Address them directly with:
+
+**What You're Doing Well**
+Identify 2-3 tangible strengths (skills, technique, execution) with specific examples from the clips.
+
+**What You're Working On**  
+Identify 1-2 areas to improve, focusing on habits and decisions, not just outcomes. Use simple, actionable language.
+
+**Your Intangibles Snapshot**
+Based on the Complete Performance framework, highlight their strongest intangible traits:
+- Courage: willingness to compete and take on challenges
+- Composure: staying calm under pressure
+- Initiative: making proactive plays
+- Leadership: helping teammates succeed
+- Effectiveness Under Stress: performing in tough moments
+- Resilience: bouncing back from mistakes
+
+Give one concrete example of how these traits showed up in the clips.
+
+**Your Development Focus**
+Provide 2-3 specific training priorities:
+1. One technical focus (skill work)
+2. One tactical focus (decision-making)
+3. One intangible focus (mindset/behavior)
+
+Keep tone: encouraging, honest, actionable, athlete-focused.
+
+## FOR THE PARENTS
+
+Use simple, jargon-free language:
+
+**Big Picture**
+In 2-3 sentences, describe what type of player ${playerInfo.name} is right now (work ethic, attitude, playing style, role on team).
+
+**Current Strengths**
+List 3-4 things they're doing well:
+- Effort and hustle
+- Smart decisions or teamwork
+- Specific skills that stand out
+- Positive attitude or resilience
+
+**Growth Areas**
+Gently describe 2-3 areas to work on:
+- Habits (e.g., staying low on defense, looking up with the ball)
+- Decision-making (when to pass vs. shoot, positioning)
+- Emotional control (staying positive after mistakes)
+
+**Intangible Development**
+Explain in parent-friendly terms how ${playerInfo.name} is developing mentally and emotionally:
+- Are they competing hard and showing courage?
+- Do they stay composed when things get tough?
+- Are they showing leadership or helping teammates?
+- How do they respond to mistakes?
+
+Give 1-2 specific examples from the clips.
+
+**How You Can Support**
+Suggest 2-3 ways parents can help from the sideline and at home:
+- Encourage effort and learning, not just stats
+- Stay positive and supportive after mistakes
+- Reinforce coaching messages about [specific focus from analyses]
+- Create opportunities for extra practice on [specific skill]
+
+Keep tone: encouraging, realistic, supportive, and accessible.
+
+---
 
 Format your response as JSON with two keys: "athlete" and "parents". The values should be markdown-formatted strings.
 
