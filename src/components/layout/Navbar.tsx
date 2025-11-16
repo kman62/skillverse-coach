@@ -80,6 +80,28 @@ const Navbar = () => {
                 </li>
                 <li>
                   <Link 
+                    to="/batch-analysis" 
+                    className={cn(
+                      "text-sm font-medium link-underline",
+                      location.pathname === "/batch-analysis" ? "text-primary" : "text-foreground/80"
+                    )}
+                  >
+                    Batch Analysis
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/intangibles" 
+                    className={cn(
+                      "text-sm font-medium link-underline",
+                      location.pathname === "/intangibles" ? "text-primary" : "text-foreground/80"
+                    )}
+                  >
+                    Intangibles
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     to="/profile" 
                     className={cn(
                       "text-sm font-medium link-underline",
@@ -159,6 +181,28 @@ const Navbar = () => {
                       )}
                     >
                       My Athletes
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/batch-analysis" 
+                      className={cn(
+                        "block py-2 text-base font-medium",
+                        location.pathname === "/batch-analysis" ? "text-primary" : "text-foreground/80"
+                      )}
+                    >
+                      Batch Analysis
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/intangibles" 
+                      className={cn(
+                        "block py-2 text-base font-medium",
+                        location.pathname === "/intangibles" ? "text-primary" : "text-foreground/80"
+                      )}
+                    >
+                      Intangibles
                     </Link>
                   </li>
                   <li>

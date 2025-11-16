@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, BarChart3, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -27,6 +28,7 @@ interface Athlete {
 }
 
 const AthletesPage = () => {
+  const navigate = useNavigate();
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,17 +83,27 @@ const AthletesPage = () => {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">My Athletes</h1>
               <p className="text-muted-foreground mt-2">
                 Manage athlete profiles and track their performance
               </p>
             </div>
-            <Button onClick={handleCreateClick} size="lg">
-              <Plus className="h-5 w-5 mr-2" />
-              Add Athlete
-            </Button>
+            <div className="flex gap-3">
+              <Button onClick={() => navigate('/batch-analysis')} variant="outline" size="lg">
+                <BarChart3 className="h-5 w-5 mr-2" />
+                Batch Analysis
+              </Button>
+              <Button onClick={() => navigate('/intangibles')} variant="outline" size="lg">
+                <Brain className="h-5 w-5 mr-2" />
+                Intangibles
+              </Button>
+              <Button onClick={handleCreateClick} size="lg">
+                <Plus className="h-5 w-5 mr-2" />
+                Add Athlete
+              </Button>
+            </div>
           </div>
 
           <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
