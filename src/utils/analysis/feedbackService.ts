@@ -1,12 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Feedback } from "@/types/reelTypes";
+import { Feedback, PlayerInfo } from "@/types/reelTypes";
 import { HighlightReelAnalysis } from "@/types/highlightReel";
-
-interface PlayerInfo {
-  name: string;
-  position: string;
-  jerseyNumber: string;
-}
 
 export const generateFeedback = async (
   analyses: HighlightReelAnalysis[],

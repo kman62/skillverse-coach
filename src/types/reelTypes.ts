@@ -12,11 +12,13 @@ export interface Clip {
 }
 
 export interface PlayerInfo {
-  name: string;
-  position: string;
-  jerseyNumber: string;
+  name?: string;
+  position?: string;
+  jerseyNumber?: string;
+  jerseyColor?: string;
   sport: 'basketball' | 'baseball' | 'football' | 'soccer' | 'volleyball' | 'tennis' | 'golf' | 'rugby';
   analysisMode?: 'bulk' | 'detailed';
+  analysisType?: 'individual' | 'team';
 }
 
 export interface Feedback {
