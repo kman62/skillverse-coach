@@ -43,6 +43,11 @@ const HighlightReelPage = () => {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
   const [isReelModalOpen, setIsReelModalOpen] = useState(false);
+  
+  // Progress tracking
+  const [processingProgress, setProcessingProgress] = useState({ processed: 0, total: 0, failed: 0 });
+  const [rateLimitHit, setRateLimitHit] = useState(false);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
 
   // Auto-select clips based on threshold
   useEffect(() => {
@@ -145,107 +150,169 @@ const HighlightReelPage = () => {
 
   const processVideo = async (video: HTMLVideoElement, pInfo: PlayerInfo) => {
     console.log('🚀 [processVideo] Starting video processing');
-    console.log('🚀 [processVideo] Player:', pInfo.name, '#' + pInfo.jerseyNumber, 'Position:', pInfo.position || 'auto-detect');
-    console.log('🚀 [processVideo] Video duration:', video.duration.toFixed(2), 's');
-    
+    console.log(`🚀 [processVideo] Player: ${pInfo.name} #${pInfo.jerseyNumber} Position: ${pInfo.position}`);
+    console.log(`🚀 [processVideo] Video duration: ${video.duration.toFixed(2)} s`);
+
+    const clipDuration = 8;
+    const numClips = Math.ceil(video.duration / clipDuration);
+    console.log(`🚀 [processVideo] Created ${numClips} clips`);
+
+    const initialClips: Clip[] = Array.from({ length: numClips }, (_, i) => ({
+      id: `clip-${i + 1}`,
+      startTime: i * clipDuration,
+      endTime: Math.min((i + 1) * clipDuration, video.duration),
+      thumbnail: '',
+      selected: false,
+      isAnalyzing: true,
+      analysis: null,
+    }));
+
+    setClips(initialClips);
     setAppState('processing');
-    const duration = video.duration;
-    const initialClips: Clip[] = [];
+    setProcessingProgress({ processed: 0, total: numClips, failed: 0 });
+    setRateLimitHit(false);
 
-    // Create clips (8 seconds each)
-    for (let startTime = 0; startTime < duration; startTime += 8) {
-      const endTime = Math.min(startTime + 8, duration);
-      if (endTime - startTime < 4) continue; // Skip very short clips
+    // Batch configuration
+    const BATCH_SIZE = 10; // Process 10 clips at a time
+    const RATE_LIMIT_SAFE_BATCH = 5; // Conservative batch size to avoid rate limits
+    const batchSize = pInfo.analysisMode === 'detailed' ? RATE_LIMIT_SAFE_BATCH : BATCH_SIZE;
+    const batches: Clip[][] = [];
+    
+    for (let i = 0; i < initialClips.length; i += batchSize) {
+      batches.push(initialClips.slice(i, i + batchSize));
+    }
 
-      initialClips.push({
-        id: `clip-${Date.now()}-${startTime}`,
-        startTime,
-        endTime,
-        thumbnail: '',
-        analysis: null,
-        isAnalyzing: true,
-        selected: false,
-        error: null,
+    console.log(`📦 [processVideo] Processing ${batches.length} batches of ${batchSize} clips each`);
+
+    const startTime = Date.now();
+    let processedCount = 0;
+    let failedCount = 0;
+    let shouldStopProcessing = false;
+
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      if (shouldStopProcessing) {
+        console.log('⏸️ [processVideo] Stopping due to rate limit');
+        break;
+      }
+
+      const batch = batches[batchIndex];
+      const batchNumber = batchIndex + 1;
+      console.log(`\n📊 [Batch ${batchNumber}/${batches.length}] Processing ${batch.length} clips`);
+
+      try {
+        const batchPromises = batch.map(async (clip, clipIndexInBatch) => {
+          const globalIndex = batchIndex * batchSize + clipIndexInBatch;
+          console.log(`📊 [Clip ${globalIndex + 1}/${numClips}] Processing ${clip.startTime.toFixed(1)}s - ${clip.endTime.toFixed(1)}s`);
+
+          try {
+            // Generate thumbnail
+            console.log(`📊 [Clip ${globalIndex + 1}] Generating thumbnail...`);
+            const midpoint = (clip.startTime + clip.endTime) / 2;
+            const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
+
+            // Extract frame for AI analysis
+            const frameData = await extractFrameFromVideo(uploadedVideo!);
+            
+            // Call AI analysis
+            console.log(`📊 [Clip ${globalIndex + 1}] Calling AI analysis (${pInfo.analysisMode} mode)...`);
+            const analysis = await analyzeClip(frameData, {
+              name: pInfo.name,
+              jerseyNumber: pInfo.jerseyNumber,
+              position: pInfo.position || 'auto-detect',
+              sport: pInfo.sport,
+              analysisMode: pInfo.analysisMode
+            });
+
+            console.log(`✅ [Clip ${globalIndex + 1}] AI analysis complete`);
+
+            // Auto-detect position from first clip analysis
+            if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
+              console.log(`🎯 [Clip ${globalIndex + 1}] Auto-detected position:`, analysis.detectedPosition);
+              setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
+            }
+
+            const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
+            console.log(`📊 [Clip ${globalIndex + 1}] Score: ${score.toFixed(1)}`);
+
+            setClips(prev => prev.map(c => c.id === clip.id ? {
+              ...c,
+              thumbnail,
+              analysis,
+              isAnalyzing: false,
+              selected: ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold,
+            } : c));
+
+            processedCount++;
+            return { success: true, clipId: clip.id };
+
+          } catch (error) {
+            console.error(`❌ [Clip ${globalIndex + 1}] Failed:`, error);
+            
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
+            
+            if (isRateLimitError) {
+              shouldStopProcessing = true;
+              setRateLimitHit(true);
+            }
+
+            // Use fallback for this clip
+            const midpoint = (clip.startTime + clip.endTime) / 2;
+            const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
+            
+            setClips(prev => prev.map(c => c.id === clip.id ? {
+              ...c,
+              thumbnail,
+              isAnalyzing: false,
+              error: isRateLimitError ? 'Rate limit' : 'Analysis failed',
+            } : c));
+
+            failedCount++;
+            return { success: false, clipId: clip.id, rateLimited: isRateLimitError };
+          }
+        });
+
+        await Promise.all(batchPromises);
+
+        // Update progress
+        const elapsed = Date.now() - startTime;
+        const avgTimePerClip = elapsed / processedCount;
+        const remaining = numClips - processedCount - failedCount;
+        const eta = avgTimePerClip * remaining;
+        
+        setProcessingProgress({ processed: processedCount, total: numClips, failed: failedCount });
+        setEstimatedTimeRemaining(eta);
+
+        console.log(`📊 [Batch ${batchNumber}] Complete. Processed: ${processedCount}/${numClips}, Failed: ${failedCount}, ETA: ${Math.ceil(eta/1000)}s`);
+
+        // Add delay between batches to avoid rate limits
+        if (batchIndex < batches.length - 1 && !shouldStopProcessing) {
+          const delayMs = pInfo.analysisMode === 'detailed' ? 2000 : 1000;
+          console.log(`⏱️ Waiting ${delayMs}ms before next batch...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+
+      } catch (batchError) {
+        console.error(`❌ [Batch ${batchNumber}] Failed:`, batchError);
+      }
+    }
+
+    console.log(`✅ [processVideo] Processing complete. Processed: ${processedCount}, Failed: ${failedCount}`);
+    setAppState('results');
+    setEstimatedTimeRemaining(null);
+    
+    if (rateLimitHit) {
+      toast({
+        title: "Rate Limit Reached",
+        description: `Processed ${processedCount} clips. ${numClips - processedCount - failedCount} clips remaining. Wait 1 hour or use demo mode.`,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Analysis complete",
+        description: `Successfully analyzed ${processedCount} clips for ${pInfo.name}`,
       });
     }
-    console.log('🚀 [processVideo] Created', initialClips.length, 'clips');
-    setClips(initialClips);
-
-    // Process all clips in parallel
-    console.log('🚀 [processVideo] Starting parallel analysis...');
-    const analysisPromises = initialClips.map(async (clip, index) => {
-      console.log(`📊 [Clip ${index + 1}/${initialClips.length}] Processing ${clip.startTime.toFixed(1)}s - ${clip.endTime.toFixed(1)}s`);
-      
-      // 1) Generate thumbnail from a separate, off-DOM video element
-      let thumbnail = '';
-      try {
-        if (videoSrc) {
-          console.log(`📊 [Clip ${index + 1}] Generating thumbnail...`);
-          thumbnail = await generateFrameFromSrc(videoSrc, clip.startTime + 4);
-          console.log(`✅ [Clip ${index + 1}] Thumbnail generated: ${(thumbnail.length / 1024).toFixed(2)} KB`);
-          // store thumbnail immediately so UI shows even if analysis fails
-          setClips(prev => prev.map(c => c.id === clip.id ? { ...c, thumbnail } : c));
-        }
-      } catch (err) {
-        console.error(`❌ [Clip ${index + 1}] Thumbnail failed:`, err);
-        // keep empty thumbnail on failure; proceed with analysis anyway
-      }
-
-      // 2) Run AI analysis
-      try {
-        console.log(`📊 [Clip ${index + 1}] Starting AI analysis...`);
-        const analysis = await analyzeClip(thumbnail, pInfo);
-        console.log(`✅ [Clip ${index + 1}] AI analysis complete`);
-
-        // Auto-detect position from first clip analysis
-        if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
-          console.log(`🎯 [Clip ${index + 1}] Auto-detected position:`, analysis.detectedPosition);
-          setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
-        }
-
-        const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
-        console.log(`📊 [Clip ${index + 1}] Score: ${score.toFixed(1)}, Selected: ${score >= selectionThreshold}`);
-
-        setClips(prev => prev.map(c => c.id === clip.id ? {
-          ...c,
-          thumbnail,
-          analysis,
-          isAnalyzing: false,
-          selected: analysis ? ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold : false,
-        } : c));
-      } catch (error) {
-        console.error(`❌ [Clip ${index + 1}] AI analysis failed:`, error);
-        console.error(`❌ [Clip ${index + 1}] Details:`, error instanceof Error ? error.message : 'Unknown');
-        
-        // Check for rate limit error
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
-        
-        if (isRateLimitError) {
-          toast({
-            title: "Rate Limit Reached",
-            description: "You can make 30 analysis requests per hour. Please wait before analyzing more clips.",
-            variant: "destructive",
-          });
-        }
-        
-        setClips(prev => prev.map(c => c.id === clip.id ? {
-          ...c,
-          thumbnail,
-          isAnalyzing: false,
-          error: isRateLimitError ? 'Rate limit exceeded' : 'Analysis failed. Please try again.'
-        } : c));
-      }
-    });
-
-    await Promise.all(analysisPromises);
-    console.log('✅ [processVideo] All clips processed successfully');
-    setAppState('results');
-    
-    toast({
-      title: "Analysis complete",
-      description: `Analyzed ${initialClips.length} clips for ${pInfo.name}`,
-    });
   };
 
   const handleStartAnalysis = () => {
@@ -415,11 +482,177 @@ const HighlightReelPage = () => {
                 )}
 
                 {appState === 'processing' && (
-                  <div className="flex flex-col items-center justify-center gap-3 p-6 bg-card/50 rounded-lg border">
-                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                    <p className="text-lg font-semibold">AI is analyzing your video for {playerInfo.name}...</p>
-                    <p className="text-sm text-muted-foreground">
-                      This may take a few moments. Clips will appear as they are processed.
+                  <div className="flex flex-col gap-4 p-6 bg-card/50 rounded-lg border">
+                    <div className="flex items-center justify-center gap-3">
+                      <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                      <p className="text-lg font-semibold">AI is analyzing your video for {playerInfo.name}...</p>
+                    </div>
+                    
+                    {/* Progress Stats */}
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-background rounded-lg p-3">
+                        <div className="text-2xl font-bold text-primary">{processingProgress.processed}</div>
+                        <div className="text-xs text-muted-foreground">Analyzed</div>
+                      </div>
+                      <div className="bg-background rounded-lg p-3">
+                        <div className="text-2xl font-bold text-muted-foreground">{processingProgress.total - processingProgress.processed - processingProgress.failed}</div>
+                        <div className="text-xs text-muted-foreground">Remaining</div>
+                      </div>
+                      <div className="bg-background rounded-lg p-3">
+                        <div className="text-2xl font-bold text-destructive">{processingProgress.failed}</div>
+                        <div className="text-xs text-muted-foreground">Failed</div>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {Math.round((processingProgress.processed / processingProgress.total) * 100)}% Complete
+                        </span>
+                        {estimatedTimeRemaining && (
+                          <span className="text-muted-foreground">
+                            ETA: {Math.ceil(estimatedTimeRemaining / 1000)}s
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-primary h-full transition-all duration-300"
+                          style={{ width: `${(processingProgress.processed / processingProgress.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Rate Limit Warning */}
+                    {rateLimitHit && (
+                      <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+                        <h3 className="font-semibold text-destructive mb-2">⚠️ Rate Limit Reached</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          You can make 30 AI analysis requests per hour. {processingProgress.total - processingProgress.processed - processingProgress.failed} clips remaining.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              // Use demo analysis for remaining clips
+                              setClips(prev => prev.map(c => {
+                                if (c.isAnalyzing || c.error === 'Rate limit') {
+                                  return {
+                                    ...c,
+                                    isAnalyzing: false,
+                                    error: undefined,
+                                    analysis: {
+                                      metadata: {
+                                        video_id: '',
+                                        team: '',
+                                        opponent: '',
+                                        game_date: new Date().toISOString(),
+                                        clip_start_time: c.startTime.toString(),
+                                        clip_end_time: c.endTime.toString(),
+                                        analyst: 'Demo Mode',
+                                        source_method: ['computer_vision' as const]
+                                      },
+                                      play_context: {
+                                        play_type: 'other' as const,
+                                        possession_phase: 'offense' as const,
+                                        formation: 'Demo',
+                                        situation: 'live_play' as const
+                                      },
+                                      tangible_performance: {
+                                        actions: [],
+                                        overall_summary: { 
+                                          execution_quality: 0.75,
+                                          decision_accuracy: 0.75,
+                                          spacing_index: 0.75,
+                                          transition_speed_sec: 0
+                                        }
+                                      },
+                                      intangible_performance: {
+                                        courage: { 
+                                          definition: 'Demo',
+                                          observed_instances: 0,
+                                          successful_instances: 0,
+                                          percentage_correct: 75,
+                                          qualitative_example: 'Demo mode' 
+                                        },
+                                        composure: { 
+                                          definition: 'Demo',
+                                          observed_instances: 0,
+                                          successful_instances: 0,
+                                          percentage_correct: 75,
+                                          qualitative_example: 'Demo mode' 
+                                        },
+                                        initiative: { 
+                                          definition: 'Demo',
+                                          observed_instances: 0,
+                                          successful_instances: 0,
+                                          percentage_correct: 75,
+                                          qualitative_example: 'Demo mode' 
+                                        },
+                                        leadership: { 
+                                          definition: 'Demo',
+                                          observed_instances: 0,
+                                          successful_instances: 0,
+                                          percentage_correct: 75,
+                                          qualitative_example: 'Demo mode' 
+                                        },
+                                        effectiveness_under_stress: { 
+                                          definition: 'Demo',
+                                          observed_instances: 0,
+                                          successful_instances: 0,
+                                          percentage_correct: 75,
+                                          qualitative_example: 'Demo mode' 
+                                        }
+                                      },
+                                      integrated_insight: {
+                                        summary: 'Demo analysis (rate limit fallback)',
+                                        correlation_metrics: {
+                                          intangible_to_outcome_correlation: 0.75,
+                                          intangibles_overall_score: 0.75,
+                                          tangible_efficiency_score: 0.75
+                                        },
+                                        radar_chart_data: {
+                                          courage: 0.75,
+                                          composure: 0.75,
+                                          initiative: 0.75,
+                                          leadership: 0.75,
+                                          effectiveness_under_stress: 0.75
+                                        }
+                                      },
+                                      coaching_recommendations: {
+                                        key_takeaways: ['Demo analysis mode - rate limit reached'],
+                                        action_steps: [{ 
+                                          focus_area: 'composure' as const, 
+                                          training_drill: 'Demo mode',
+                                          measurement_goal: 'N/A'
+                                        }]
+                                      }
+                                    }
+                                  };
+                                }
+                                return c;
+                              }));
+                              setAppState('results');
+                              setRateLimitHit(false);
+                              toast({
+                                title: "Using Demo Analysis",
+                                description: `Applied demo analysis to ${processingProgress.total - processingProgress.processed - processingProgress.failed} remaining clips.`
+                              });
+                            }}
+                          >
+                            Use Demo Analysis for Remaining Clips
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            Wait 1 hour for rate limit reset, or use demo analysis to continue reviewing clips now.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <p className="text-sm text-muted-foreground text-center">
+                      Clips will appear as they are processed. Processing in batches to avoid rate limits.
                     </p>
                   </div>
                 )}
