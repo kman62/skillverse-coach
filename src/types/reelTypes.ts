@@ -16,6 +16,7 @@ export interface PlayerInfo {
   position: string;
   jerseyNumber: string;
   sport: 'basketball' | 'baseball' | 'football' | 'soccer' | 'volleyball' | 'tennis' | 'golf' | 'rugby';
+  analysisMode?: 'bulk' | 'detailed';
 }
 
 export interface Feedback {

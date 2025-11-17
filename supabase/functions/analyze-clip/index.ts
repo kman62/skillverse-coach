@@ -41,7 +41,8 @@ const playerInfoSchema = z.object({
   name: z.string().trim().min(1).max(100),
   jerseyNumber: z.string().trim().max(10),
   position: z.string().trim().max(50),
-  sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby']).default('basketball')
+  sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby']).default('basketball'),
+  analysisMode: z.enum(['bulk', 'detailed']).optional().default('bulk')
 });
 
 const requestSchema = z.object({
@@ -131,6 +132,7 @@ Deno.serve(async (req) => {
     const { frameData, playerInfo } = validationResult.data;
     
     console.log(`🔵 [${requestId}] Player: ${playerInfo.name} #${playerInfo.jerseyNumber}, Position: ${playerInfo.position || 'auto-detect'}`);
+    console.log(`🔵 [${requestId}] Analysis mode: ${playerInfo.analysisMode}`);
     console.log(`🔵 [${requestId}] Frame data size: ${(frameData.length / 1024).toFixed(2)} KB`);
 
     // Using Lovable AI Gateway
@@ -143,7 +145,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`🔵 [${requestId}] Calling Lovable AI gateway for ${playerInfo.sport}...`);
+    // Select model based on analysis mode
+    const model = playerInfo.analysisMode === 'detailed' ? 'openai/gpt-5' : 'google/gemini-2.5-flash';
+    console.log(`🔵 [${requestId}] Using model: ${model} for ${playerInfo.sport}...`);
 
     const systemPrompt = getSportSpecificPrompt(playerInfo.sport);
     const userPrompt = `Analyze this ${playerInfo.sport} play for player ${playerInfo.name}, #${playerInfo.jerseyNumber}, position: ${playerInfo.position || 'unknown'}.`;
@@ -156,7 +160,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model,
           messages: [
             { role: 'system', content: systemPrompt },
             {

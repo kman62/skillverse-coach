@@ -31,7 +31,8 @@ const HighlightReelPage = () => {
     name: '', 
     position: '', 
     jerseyNumber: '',
-    sport: 'basketball'
+    sport: 'basketball',
+    analysisMode: 'bulk'
   });
   
   const [clips, setClips] = useState<Clip[]>([]);

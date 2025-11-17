@@ -5,6 +5,7 @@ export interface PlayerInfo {
   jerseyNumber: string;
   position: string;
   sport: 'basketball' | 'baseball' | 'football' | 'soccer' | 'volleyball' | 'tennis' | 'golf' | 'rugby';
+  analysisMode?: 'bulk' | 'detailed';
 }
 
 export const analyzeClip = async (frameData: string, playerInfo: PlayerInfo) => {

@@ -13,7 +13,8 @@ const playerInfoSchema = z.object({
   jerseyNumber: z.string().trim().min(1, "Jersey number is required").max(10, "Jersey number must be less than 10 characters"),
   sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby'], {
     required_error: "Please select a sport"
-  })
+  }),
+  analysisMode: z.enum(['bulk', 'detailed']).optional()
 });
 
 type PlayerInfoForm = z.infer<typeof playerInfoSchema>;
@@ -31,7 +32,8 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
       name: playerInfo.name || "",
       position: playerInfo.position || "",
       jerseyNumber: playerInfo.jerseyNumber || "",
-      sport: playerInfo.sport
+      sport: playerInfo.sport,
+      analysisMode: playerInfo.analysisMode || 'bulk'
     },
     mode: "onChange"
   });
@@ -77,6 +79,38 @@ export const PlayerDetailsForm = ({ playerInfo, onPlayerInfoChange, onStartAnaly
                         {option.label}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="analysisMode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Analysis Mode</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select analysis mode" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="bulk">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Bulk Analysis (Flash)</span>
+                        <span className="text-xs text-muted-foreground">Faster, cost-effective for multiple clips</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="detailed">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Detailed Analysis (GPT-5)</span>
+                        <span className="text-xs text-muted-foreground">Higher quality, best for single clips</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
