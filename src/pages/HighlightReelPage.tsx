@@ -215,11 +215,24 @@ const HighlightReelPage = () => {
       } catch (error) {
         console.error(`❌ [Clip ${index + 1}] AI analysis failed:`, error);
         console.error(`❌ [Clip ${index + 1}] Details:`, error instanceof Error ? error.message : 'Unknown');
+        
+        // Check for rate limit error
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
+        
+        if (isRateLimitError) {
+          toast({
+            title: "Rate Limit Reached",
+            description: "You can make 30 analysis requests per hour. Please wait before analyzing more clips.",
+            variant: "destructive",
+          });
+        }
+        
         setClips(prev => prev.map(c => c.id === clip.id ? {
           ...c,
           thumbnail,
           isAnalyzing: false,
-          error: 'Analysis failed. Please try again.'
+          error: isRateLimitError ? 'Rate limit exceeded' : 'Analysis failed. Please try again.'
         } : c));
       }
     });
