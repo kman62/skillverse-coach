@@ -329,28 +329,6 @@ const HighlightReelPage = () => {
         }
       }
 
-        // Generate thumbnail even on error
-        try {
-          const midpoint = (clip.startTime + clip.endTime) / 2;
-          const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
-          
-          setClips(prev => prev.map(c => c.id === clip.id ? {
-            ...c,
-            thumbnail,
-            isAnalyzing: false,
-            error: isRateLimitError ? 'Rate limit' : 'Analysis failed',
-          } : c));
-        } catch {
-          setClips(prev => prev.map(c => c.id === clip.id ? {
-            ...c,
-            isAnalyzing: false,
-            error: isRateLimitError ? 'Rate limit' : 'Analysis failed',
-          } : c));
-        }
-
-        failedCount++;
-      }
-
       // Update progress
       const elapsed = Date.now() - startTime;
       const avgTimePerClip = elapsed / (processedCount + failedCount);
