@@ -38,11 +38,13 @@ async function retryWithBackoff<T>(
 
 // Input validation schemas
 const playerInfoSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  jerseyNumber: z.string().trim().max(10),
-  position: z.string().trim().max(50),
+  name: z.string().trim().max(100).optional(),
+  jerseyNumber: z.string().trim().max(10).optional(),
+  jerseyColor: z.string().trim().max(50).optional(),
+  position: z.string().trim().max(50).optional(),
   sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby']).default('basketball'),
-  analysisMode: z.enum(['bulk', 'detailed']).optional().default('bulk')
+  analysisMode: z.enum(['bulk', 'detailed']).optional().default('bulk'),
+  analysisType: z.enum(['individual', 'team']).optional().default('individual')
 });
 
 const requestSchema = z.object({
@@ -147,20 +149,18 @@ Deno.serve(async (req) => {
 
     // Select model based on analysis mode
     const model = playerInfo.analysisMode === 'detailed' ? 'openai/gpt-5' : 'google/gemini-2.5-flash';
-    console.log(`🔵 [${requestId}] Using model: ${model} for ${playerInfo.sport}...`);
+    console.log(`🔵 [${requestId}] Using model: ${model} for ${playerInfo.sport} (${playerInfo.analysisType})...`);
 
-    // Check if this is team offensive sets analysis
-    const isOffensiveSetsAnalysis = playerInfo.position?.toLowerCase().includes('offensive') || 
-                                     playerInfo.position?.toLowerCase().includes('team') ||
-                                     playerInfo.name?.toLowerCase().includes('offensive sets');
+    // Use analysisType to determine prompt and analysis approach
+    const isTeamAnalysis = playerInfo.analysisType === 'team';
 
-    const systemPrompt = isOffensiveSetsAnalysis 
+    const systemPrompt = isTeamAnalysis 
       ? getOffensiveSetsPrompt(playerInfo.sport)
       : getSportSpecificPrompt(playerInfo.sport);
     
-    const userPrompt = isOffensiveSetsAnalysis
+    const userPrompt = isTeamAnalysis
       ? `Analyze this ${playerInfo.sport} offensive set and team play execution. Evaluate spacing, timing, player movement, and overall set effectiveness.`
-      : `Analyze this ${playerInfo.sport} play for player ${playerInfo.name}, #${playerInfo.jerseyNumber}, position: ${playerInfo.position || 'unknown'}.`;
+      : `Analyze this ${playerInfo.sport} play for player ${playerInfo.name || 'the athlete'}${playerInfo.jerseyNumber ? `, #${playerInfo.jerseyNumber}` : ''}${playerInfo.jerseyColor ? ` in ${playerInfo.jerseyColor}` : ''}${playerInfo.position ? `, position: ${playerInfo.position}` : ''}.`;
 
     const response = await retryWithBackoff(async () => {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
