@@ -172,145 +172,138 @@ const HighlightReelPage = () => {
     setProcessingProgress({ processed: 0, total: numClips, failed: 0 });
     setRateLimitHit(false);
 
-    // Batch configuration
-    const BATCH_SIZE = 10; // Process 10 clips at a time
-    const RATE_LIMIT_SAFE_BATCH = 5; // Conservative batch size to avoid rate limits
-    const batchSize = pInfo.analysisMode === 'detailed' ? RATE_LIMIT_SAFE_BATCH : BATCH_SIZE;
-    const batches: Clip[][] = [];
-    
-    for (let i = 0; i < initialClips.length; i += batchSize) {
-      batches.push(initialClips.slice(i, i + batchSize));
-    }
-
-    console.log(`📦 [processVideo] Processing ${batches.length} batches of ${batchSize} clips each`);
-
+    const DELAY_BETWEEN_REQUESTS = 2000; // 2 seconds
     const startTime = Date.now();
     let processedCount = 0;
     let failedCount = 0;
     let shouldStopProcessing = false;
 
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+    console.log(`⏱️ [processVideo] Processing sequentially with ${DELAY_BETWEEN_REQUESTS}ms delay between clips`);
+    console.log(`⏱️ [processVideo] Estimated time: ${Math.ceil((numClips * DELAY_BETWEEN_REQUESTS) / 1000 / 60)} minutes`);
+
+    // Process clips sequentially
+    for (let i = 0; i < initialClips.length; i++) {
       if (shouldStopProcessing) {
         console.log('⏸️ [processVideo] Stopping due to rate limit');
         break;
       }
 
-      const batch = batches[batchIndex];
-      const batchNumber = batchIndex + 1;
-      console.log(`\n📊 [Batch ${batchNumber}/${batches.length}] Processing ${batch.length} clips`);
+      const clip = initialClips[i];
+      const clipNumber = i + 1;
+      console.log(`\n📊 [Clip ${clipNumber}/${numClips}] Processing ${clip.startTime.toFixed(1)}s - ${clip.endTime.toFixed(1)}s`);
 
       try {
-        const batchPromises = batch.map(async (clip, clipIndexInBatch) => {
-          const globalIndex = batchIndex * batchSize + clipIndexInBatch;
-          console.log(`📊 [Clip ${globalIndex + 1}/${numClips}] Processing ${clip.startTime.toFixed(1)}s - ${clip.endTime.toFixed(1)}s`);
+        // Generate thumbnail
+        console.log(`📊 [Clip ${clipNumber}] Generating thumbnail...`);
+        const midpoint = (clip.startTime + clip.endTime) / 2;
+        const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
 
-          try {
-            // Generate thumbnail
-            console.log(`📊 [Clip ${globalIndex + 1}] Generating thumbnail...`);
-            const midpoint = (clip.startTime + clip.endTime) / 2;
-            const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
-
-            // Extract frame for AI analysis
-            const frameData = await extractFrameFromVideo(uploadedVideo!);
-            
-            // Call AI analysis
-            console.log(`📊 [Clip ${globalIndex + 1}] Calling AI analysis (${pInfo.analysisMode} mode)...`);
-            const analysis = await analyzeClip(frameData, {
-              name: pInfo.name,
-              jerseyNumber: pInfo.jerseyNumber,
-              position: pInfo.position || 'auto-detect',
-              sport: pInfo.sport,
-              analysisMode: pInfo.analysisMode
-            });
-
-            console.log(`✅ [Clip ${globalIndex + 1}] AI analysis complete`);
-
-            // Auto-detect position from first clip analysis
-            if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
-              console.log(`🎯 [Clip ${globalIndex + 1}] Auto-detected position:`, analysis.detectedPosition);
-              setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
-            }
-
-            const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
-            console.log(`📊 [Clip ${globalIndex + 1}] Score: ${score.toFixed(1)}`);
-
-            setClips(prev => prev.map(c => c.id === clip.id ? {
-              ...c,
-              thumbnail,
-              analysis,
-              isAnalyzing: false,
-              selected: ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold,
-            } : c));
-
-            processedCount++;
-            return { success: true, clipId: clip.id };
-
-          } catch (error) {
-            console.error(`❌ [Clip ${globalIndex + 1}] Failed:`, error);
-            
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
-            
-            if (isRateLimitError) {
-              shouldStopProcessing = true;
-              setRateLimitHit(true);
-            }
-
-            // Use fallback for this clip
-            const midpoint = (clip.startTime + clip.endTime) / 2;
-            const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
-            
-            setClips(prev => prev.map(c => c.id === clip.id ? {
-              ...c,
-              thumbnail,
-              isAnalyzing: false,
-              error: isRateLimitError ? 'Rate limit' : 'Analysis failed',
-            } : c));
-
-            failedCount++;
-            return { success: false, clipId: clip.id, rateLimited: isRateLimitError };
-          }
+        // Extract frame for AI analysis
+        const frameData = await extractFrameFromVideo(uploadedVideo!);
+        
+        // Call AI analysis
+        console.log(`📊 [Clip ${clipNumber}] Calling AI analysis (${pInfo.analysisMode} mode)...`);
+        const analysis = await analyzeClip(frameData, {
+          name: pInfo.name,
+          jerseyNumber: pInfo.jerseyNumber,
+          position: pInfo.position || 'auto-detect',
+          sport: pInfo.sport,
+          analysisMode: pInfo.analysisMode
         });
 
-        await Promise.all(batchPromises);
+        console.log(`✅ [Clip ${clipNumber}] AI analysis complete`);
 
-        // Update progress
-        const elapsed = Date.now() - startTime;
-        const avgTimePerClip = elapsed / processedCount;
-        const remaining = numClips - processedCount - failedCount;
-        const eta = avgTimePerClip * remaining;
-        
-        setProcessingProgress({ processed: processedCount, total: numClips, failed: failedCount });
-        setEstimatedTimeRemaining(eta);
-
-        console.log(`📊 [Batch ${batchNumber}] Complete. Processed: ${processedCount}/${numClips}, Failed: ${failedCount}, ETA: ${Math.ceil(eta/1000)}s`);
-
-        // Add delay between batches to avoid rate limits
-        if (batchIndex < batches.length - 1 && !shouldStopProcessing) {
-          const delayMs = pInfo.analysisMode === 'detailed' ? 2000 : 1000;
-          console.log(`⏱️ Waiting ${delayMs}ms before next batch...`);
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+        // Auto-detect position from first clip analysis
+        if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
+          console.log(`🎯 [Clip ${clipNumber}] Auto-detected position:`, analysis.detectedPosition);
+          setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
         }
 
-      } catch (batchError) {
-        console.error(`❌ [Batch ${batchNumber}] Failed:`, batchError);
+        const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
+        console.log(`📊 [Clip ${clipNumber}] Score: ${score.toFixed(1)}`);
+
+        setClips(prev => prev.map(c => c.id === clip.id ? {
+          ...c,
+          thumbnail,
+          analysis,
+          isAnalyzing: false,
+          selected: ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold,
+        } : c));
+
+        processedCount++;
+
+      } catch (error) {
+        console.error(`❌ [Clip ${clipNumber}] Failed:`, error);
+        
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
+        
+        if (isRateLimitError) {
+          console.log(`⚠️ [Clip ${clipNumber}] Rate limit hit - stopping processing`);
+          shouldStopProcessing = true;
+          setRateLimitHit(true);
+          
+          toast({
+            title: "Rate Limit Reached",
+            description: `Processed ${processedCount} of ${numClips} clips. ${numClips - processedCount - failedCount} clips remaining.`,
+            variant: "destructive",
+          });
+        }
+
+        // Generate thumbnail even on error
+        try {
+          const midpoint = (clip.startTime + clip.endTime) / 2;
+          const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
+          
+          setClips(prev => prev.map(c => c.id === clip.id ? {
+            ...c,
+            thumbnail,
+            isAnalyzing: false,
+            error: isRateLimitError ? 'Rate limit' : 'Analysis failed',
+          } : c));
+        } catch {
+          setClips(prev => prev.map(c => c.id === clip.id ? {
+            ...c,
+            isAnalyzing: false,
+            error: isRateLimitError ? 'Rate limit' : 'Analysis failed',
+          } : c));
+        }
+
+        failedCount++;
+      }
+
+      // Update progress
+      const elapsed = Date.now() - startTime;
+      const avgTimePerClip = elapsed / (processedCount + failedCount);
+      const remaining = numClips - processedCount - failedCount;
+      const eta = avgTimePerClip * remaining;
+      
+      setProcessingProgress({ processed: processedCount, total: numClips, failed: failedCount });
+      setEstimatedTimeRemaining(eta);
+
+      console.log(`📊 [Progress] Processed: ${processedCount}/${numClips}, Failed: ${failedCount}, ETA: ${Math.ceil(eta/1000)}s`);
+
+      // Add delay before next request (except for last clip or if stopping)
+      if (i < initialClips.length - 1 && !shouldStopProcessing) {
+        console.log(`⏱️ Waiting ${DELAY_BETWEEN_REQUESTS}ms before next clip...`);
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
       }
     }
 
-    console.log(`✅ [processVideo] Processing complete. Processed: ${processedCount}, Failed: ${failedCount}`);
+    console.log(`✅ [processVideo] Processing ${shouldStopProcessing ? 'paused' : 'complete'}. Processed: ${processedCount}, Failed: ${failedCount}`);
     setAppState('results');
     setEstimatedTimeRemaining(null);
     
     if (rateLimitHit) {
       toast({
         title: "Rate Limit Reached",
-        description: `Processed ${processedCount} clips. ${numClips - processedCount - failedCount} clips remaining. Wait 1 hour or use demo mode.`,
+        description: `Successfully analyzed ${processedCount} clips. ${numClips - processedCount - failedCount} clips remaining. Wait 1 hour or use demo mode.`,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Analysis complete",
-        description: `Successfully analyzed ${processedCount} clips for ${pInfo.name}`,
+        title: "Analysis Complete!",
+        description: `Successfully analyzed all ${processedCount} clips for ${pInfo.name}`,
       });
     }
   };
@@ -652,8 +645,16 @@ const HighlightReelPage = () => {
                     )}
                     
                     <p className="text-sm text-muted-foreground text-center">
-                      Clips will appear as they are processed. Processing in batches to avoid rate limits.
+                      Processing sequentially (1 clip every 2 seconds) to respect rate limits. Clips appear as analyzed.
                     </p>
+                    
+                    {!rateLimitHit && estimatedTimeRemaining && estimatedTimeRemaining > 60000 && (
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground text-center">
+                          💡 Tip: Large videos take time. Consider trimming to key moments or trying a shorter clip first!
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
