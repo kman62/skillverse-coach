@@ -149,8 +149,18 @@ Deno.serve(async (req) => {
     const model = playerInfo.analysisMode === 'detailed' ? 'openai/gpt-5' : 'google/gemini-2.5-flash';
     console.log(`🔵 [${requestId}] Using model: ${model} for ${playerInfo.sport}...`);
 
-    const systemPrompt = getSportSpecificPrompt(playerInfo.sport);
-    const userPrompt = `Analyze this ${playerInfo.sport} play for player ${playerInfo.name}, #${playerInfo.jerseyNumber}, position: ${playerInfo.position || 'unknown'}.`;
+    // Check if this is team offensive sets analysis
+    const isOffensiveSetsAnalysis = playerInfo.position?.toLowerCase().includes('offensive') || 
+                                     playerInfo.position?.toLowerCase().includes('team') ||
+                                     playerInfo.name?.toLowerCase().includes('offensive sets');
+
+    const systemPrompt = isOffensiveSetsAnalysis 
+      ? getOffensiveSetsPrompt(playerInfo.sport)
+      : getSportSpecificPrompt(playerInfo.sport);
+    
+    const userPrompt = isOffensiveSetsAnalysis
+      ? `Analyze this ${playerInfo.sport} offensive set and team play execution. Evaluate spacing, timing, player movement, and overall set effectiveness.`
+      : `Analyze this ${playerInfo.sport} play for player ${playerInfo.name}, #${playerInfo.jerseyNumber}, position: ${playerInfo.position || 'unknown'}.`;
 
     const response = await retryWithBackoff(async () => {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -398,6 +408,84 @@ Be specific with evidence for each intangible metric. Rate honestly using the fu
   };
 
   return prompts[sport] || prompts.basketball;
+}
+
+function getOffensiveSetsPrompt(sport: string): string {
+  const sportName = sport || 'basketball';
+  
+  return `You are a professional ${sportName} coach AI analyzing TEAM OFFENSIVE SETS using the Complete Performance framework.
+
+D1 recruiters and coaches evaluate offensive sets by: spacing efficiency, timing of cuts and screens, ball movement quality, player movement patterns, set execution consistency, and adaptability to defensive pressure.
+
+Analyze the offensive set phase-by-phase and return structured JSON with the following schema:
+
+{
+  "playType": "string - name/type of offensive set (e.g., 'Motion Offense', 'Pick and Roll', 'Horns Set', 'Princeton Offense')",
+  "outcome": "string - result of the set execution",
+  "detectedPosition": "Team Offensive Set",
+  "sport": "${sportName}",
+  "play_context": {
+    "situation": "string - offensive situation and defensive alignment",
+    "pressure_level": "string - defensive pressure (low/medium/high)",
+    "critical_moment": "boolean - high-stakes possession"
+  },
+  "tangible_performance": {
+    "technical_execution": {
+      "spacing_quality": "0-10 rating - floor spacing and positioning",
+      "timing_quality": "0-10 rating - cut timing and screen timing",
+      "ball_movement": "0-10 rating - passing quality and decision-making",
+      "player_movement": "0-10 rating - cuts, screens, and repositioning"
+    },
+    "phases": [
+      {
+        "phase_name": "string - phase of the set (e.g., 'Initial Alignment', 'Screen Action', 'Ball Reversal', 'Finish')",
+        "quality": "0-10 rating",
+        "notes": "string - specific observations"
+      }
+    ],
+    "efficiency_notes": "string - overall set execution quality and effectiveness"
+  },
+  "intangible_performance": {
+    "courage": {
+      "rating": "1-5 scale",
+      "evidence": "team's willingness to execute under pressure, attacking mentality despite defensive adjustments"
+    },
+    "composure": {
+      "rating": "1-5 scale", 
+      "evidence": "team's poise in execution, maintaining structure under defensive pressure"
+    },
+    "initiative": {
+      "rating": "1-5 scale",
+      "evidence": "players making independent reads and adjustments within the set"
+    },
+    "leadership": {
+      "rating": "1-5 scale",
+      "evidence": "communication, floor generals organizing teammates, verbal/non-verbal cues"
+    },
+    "effectiveness_under_stress": {
+      "rating": "1-5 scale",
+      "evidence": "execution quality when defense rotates, switches, or applies pressure"
+    },
+    "resilience": {
+      "rating": "1-5 scale",
+      "evidence": "team's ability to reset and maintain structure after breakdowns"
+    }
+  },
+  "integrated_insight": {
+    "correlation_metrics": {
+      "intangibles_overall_score": "0-1 decimal"
+    },
+    "synthesis": "one paragraph explaining how team chemistry, communication, and mental approach influenced the set's technical execution and effectiveness"
+  },
+  "coaching_recommendations": {
+    "technical_focus": "one specific spacing, timing, or movement adjustment for the set",
+    "tactical_focus": "one specific adjustment to counter defensive pressure or improve efficiency",
+    "intangible_focus": "one specific area to improve team communication, chemistry, or execution under pressure",
+    "practice_drills": ["array of 2-3 specific team drills to improve this offensive set"]
+  }
+}
+
+Focus on TEAM execution, not individual players. Evaluate spacing patterns, timing synchronization, and overall offensive flow. Be specific with evidence for each intangible metric. Rate honestly using the full 1-5 scale.`;
 }
 
 function buildFallbackAnalysis(playerInfo: any) {
