@@ -61,30 +61,31 @@ serve(async (req) => {
       }
     );
 
-    // Get user from JWT
+    // Try to get user from JWT (optional for public endpoint)
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.warn('aggregate-intangibles: no authenticated user; proceeding without auth');
     }
 
-    // Check rate limit
-    const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
-      _user_id: user.id,
-      _endpoint: 'aggregate-intangibles',
-      _max_requests: 20,
-      _window_minutes: 60
-    });
 
-    if (rateLimitError || !rateLimitOk) {
-      console.log('Rate limit exceeded for user:', user.id);
-      return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check rate limit only when user is authenticated
+    if (user) {
+      const { data: rateLimitOk, error: rateLimitError } = await supabaseClient.rpc('check_rate_limit', {
+        _user_id: user.id,
+        _endpoint: 'aggregate-intangibles',
+        _max_requests: 20,
+        _window_minutes: 60
+      });
+
+      if (rateLimitError || !rateLimitOk) {
+        console.log('Rate limit exceeded for user:', user.id);
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
+
 
     const input: AggregateInput = await req.json();
 
