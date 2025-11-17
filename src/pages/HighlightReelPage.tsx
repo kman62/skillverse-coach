@@ -48,6 +48,8 @@ const HighlightReelPage = () => {
   const [processingProgress, setProcessingProgress] = useState({ processed: 0, total: 0, failed: 0 });
   const [rateLimitHit, setRateLimitHit] = useState(false);
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
+  const [backoffCountdown, setBackoffCountdown] = useState<number | null>(null);
+  const [currentBackoffDelay, setCurrentBackoffDelay] = useState(2000); // Start with 2 seconds
 
   // Auto-select clips based on threshold
   useEffect(() => {
@@ -171,84 +173,161 @@ const HighlightReelPage = () => {
     setAppState('processing');
     setProcessingProgress({ processed: 0, total: numClips, failed: 0 });
     setRateLimitHit(false);
+    setBackoffCountdown(null);
 
-    const DELAY_BETWEEN_REQUESTS = 2000; // 2 seconds
+    let baseDelay = 2000; // Start with 2 seconds between requests
+    let backoffMultiplier = 1;
     const startTime = Date.now();
     let processedCount = 0;
     let failedCount = 0;
-    let shouldStopProcessing = false;
+    let consecutiveRateLimits = 0;
 
-    console.log(`⏱️ [processVideo] Processing sequentially with ${DELAY_BETWEEN_REQUESTS}ms delay between clips`);
-    console.log(`⏱️ [processVideo] Estimated time: ${Math.ceil((numClips * DELAY_BETWEEN_REQUESTS) / 1000 / 60)} minutes`);
+    console.log(`⏱️ [processVideo] Processing sequentially with ${baseDelay}ms base delay between clips`);
+    console.log(`⏱️ [processVideo] Estimated time: ${Math.ceil((numClips * baseDelay) / 1000 / 60)} minutes`);
 
-    // Process clips sequentially
+    // Countdown helper function
+    const startCountdown = (seconds: number): Promise<void> => {
+      return new Promise((resolve) => {
+        let remaining = seconds;
+        setBackoffCountdown(remaining);
+        
+        const interval = setInterval(() => {
+          remaining--;
+          setBackoffCountdown(remaining);
+          
+          if (remaining <= 0) {
+            clearInterval(interval);
+            setBackoffCountdown(null);
+            resolve();
+          }
+        }, 1000);
+      });
+    };
+
+    // Process clips sequentially with backoff
     for (let i = 0; i < initialClips.length; i++) {
-      if (shouldStopProcessing) {
-        console.log('⏸️ [processVideo] Stopping due to rate limit');
-        break;
-      }
-
       const clip = initialClips[i];
       const clipNumber = i + 1;
       console.log(`\n📊 [Clip ${clipNumber}/${numClips}] Processing ${clip.startTime.toFixed(1)}s - ${clip.endTime.toFixed(1)}s`);
 
-      try {
-        // Generate thumbnail
-        console.log(`📊 [Clip ${clipNumber}] Generating thumbnail...`);
-        const midpoint = (clip.startTime + clip.endTime) / 2;
-        const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
+      // Reset backoff on successful requests
+      if (consecutiveRateLimits > 0 && i > 0) {
+        console.log(`✅ Resetting backoff after successful request`);
+        consecutiveRateLimits = 0;
+        backoffMultiplier = 1;
+        setCurrentBackoffDelay(baseDelay);
+      }
 
-        // Extract frame for AI analysis
-        const frameData = await extractFrameFromVideo(uploadedVideo!);
-        
-        // Call AI analysis
-        console.log(`📊 [Clip ${clipNumber}] Calling AI analysis (${pInfo.analysisMode} mode)...`);
-        const analysis = await analyzeClip(frameData, {
-          name: pInfo.name,
-          jerseyNumber: pInfo.jerseyNumber,
-          position: pInfo.position || 'auto-detect',
-          sport: pInfo.sport,
-          analysisMode: pInfo.analysisMode
-        });
+      let retryCount = 0;
+      let success = false;
 
-        console.log(`✅ [Clip ${clipNumber}] AI analysis complete`);
+      while (!success && retryCount < 5) { // Max 5 retries per clip
+        try {
+          // Generate thumbnail
+          console.log(`📊 [Clip ${clipNumber}] Generating thumbnail...`);
+          const midpoint = (clip.startTime + clip.endTime) / 2;
+          const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
 
-        // Auto-detect position from first clip analysis
-        if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
-          console.log(`🎯 [Clip ${clipNumber}] Auto-detected position:`, analysis.detectedPosition);
-          setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
-        }
-
-        const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
-        console.log(`📊 [Clip ${clipNumber}] Score: ${score.toFixed(1)}`);
-
-        setClips(prev => prev.map(c => c.id === clip.id ? {
-          ...c,
-          thumbnail,
-          analysis,
-          isAnalyzing: false,
-          selected: ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold,
-        } : c));
-
-        processedCount++;
-
-      } catch (error) {
-        console.error(`❌ [Clip ${clipNumber}] Failed:`, error);
-        
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
-        
-        if (isRateLimitError) {
-          console.log(`⚠️ [Clip ${clipNumber}] Rate limit hit - stopping processing`);
-          shouldStopProcessing = true;
-          setRateLimitHit(true);
+          // Extract frame for AI analysis
+          const frameData = await extractFrameFromVideo(uploadedVideo!);
           
-          toast({
-            title: "Rate Limit Reached",
-            description: `Processed ${processedCount} of ${numClips} clips. ${numClips - processedCount - failedCount} clips remaining.`,
-            variant: "destructive",
+          // Call AI analysis
+          console.log(`📊 [Clip ${clipNumber}] Calling AI analysis (${pInfo.analysisMode} mode) - attempt ${retryCount + 1}...`);
+          const analysis = await analyzeClip(frameData, {
+            name: pInfo.name,
+            jerseyNumber: pInfo.jerseyNumber,
+            position: pInfo.position || 'auto-detect',
+            sport: pInfo.sport,
+            analysisMode: pInfo.analysisMode
           });
+
+          console.log(`✅ [Clip ${clipNumber}] AI analysis complete`);
+
+          // Auto-detect position from first clip analysis
+          if (analysis && 'detectedPosition' in analysis && analysis.detectedPosition && !pInfo.position) {
+            console.log(`🎯 [Clip ${clipNumber}] Auto-detected position:`, analysis.detectedPosition);
+            setPlayerInfo(prev => ({ ...prev, position: analysis.detectedPosition as string }));
+          }
+
+          const score = (analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10;
+          console.log(`📊 [Clip ${clipNumber}] Score: ${score.toFixed(1)}`);
+
+          setClips(prev => prev.map(c => c.id === clip.id ? {
+            ...c,
+            thumbnail,
+            analysis,
+            isAnalyzing: false,
+            selected: ((analysis.integrated_insight?.correlation_metrics?.intangibles_overall_score ?? 0) * 10) >= selectionThreshold,
+          } : c));
+
+          processedCount++;
+          success = true;
+
+        } catch (error) {
+          console.error(`❌ [Clip ${clipNumber}] Attempt ${retryCount + 1} failed:`, error);
+          
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const isRateLimitError = errorMessage.includes('Rate limit exceeded') || errorMessage.includes('429');
+          
+          if (isRateLimitError) {
+            consecutiveRateLimits++;
+            backoffMultiplier = Math.min(Math.pow(2, consecutiveRateLimits), 32); // Cap at 64 seconds
+            const backoffTime = Math.floor((baseDelay * backoffMultiplier) / 1000);
+            
+            console.log(`⚠️ [Clip ${clipNumber}] Rate limit hit (${consecutiveRateLimits} consecutive). Backing off for ${backoffTime}s...`);
+            setRateLimitHit(true);
+            setCurrentBackoffDelay(baseDelay * backoffMultiplier);
+            
+            if (retryCount < 4) { // Don't show toast on final retry
+              toast({
+                title: `Rate Limit Hit - Retrying`,
+                description: `Backing off for ${backoffTime} seconds before retry ${retryCount + 2}/5`,
+                variant: "destructive",
+              });
+              
+              // Wait with countdown
+              await startCountdown(backoffTime);
+              retryCount++;
+            } else {
+              // Final failure
+              console.log(`❌ [Clip ${clipNumber}] Max retries exceeded, skipping clip`);
+              
+              const thumbnail = await generateFrameFromSrc(videoSrc!, (clip.startTime + clip.endTime) / 2);
+              setClips(prev => prev.map(c => c.id === clip.id ? {
+                ...c,
+                thumbnail,
+                isAnalyzing: false,
+                error: 'Rate limit - max retries exceeded',
+              } : c));
+              
+              failedCount++;
+              break;
+            }
+          } else {
+            // Non-rate limit error - generate thumbnail and mark as failed
+            try {
+              const midpoint = (clip.startTime + clip.endTime) / 2;
+              const thumbnail = await generateFrameFromSrc(videoSrc!, midpoint);
+              
+              setClips(prev => prev.map(c => c.id === clip.id ? {
+                ...c,
+                thumbnail,
+                isAnalyzing: false,
+                error: 'Analysis failed',
+              } : c));
+            } catch {
+              setClips(prev => prev.map(c => c.id === clip.id ? {
+                ...c,
+                isAnalyzing: false,
+                error: 'Analysis failed',
+              } : c));
+            }
+            
+            failedCount++;
+            break;
+          }
         }
+      }
 
         // Generate thumbnail even on error
         try {
@@ -283,21 +362,24 @@ const HighlightReelPage = () => {
 
       console.log(`📊 [Progress] Processed: ${processedCount}/${numClips}, Failed: ${failedCount}, ETA: ${Math.ceil(eta/1000)}s`);
 
-      // Add delay before next request (except for last clip or if stopping)
-      if (i < initialClips.length - 1 && !shouldStopProcessing) {
-        console.log(`⏱️ Waiting ${DELAY_BETWEEN_REQUESTS}ms before next clip...`);
-        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+      // Add delay before next request (except for last clip)
+      if (i < initialClips.length - 1) {
+        const currentDelay = Math.max(baseDelay, currentBackoffDelay);
+        console.log(`⏱️ Waiting ${currentDelay}ms before next clip...`);
+        await new Promise(resolve => setTimeout(resolve, currentDelay));
       }
     }
 
-    console.log(`✅ [processVideo] Processing ${shouldStopProcessing ? 'paused' : 'complete'}. Processed: ${processedCount}, Failed: ${failedCount}`);
+    console.log(`✅ [processVideo] Processing complete. Processed: ${processedCount}, Failed: ${failedCount}`);
     setAppState('results');
     setEstimatedTimeRemaining(null);
+    setBackoffCountdown(null);
+    setRateLimitHit(false);
     
-    if (rateLimitHit) {
+    if (failedCount > 0) {
       toast({
-        title: "Rate Limit Reached",
-        description: `Successfully analyzed ${processedCount} clips. ${numClips - processedCount - failedCount} clips remaining. Wait 1 hour or use demo mode.`,
+        title: "Processing Complete with Issues",
+        description: `Analyzed ${processedCount} clips successfully. ${failedCount} clips failed after retries.`,
         variant: "destructive",
       });
     } else {
@@ -503,7 +585,11 @@ const HighlightReelPage = () => {
                         <span className="text-muted-foreground">
                           {Math.round((processingProgress.processed / processingProgress.total) * 100)}% Complete
                         </span>
-                        {estimatedTimeRemaining && (
+                        {backoffCountdown ? (
+                          <span className="text-destructive font-medium">
+                            Resuming in {backoffCountdown}s
+                          </span>
+                        ) : estimatedTimeRemaining && (
                           <span className="text-muted-foreground">
                             ETA: {Math.ceil(estimatedTimeRemaining / 1000)}s
                           </span>
@@ -515,14 +601,29 @@ const HighlightReelPage = () => {
                           style={{ width: `${(processingProgress.processed / processingProgress.total) * 100}%` }}
                         />
                       </div>
+                      {backoffCountdown && (
+                        <div className="text-xs text-muted-foreground">
+                          Rate limit hit - using incremental backoff to retry automatically
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Rate Limit Warning */}
-                    {rateLimitHit && (
-                      <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
-                        <h3 className="font-semibold text-destructive mb-2">⚠️ Rate Limit Reached</h3>
+                    {/* Backoff Info */}
+                    {rateLimitHit && backoffCountdown && (
+                      <div className="bg-warning/10 border border-warning rounded-lg p-4">
+                        <h3 className="font-semibold text-warning mb-2">🔄 Auto-Retry in Progress</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                          You can make 30 AI analysis requests per hour. {processingProgress.total - processingProgress.processed - processingProgress.failed} clips remaining.
+                          Hit rate limit - automatically retrying with incremental backoff. Resuming in {backoffCountdown} seconds.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Rate Limit Actions */}
+                    {rateLimitHit && !backoffCountdown && processingProgress.failed > 0 && (
+                      <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+                        <h3 className="font-semibold text-destructive mb-2">⚠️ Some Clips Failed</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {processingProgress.failed} clips failed after multiple retry attempts.
                         </p>
                         <div className="flex flex-col gap-2">
                           <Button 
