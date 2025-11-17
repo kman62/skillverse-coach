@@ -4,6 +4,7 @@ export interface PlayerInfo {
   name: string;
   jerseyNumber: string;
   position: string;
+  sport: 'basketball' | 'baseball' | 'football' | 'soccer' | 'volleyball' | 'tennis' | 'golf' | 'rugby';
 }
 
 export const analyzeClip = async (frameData: string, playerInfo: PlayerInfo) => {
