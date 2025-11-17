@@ -135,6 +135,9 @@ export default function IntangiblesDashboard() {
         body: {
           athlete_id: selectedAthleteId,
           sport: athlete.sport
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
 
