@@ -131,7 +131,7 @@ export default function IntangiblesDashboard() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('aggregate-intangibles', {
+      const response = await supabase.functions.invoke('aggregate-intangibles', {
         body: {
           athlete_id: selectedAthleteId,
           sport: athlete.sport
@@ -141,29 +141,24 @@ export default function IntangiblesDashboard() {
         }
       });
 
-      // Handle the response - check for error message in data first
+      const { data, error } = response;
+
+      // Handle error responses (404 returns error message in data when FunctionsHttpError occurs)
+      if (error) {
+        // For FunctionsHttpError, the data contains the response body
+        if (data?.error) {
+          toast.info(data.error);
+          setProfile(null);
+          return;
+        }
+        throw error;
+      }
+
+      // Check for error message in successful response (shouldn't happen but be safe)
       if (data?.error) {
-        // This is a 404 or validation error from the function
         toast.info(data.error);
         setProfile(null);
         return;
-      }
-
-      if (error) {
-        // Check if it's a FunctionsHttpError with a response body
-        if (error.name === 'FunctionsHttpError') {
-          try {
-            const errorData = await error.context?.json?.();
-            if (errorData?.error) {
-              toast.info(errorData.error);
-              setProfile(null);
-              return;
-            }
-          } catch {
-            // Ignore JSON parsing errors
-          }
-        }
-        throw error;
       }
 
       if (data?.profile) {
