@@ -141,17 +141,41 @@ export default function IntangiblesDashboard() {
         }
       });
 
-      if (error) throw error;
+      // Handle the response - check for error message in data first
+      if (data?.error) {
+        // This is a 404 or validation error from the function
+        toast.info(data.error);
+        setProfile(null);
+        return;
+      }
 
-      if (data.profile) {
+      if (error) {
+        // Check if it's a FunctionsHttpError with a response body
+        if (error.name === 'FunctionsHttpError') {
+          try {
+            const errorData = await error.context?.json?.();
+            if (errorData?.error) {
+              toast.info(errorData.error);
+              setProfile(null);
+              return;
+            }
+          } catch {
+            // Ignore JSON parsing errors
+          }
+        }
+        throw error;
+      }
+
+      if (data?.profile) {
         setProfile(data.profile);
         toast.success('Intangible profile generated successfully');
       } else {
-        toast.info('No analysis data available for this athlete');
+        toast.info('No analysis data available for this athlete. Upload and analyze some clips first.');
+        setProfile(null);
       }
     } catch (error) {
       console.error('Error generating profile:', error);
-      toast.error('Failed to generate intangible profile');
+      toast.error('Failed to generate intangible profile. Please try again.');
     } finally {
       setLoading(false);
     }
