@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { IntangiblePerformance } from "@/types/highlightReel";
-import { Target, Heart, Zap, Users, Award } from "lucide-react";
+import { Target, Heart, Zap, Users, Award, Shield, Eye, BarChart3, Brain } from "lucide-react";
 
 interface IntangibleMetricsCardProps {
   intangibles: IntangiblePerformance;
@@ -14,6 +14,10 @@ const getIcon = (key: string) => {
     case 'initiative': return <Zap className="w-5 h-5 text-yellow-500" />;
     case 'leadership': return <Users className="w-5 h-5 text-green-500" />;
     case 'effectiveness_under_stress': return <Award className="w-5 h-5 text-purple-500" />;
+    case 'discipline': return <Shield className="w-5 h-5 text-orange-500" />;
+    case 'focus': return <Eye className="w-5 h-5 text-cyan-500" />;
+    case 'consistency': return <BarChart3 className="w-5 h-5 text-indigo-500" />;
+    case 'game_iq': return <Brain className="w-5 h-5 text-pink-500" />;
     default: return null;
   }
 };

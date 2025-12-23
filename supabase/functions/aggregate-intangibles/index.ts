@@ -144,7 +144,7 @@ serve(async (req) => {
     }
 
     // Aggregate ratings by metric
-    const metrics = ['courage', 'composure', 'initiative', 'leadership', 'effectiveness_under_stress', 'resilience'];
+    const metrics = ['courage', 'composure', 'initiative', 'leadership', 'effectiveness_under_stress', 'resilience', 'discipline', 'focus', 'consistency', 'game_iq'];
     const aggregated: Record<string, number[]> = {};
     
     metrics.forEach(metric => {
@@ -196,6 +196,10 @@ serve(async (req) => {
         leadership_avg: averages.leadership_avg || null,
         stress_effectiveness_avg: averages.effectiveness_under_stress_avg || null,
         resilience_avg: averages.resilience_avg || null,
+        discipline_avg: averages.discipline_avg || null,
+        focus_avg: averages.focus_avg || null,
+        consistency_avg: averages.consistency_avg || null,
+        game_iq_avg: averages.game_iq_avg || null,
         primary_focus,
         secondary_focus,
       })
