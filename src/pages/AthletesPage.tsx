@@ -11,28 +11,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AthletesList } from '@/components/athletes/AthletesList';
-import { AthleteForm } from '@/components/athletes/AthleteForm';
+import { AthleteForm, AthleteData } from '@/components/athletes/AthleteForm';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface Athlete {
-  id: string;
-  name: string;
-  position?: string;
-  jersey_number?: string;
-  sport?: string;
-  date_of_birth?: string;
-  notes?: string;
-}
-
 const AthletesPage = () => {
   const navigate = useNavigate();
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<AthleteData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedAthlete, setSelectedAthlete] = useState<Athlete | undefined>();
+  const [selectedAthlete, setSelectedAthlete] = useState<AthleteData | undefined>();
 
   const fetchAthletes = async () => {
     try {
@@ -61,7 +51,7 @@ const AthletesPage = () => {
     setDialogOpen(true);
   };
 
-  const handleEditClick = (athlete: Athlete) => {
+  const handleEditClick = (athlete: AthleteData) => {
     setSelectedAthlete(athlete);
     setDialogOpen(true);
   };
