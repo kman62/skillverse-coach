@@ -8,6 +8,13 @@ interface CoachingRecommendationsCardProps {
 }
 
 export const CoachingRecommendationsCard = ({ recommendations }: CoachingRecommendationsCardProps) => {
+  if (!recommendations) {
+    return null;
+  }
+
+  const keyTakeaways = recommendations.key_takeaways || [];
+  const actionSteps = recommendations.action_steps || [];
+
   return (
     <Card className="p-6">
       <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -18,7 +25,7 @@ export const CoachingRecommendationsCard = ({ recommendations }: CoachingRecomme
       <div className="mb-6">
         <h4 className="font-semibold mb-3">Key Takeaways</h4>
         <ul className="space-y-2">
-          {recommendations.key_takeaways.map((takeaway, idx) => (
+          {keyTakeaways.map((takeaway, idx) => (
             <li key={idx} className="flex gap-2">
               <span className="text-primary">•</span>
               <span>{takeaway}</span>
@@ -33,7 +40,7 @@ export const CoachingRecommendationsCard = ({ recommendations }: CoachingRecomme
           Action Steps
         </h4>
         <div className="space-y-4">
-          {recommendations.action_steps.map((step, idx) => (
+          {actionSteps.map((step, idx) => (
             <div key={idx} className="p-4 rounded-lg border bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary" className="capitalize">
