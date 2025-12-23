@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface IntangibleRating {
-  metric_name: 'courage' | 'composure' | 'initiative' | 'leadership' | 'effectiveness_under_stress' | 'resilience';
+  metric_name: 'courage' | 'composure' | 'initiative' | 'leadership' | 'effectiveness_under_stress' | 'resilience' | 'discipline' | 'focus' | 'consistency' | 'game_iq';
   rating: number;
   evidence: string;
 }
@@ -39,13 +39,17 @@ export const extractIntangibleRatings = (intangiblePerformance: any): Intangible
   if (!intangiblePerformance) return [];
 
   const ratings: IntangibleRating[] = [];
-  const metrics: Array<'courage' | 'composure' | 'initiative' | 'leadership' | 'effectiveness_under_stress' | 'resilience'> = [
+  const metrics: Array<'courage' | 'composure' | 'initiative' | 'leadership' | 'effectiveness_under_stress' | 'resilience' | 'discipline' | 'focus' | 'consistency' | 'game_iq'> = [
     'courage',
     'composure',
     'initiative',
     'leadership',
     'effectiveness_under_stress',
-    'resilience'
+    'resilience',
+    'discipline',
+    'focus',
+    'consistency',
+    'game_iq'
   ];
 
   metrics.forEach(metric => {

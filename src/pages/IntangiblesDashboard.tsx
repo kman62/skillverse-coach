@@ -186,7 +186,11 @@ export default function IntangiblesDashboard() {
       { metric: 'Leadership', value: profile.leadership_avg || 0, fullMark: 5 },
       { metric: 'Stress Handling', value: profile.stress_effectiveness_avg || 0, fullMark: 5 },
       { metric: 'Resilience', value: profile.resilience_avg || 0, fullMark: 5 },
-    ];
+      { metric: 'Discipline', value: (profile as any).discipline_avg || 0, fullMark: 5 },
+      { metric: 'Focus', value: (profile as any).focus_avg || 0, fullMark: 5 },
+      { metric: 'Consistency', value: (profile as any).consistency_avg || 0, fullMark: 5 },
+      { metric: 'Game IQ', value: (profile as any).game_iq_avg || 0, fullMark: 5 },
+    ].filter(item => item.value > 0);
   };
 
   const formatMetricName = (name: string) => {
@@ -279,6 +283,10 @@ export default function IntangiblesDashboard() {
                     { name: 'leadership', value: profile.leadership_avg },
                     { name: 'stress_effectiveness', value: profile.stress_effectiveness_avg },
                     { name: 'resilience', value: profile.resilience_avg },
+                    { name: 'discipline', value: (profile as any).discipline_avg },
+                    { name: 'focus', value: (profile as any).focus_avg },
+                    { name: 'consistency', value: (profile as any).consistency_avg },
+                    { name: 'game_iq', value: (profile as any).game_iq_avg },
                   ]
                     .sort((a, b) => (b.value || 0) - (a.value || 0))
                     .slice(0, 3)

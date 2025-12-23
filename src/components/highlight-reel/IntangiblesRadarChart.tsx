@@ -8,6 +8,10 @@ interface IntangiblesRadarChartProps {
     initiative: number;
     leadership: number;
     effectiveness_under_stress: number;
+    discipline?: number;
+    focus?: number;
+    consistency?: number;
+    game_iq?: number;
   };
 }
 
@@ -18,6 +22,10 @@ export const IntangiblesRadarChart = ({ data }: IntangiblesRadarChartProps) => {
     { metric: "Initiative", value: data.initiative * 100 },
     { metric: "Leadership", value: data.leadership * 100 },
     { metric: "Effectiveness", value: data.effectiveness_under_stress * 100 },
+    ...(data.discipline !== undefined ? [{ metric: "Discipline", value: data.discipline * 100 }] : []),
+    ...(data.focus !== undefined ? [{ metric: "Focus", value: data.focus * 100 }] : []),
+    ...(data.consistency !== undefined ? [{ metric: "Consistency", value: data.consistency * 100 }] : []),
+    ...(data.game_iq !== undefined ? [{ metric: "Game IQ", value: data.game_iq * 100 }] : []),
   ];
 
   return (

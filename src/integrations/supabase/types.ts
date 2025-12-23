@@ -207,9 +207,13 @@ export type Database = {
         Row: {
           athlete_id: string | null
           composure_avg: number | null
+          consistency_avg: number | null
           courage_avg: number | null
           date_range_end: string | null
           date_range_start: string | null
+          discipline_avg: number | null
+          focus_avg: number | null
+          game_iq_avg: number | null
           id: string
           initiative_avg: number | null
           leadership_avg: number | null
@@ -223,9 +227,13 @@ export type Database = {
         Insert: {
           athlete_id?: string | null
           composure_avg?: number | null
+          consistency_avg?: number | null
           courage_avg?: number | null
           date_range_end?: string | null
           date_range_start?: string | null
+          discipline_avg?: number | null
+          focus_avg?: number | null
+          game_iq_avg?: number | null
           id?: string
           initiative_avg?: number | null
           leadership_avg?: number | null
@@ -239,9 +247,13 @@ export type Database = {
         Update: {
           athlete_id?: string | null
           composure_avg?: number | null
+          consistency_avg?: number | null
           courage_avg?: number | null
           date_range_end?: string | null
           date_range_start?: string | null
+          discipline_avg?: number | null
+          focus_avg?: number | null
+          game_iq_avg?: number | null
           id?: string
           initiative_avg?: number | null
           leadership_avg?: number | null

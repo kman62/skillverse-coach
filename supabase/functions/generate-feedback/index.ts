@@ -123,6 +123,10 @@ Based on the Complete Performance framework, highlight their strongest intangibl
 - Leadership: helping teammates succeed
 - Effectiveness Under Stress: performing in tough moments
 - Resilience: bouncing back from mistakes
+- Discipline: following the game plan, avoiding undisciplined plays
+- Focus: attention to detail, tracking the play, minimizing mental lapses
+- Consistency: repeatable mechanics and decision-making
+- Game IQ: reading the game, anticipation, situational awareness
 
 Give one concrete example of how these traits showed up in the clips.
 

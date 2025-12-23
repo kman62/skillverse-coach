@@ -56,6 +56,10 @@ export interface IntangiblePerformance {
   initiative: IntangibleMetric;
   leadership: IntangibleMetric;
   effectiveness_under_stress: IntangibleMetric;
+  discipline?: IntangibleMetric;
+  focus?: IntangibleMetric;
+  consistency?: IntangibleMetric;
+  game_iq?: IntangibleMetric;
 }
 
 export interface IntegratedInsight {
@@ -71,11 +75,15 @@ export interface IntegratedInsight {
     initiative: number;
     leadership: number;
     effectiveness_under_stress: number;
+    discipline?: number;
+    focus?: number;
+    consistency?: number;
+    game_iq?: number;
   };
 }
 
 export interface ActionStep {
-  focus_area: 'courage' | 'composure' | 'initiative' | 'leadership' | 'effectiveness';
+  focus_area: 'courage' | 'composure' | 'initiative' | 'leadership' | 'effectiveness' | 'discipline' | 'focus' | 'consistency' | 'game_iq';
   training_drill: string;
   measurement_goal: string;
 }

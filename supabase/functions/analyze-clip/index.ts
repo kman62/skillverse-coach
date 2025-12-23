@@ -363,6 +363,22 @@ Analyze the play phase-by-phase and return structured JSON with the following sc
     "resilience": {
       "rating": "1-5 scale",
       "evidence": "specific observation of recovery behavior after adversity"
+    },
+    "discipline": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of adherence to game plan, avoiding undisciplined plays or penalties"
+    },
+    "focus": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of attention to detail, tracking the ball/play, minimizing mental lapses"
+    },
+    "consistency": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of repeatable mechanics and decision-making across multiple attempts"
+    },
+    "game_iq": {
+      "rating": "1-5 scale",
+      "evidence": "specific observation of reading the defense/offense, anticipation, and situational awareness"
     }
   },
   "integrated_insight": {
