@@ -16,6 +16,10 @@ interface IntangiblesRadarChartProps {
 }
 
 export const IntangiblesRadarChart = ({ data }: IntangiblesRadarChartProps) => {
+  if (!data) {
+    return null;
+  }
+
   const chartData = [
     { metric: "Courage", value: data.courage * 100 },
     { metric: "Composure", value: data.composure * 100 },
