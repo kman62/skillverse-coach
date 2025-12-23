@@ -19,15 +19,15 @@ export const IntegratedInsightCard = ({ insight }: IntegratedInsightCardProps) =
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="text-center p-4 rounded-lg bg-muted/50">
           <p className="text-sm text-muted-foreground mb-1">Intangible Score</p>
-          <p className="text-2xl font-bold">{(insight.correlation_metrics.intangibles_overall_score * 100).toFixed(0)}%</p>
+          <p className="text-2xl font-bold">{((insight.correlation_metrics?.intangibles_overall_score ?? 0) * 100).toFixed(0)}%</p>
         </div>
         <div className="text-center p-4 rounded-lg bg-muted/50">
           <p className="text-sm text-muted-foreground mb-1">Tangible Efficiency</p>
-          <p className="text-2xl font-bold">{(insight.correlation_metrics.tangible_efficiency_score * 100).toFixed(0)}%</p>
+          <p className="text-2xl font-bold">{((insight.correlation_metrics?.tangible_efficiency_score ?? 0) * 100).toFixed(0)}%</p>
         </div>
         <div className="text-center p-4 rounded-lg bg-muted/50">
           <p className="text-sm text-muted-foreground mb-1">Correlation</p>
-          <p className="text-2xl font-bold">{(insight.correlation_metrics.intangible_to_outcome_correlation).toFixed(2)}</p>
+          <p className="text-2xl font-bold">{(insight.correlation_metrics?.intangible_to_outcome_correlation ?? 0).toFixed(2)}</p>
         </div>
       </div>
     </Card>
