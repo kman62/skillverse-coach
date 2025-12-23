@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { ArrowLeft, TrendingUp, Target } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Target, Video, Upload, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Athlete {
@@ -331,15 +331,46 @@ export default function IntangiblesDashboard() {
       )}
 
       {!loading && !profile && selectedAthleteId && (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center space-y-4">
-              <p className="text-muted-foreground">
-                No intangible profile found for this athlete.
-              </p>
-              <Button onClick={generateProfile} disabled={loading}>
-                Generate Profile
-              </Button>
+        <Card className="border-dashed border-2">
+          <CardContent className="py-16">
+            <div className="text-center space-y-6 max-w-md mx-auto">
+              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Brain className="h-8 w-8 text-primary" />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold">No Intangible Data Yet</h3>
+                <p className="text-muted-foreground">
+                  Intangible metrics like courage, composure, and leadership are generated from video analysis. Upload and analyze clips to start tracking psychological development.
+                </p>
+              </div>
+
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                <p className="text-sm font-medium">How to get started:</p>
+                <div className="flex items-start gap-3 text-left">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                  <p className="text-sm text-muted-foreground">Go to Highlight Reel and upload a video clip</p>
+                </div>
+                <div className="flex items-start gap-3 text-left">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                  <p className="text-sm text-muted-foreground">Run AI analysis on the clip with this athlete selected</p>
+                </div>
+                <div className="flex items-start gap-3 text-left">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">3</div>
+                  <p className="text-sm text-muted-foreground">Return here to see aggregated intangible metrics</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => navigate('/highlight-reel')} className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Clips
+                </Button>
+                <Button variant="outline" onClick={generateProfile} disabled={loading} className="gap-2">
+                  <Video className="h-4 w-4" />
+                  Check for Data
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
