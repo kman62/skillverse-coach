@@ -103,12 +103,12 @@ Deno.serve(async (req) => {
 
     console.log(`✅ [${requestId}] User authenticated: ${user.id}`);
     
-    // Rate limiting: 30 requests per 60 minutes
+    // Rate limiting: 60 requests per 60 minutes
     const { data: rateLimitOk, error: rateLimitError } = await supabase
       .rpc('check_rate_limit', {
         _user_id: user.id,
         _endpoint: 'analyze-clip',
-        _max_requests: 30,
+        _max_requests: 60,
         _window_minutes: 60
       });
 
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     if (!rateLimitOk) {
       console.log(`⚠️ [${requestId}] Rate limit exceeded for user ${user.id}`);
       return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded. You can make 30 analysis requests per hour. Please try again later.' }),
+        JSON.stringify({ error: 'Rate limit exceeded. You can make 60 analysis requests per hour. Please try again later.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
