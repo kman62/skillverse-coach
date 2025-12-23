@@ -4,8 +4,16 @@ export interface PlayerInfo {
   name: string;
   jerseyNumber: string;
   position: string;
+  jerseyColor?: string;
   sport: 'basketball' | 'baseball' | 'football' | 'soccer' | 'volleyball' | 'tennis' | 'golf' | 'rugby';
   analysisMode?: 'bulk' | 'detailed';
+  analysisType?: 'individual' | 'team';
+  // NEW: Competition level for level-appropriate feedback
+  competitionLevel?: 'youth' | 'middle_school' | 'high_school' | 'juco' | 'd3' | 'd2' | 'd1' | 'professional';
+  // NEW: Physical measurables for context
+  heightInches?: number;
+  weightLbs?: number;
+  graduationYear?: number;
 }
 
 export const analyzeClip = async (frameData: string, playerInfo: PlayerInfo) => {

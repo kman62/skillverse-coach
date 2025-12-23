@@ -94,16 +94,18 @@ serve(async (req) => {
     try {
     const { analyses, playerInfo } = await req.json();
     const sport = playerInfo.sport || 'basketball';
+    const competitionLevel = playerInfo.competitionLevel || 'high_school';
 
-    console.log(`Generating ${sport} feedback for ${playerInfo.name} based on ${analyses.length} clips`);
+    console.log(`Generating ${sport} feedback for ${playerInfo.name} (${competitionLevel}) based on ${analyses.length} clips`);
 
-    const sportContext = getSportFeedbackContext(sport);
+    const sportContext = getSportFeedbackContext(sport, competitionLevel);
 
-    const prompt = `You are a supportive and constructive ${sport} coach reviewing a series of advanced video clip analyses for a young athlete named ${playerInfo.name}, who plays ${playerInfo.position} and wears jersey #${playerInfo.jerseyNumber}.
+    const prompt = `You are a supportive and constructive ${sport} coach reviewing a series of advanced video clip analyses for an athlete named ${playerInfo.name}, who plays ${playerInfo.position} and wears jersey #${playerInfo.jerseyNumber}.
 
+Competition Level: ${competitionLevel.replace('_', ' ').toUpperCase()}
 ${sportContext}
 
-Create two sections of feedback using the Complete Performance framework.
+Create two sections of feedback using the Complete Performance framework, calibrated appropriately for a ${competitionLevel.replace('_', ' ')} athlete.
 
 ## FOR THE ATHLETE (${playerInfo.name})
 
