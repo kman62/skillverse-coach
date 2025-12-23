@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { getSportLevelContext, getLevelContext } from "./level-contexts.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,7 +45,13 @@ const playerInfoSchema = z.object({
   position: z.string().trim().max(50).optional(),
   sport: z.enum(['basketball', 'baseball', 'football', 'soccer', 'volleyball', 'tennis', 'golf', 'rugby']).default('basketball'),
   analysisMode: z.enum(['bulk', 'detailed']).optional().default('bulk'),
-  analysisType: z.enum(['individual', 'team']).optional().default('individual')
+  analysisType: z.enum(['individual', 'team']).optional().default('individual'),
+  // NEW: Competition level for level-appropriate feedback
+  competitionLevel: z.enum(['youth', 'middle_school', 'high_school', 'juco', 'd3', 'd2', 'd1', 'professional']).optional(),
+  // NEW: Physical measurables for context
+  heightInches: z.number().optional(),
+  weightLbs: z.number().optional(),
+  graduationYear: z.number().optional()
 });
 
 const requestSchema = z.object({
@@ -134,7 +141,8 @@ Deno.serve(async (req) => {
     const { frameData, playerInfo } = validationResult.data;
     
     console.log(`🔵 [${requestId}] Player: ${playerInfo.name} #${playerInfo.jerseyNumber}, Position: ${playerInfo.position || 'auto-detect'}`);
-    console.log(`🔵 [${requestId}] Analysis mode: ${playerInfo.analysisMode}`);
+    console.log(`🔵 [${requestId}] Analysis mode: ${playerInfo.analysisMode}, Competition level: ${playerInfo.competitionLevel || 'high_school (default)'}`);
+    console.log(`🔵 [${requestId}] Physical: ${playerInfo.heightInches ? `${Math.floor(playerInfo.heightInches / 12)}'${playerInfo.heightInches % 12}"` : 'N/A'}, ${playerInfo.weightLbs ? `${playerInfo.weightLbs}lbs` : 'N/A'}`);
     console.log(`🔵 [${requestId}] Frame data size: ${(frameData.length / 1024).toFixed(2)} KB`);
 
     // Using Lovable AI Gateway
@@ -156,7 +164,11 @@ Deno.serve(async (req) => {
 
     const systemPrompt = isTeamAnalysis 
       ? getOffensiveSetsPrompt(playerInfo.sport)
-      : getSportSpecificPrompt(playerInfo.sport);
+      : getSportSpecificPrompt(playerInfo.sport, playerInfo.competitionLevel, {
+          heightInches: playerInfo.heightInches,
+          weightLbs: playerInfo.weightLbs,
+          graduationYear: playerInfo.graduationYear
+        });
     
     const userPrompt = isTeamAnalysis
       ? `Analyze this ${playerInfo.sport} offensive set and team play execution. Evaluate spacing, timing, player movement, and overall set effectiveness.`
@@ -305,11 +317,46 @@ Deno.serve(async (req) => {
   }
 });
 
-function getSportSpecificPrompt(sport: string): string {
-  // Enhanced prompts using Complete Performance framework
-  const baseTemplate = (sportName: string, d1Context: string) => `You are a professional ${sportName} coach AI analyzing a player's performance using the Complete Performance framework.
+interface PhysicalMeasurables {
+  heightInches?: number;
+  weightLbs?: number;
+  graduationYear?: number;
+}
 
-${d1Context}
+function getSportSpecificPrompt(
+  sport: string, 
+  competitionLevel?: string,
+  measurables?: PhysicalMeasurables
+): string {
+  // Get level-specific context from the new module
+  const levelContext = getSportLevelContext(sport, competitionLevel);
+  const levelInfo = getLevelContext(competitionLevel);
+  
+  // Build physical context string if measurables provided
+  let physicalContext = '';
+  if (measurables) {
+    const parts: string[] = [];
+    if (measurables.heightInches) {
+      const feet = Math.floor(measurables.heightInches / 12);
+      const inches = measurables.heightInches % 12;
+      parts.push(`Height: ${feet}'${inches}"`);
+    }
+    if (measurables.weightLbs) {
+      parts.push(`Weight: ${measurables.weightLbs} lbs`);
+    }
+    if (measurables.graduationYear) {
+      parts.push(`Class of ${measurables.graduationYear}`);
+    }
+    if (parts.length > 0) {
+      physicalContext = `\n\nAthlete Physical Profile: ${parts.join(', ')}. Consider these measurables when evaluating movement efficiency and athletic potential.`;
+    }
+  }
+
+  // Enhanced prompts using Complete Performance framework with level-aware context
+  const baseTemplate = (sportName: string, levelCtx: string) => `You are a professional ${sportName} coach AI analyzing a player's performance using the Complete Performance framework.
+
+COMPETITION LEVEL: ${levelInfo.label}
+${levelCtx}${physicalContext}
 
 Analyze the play phase-by-phase and return structured JSON with the following schema:
 
@@ -318,6 +365,7 @@ Analyze the play phase-by-phase and return structured JSON with the following sc
   "outcome": "string - result of the play",
   "detectedPosition": "string - player position",
   "sport": "${sportName}",
+  "competitionLevel": "${competitionLevel || 'high_school'}",
   "play_context": {
     "situation": "string - game context",
     "pressure_level": "string - low/medium/high",
@@ -325,59 +373,59 @@ Analyze the play phase-by-phase and return structured JSON with the following sc
   },
   "tangible_performance": {
     "technical_execution": {
-      "footwork_quality": "0-10 rating",
-      "body_control": "0-10 rating",
-      "technique_rating": "0-10 rating",
-      "spatial_awareness": "0-10 rating"
+      "footwork_quality": "0-10 rating (calibrated for ${levelInfo.label})",
+      "body_control": "0-10 rating (calibrated for ${levelInfo.label})",
+      "technique_rating": "0-10 rating (calibrated for ${levelInfo.label})",
+      "spatial_awareness": "0-10 rating (calibrated for ${levelInfo.label})"
     },
     "phases": [
       {
         "phase_name": "string",
         "quality": "0-10 rating",
-        "notes": "string"
+        "notes": "string - level-appropriate feedback"
       }
     ],
-    "efficiency_notes": "string"
+    "efficiency_notes": "string - considering athlete's development stage"
   },
   "intangible_performance": {
     "courage": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of willingness to compete/attack despite pressure or previous mistakes"
     },
     "composure": {
-      "rating": "1-5 scale", 
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})", 
       "evidence": "specific observation of poise under pressure, mechanics stability, avoiding stress reactions"
     },
     "initiative": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of independent adjustments without external prompting"
     },
     "leadership": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of verbal/non-verbal cues organizing teammates or improving flow"
     },
     "effectiveness_under_stress": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of execution quality when defended, fatigued, or time-pressured"
     },
     "resilience": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of recovery behavior after adversity"
     },
     "discipline": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of adherence to game plan, avoiding undisciplined plays or penalties"
     },
     "focus": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of attention to detail, tracking the ball/play, minimizing mental lapses"
     },
     "consistency": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of repeatable mechanics and decision-making across multiple attempts"
     },
     "game_iq": {
-      "rating": "1-5 scale",
+      "rating": "1-5 scale (calibrated for ${levelInfo.label})",
       "evidence": "specific observation of reading the defense/offense, anticipation, and situational awareness"
     }
   },
@@ -385,45 +433,23 @@ Analyze the play phase-by-phase and return structured JSON with the following sc
     "correlation_metrics": {
       "intangibles_overall_score": "0-1 decimal"
     },
-    "synthesis": "one paragraph explaining how intangibles influenced technical performance and decision-making"
+    "synthesis": "one paragraph explaining how intangibles influenced technical performance and decision-making, appropriate for ${levelInfo.label} athlete"
   },
   "coaching_recommendations": {
-    "technical_focus": "one specific mechanical/skill adjustment",
-    "tactical_focus": "one specific decision-making or positioning improvement",
+    "technical_focus": "one specific mechanical/skill adjustment appropriate for ${levelInfo.label}",
+    "tactical_focus": "one specific decision-making or positioning improvement for this level",
     "intangible_focus": "one specific behavioral or mindset development area",
-    "practice_drills": ["array of 2-3 specific drills"]
+    "practice_drills": ["array of 2-3 specific drills appropriate for ${levelInfo.label}"],
+    "development_priority": "what should this athlete focus on to reach the next level"
   }
 }
 
-Be specific with evidence for each intangible metric. Rate honestly using the full 1-5 scale.`;
+CRITICAL RATING GUIDANCE:
+${levelInfo.ratingCalibration}
 
-  const prompts: Record<string, string> = {
-    basketball: baseTemplate('basketball', 
-      'D1 recruiters evaluate: shooting efficiency, assist/turnover ratio, defensive versatility, basketball IQ, and leadership. Key metrics include points per game, shooting percentage, and athletic testing (vertical jump, shuttle times).'),
+Be specific with evidence for each intangible metric. Rate honestly using the full 1-5 scale, calibrated for ${levelInfo.label}.`;
 
-    baseball: baseTemplate('baseball',
-      'D1 recruiters evaluate: exit velocity (90+ mph), pitch velocity (85+ mph for pitchers), 60-yard dash time (<7.0s), fielding percentage, and baseball IQ. Position-specific skills and competitive stats are crucial.'),
-
-    football: baseTemplate('football',
-      'D1 recruiters evaluate: 40-yard dash times, vertical jump, strength metrics (bench press, squat), football IQ, position-specific technique, and competitive film. Size, speed, and physicality are position-dependent.'),
-
-    soccer: baseTemplate('soccer',
-      'D1 recruiters evaluate: technical ability with both feet, tactical awareness, fitness levels, vision, 1v1 ability, and decision-making under pressure. Club team performance and tournament exposure are important.'),
-
-    volleyball: baseTemplate('volleyball',
-      'D1 recruiters evaluate: vertical jump (25"+ females, 30"+ males), blocks/digs per set, hitting efficiency, serve accuracy, court awareness, and leadership. Height and athleticism are position-dependent.'),
-
-    tennis: baseTemplate('tennis',
-      'D1 recruiters evaluate: UTR rating (10+ for competitive D1), serve speed (100+ mph), consistency, mental toughness, match win percentage, and tournament results against ranked opponents.'),
-
-    golf: baseTemplate('golf',
-      'D1 recruiters evaluate: handicap (scratch or better), scoring average, driving distance (270+ yards), tournament performance, course management, and mental composure under pressure.'),
-
-    rugby: baseTemplate('rugby',
-      'D1 recruiters evaluate: physicality, tackle effectiveness, running lines, game intelligence, work rate, position-specific skills, and ability to perform in high-pressure situations.')
-  };
-
-  return prompts[sport] || prompts.basketball;
+  return baseTemplate(sport, levelContext);
 }
 
 function getOffensiveSetsPrompt(sport: string): string {
