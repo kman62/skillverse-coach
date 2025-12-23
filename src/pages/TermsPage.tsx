@@ -59,7 +59,8 @@ const TermsPage = () => {
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-1">
                 <li>Video analysis: 10 analyses per hour</li>
-                <li>Clip analysis: 30 analyses per hour</li>
+                <li>Clip analysis: 60 analyses per hour</li>
+                <li>Clips per video: 60 clips per hour</li>
                 <li>Feedback generation: 20 reports per hour</li>
               </ul>
               <p className="text-muted-foreground mt-2">

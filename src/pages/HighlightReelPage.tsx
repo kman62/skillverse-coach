@@ -158,7 +158,17 @@ const HighlightReelPage = () => {
     console.log(`🚀 [processVideo] Video duration: ${video.duration.toFixed(2)} s`);
 
     const clipDuration = 8;
-    const numClips = Math.ceil(video.duration / clipDuration);
+    const maxClipsPerVideo = 60; // Limit to 60 clips per video per hour
+    const numClips = Math.min(Math.ceil(video.duration / clipDuration), maxClipsPerVideo);
+    
+    if (Math.ceil(video.duration / clipDuration) > maxClipsPerVideo) {
+      console.log(`⚠️ [processVideo] Video would generate ${Math.ceil(video.duration / clipDuration)} clips, limiting to ${maxClipsPerVideo}`);
+      toast({
+        title: "Clip limit applied",
+        description: `Video limited to ${maxClipsPerVideo} clips per hour. Only the first ${maxClipsPerVideo} clips will be analyzed.`,
+      });
+    }
+    
     console.log(`🚀 [processVideo] Created ${numClips} clips`);
 
     const initialClips: Clip[] = Array.from({ length: numClips }, (_, i) => ({
